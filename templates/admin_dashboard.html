@@ -1,0 +1,7 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin Dashboard</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"></head><body class="p-4"><div class="container">
+<div class="d-flex justify-content-between align-items-center"><h3>Admin Dashboard</h3><div><a class="btn btn-outline-primary" href="{{ url_for('index') }}">Public</a><a class="btn btn-danger" href="{{ url_for('logout') }}">Logout</a></div></div>
+<p><a class="btn btn-success" href="{{ url_for('export_csv') }}">Export CSV</a></p>
+<h5>Users</h5><table class="table"><thead><tr><th>ID</th><th>Email</th><th>Name</th><th>Role</th></tr></thead><tbody>{% for u in users %}<tr><td>{{ u.id }}</td><td>{{ u.email }}</td><td>{{ u.name }}</td><td>{{ u.role }}</td></tr>{% endfor %}</tbody></table>
+<h5>Dogs</h5><table class="table"><thead><tr><th>ID</th><th>Name</th><th>Owner</th><th>QR</th></tr></thead><tbody>{% for d in dogs %}<tr><td>{{ d.id }}</td><td>{{ d.name }}</td><td>{{ d.owner_name }}</td><td>{% if d.qr_code %}<img src='{{ url_for('qrcodes', filename=d.qr_code) }}' width='80'>{% endif %}</td></tr>{% endfor %}</tbody></table>
+</div></body></html>
