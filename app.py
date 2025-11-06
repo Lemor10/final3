@@ -66,6 +66,10 @@ with app.app_context():
             print("Created admin user:", admin_email)
 
 # Routes
+@app.route('/scan')
+def scan_qr():
+    return render_template('scan.html')
+
 @app.route('/')
 def index():
     dogs = Dog.query.all()
@@ -130,7 +134,7 @@ def register_dog():
         age = request.form.get('age') or 0
         owner_name = current_user.name or request.form.get('owner_name') or current_user.email
         dog_uuid = os.urandom(16).hex()
-        qr_data = f"{BASE_URL}/dog/{dog_uuid}"
+        qr_data = f"{request.url_root}/dog/{dog_uuid}"
         img = qrcode.make(qr_data)
         qr_filename = f"{dog_uuid}.png"
         img.save(os.path.join(QR_FOLDER, qr_filename))
