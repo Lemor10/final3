@@ -19,7 +19,7 @@ login_manager.login_view = 'login'
 login_manager.init_app(app)
 
 # ensure QR folder exists
-QR_FOLDER = os.path.join('static', 'qrcodes')
+QR_FOLDER = os.path.join('/static', 'qrcodes')
 os.makedirs(QR_FOLDER, exist_ok=True)
 
 # Models
@@ -50,22 +50,6 @@ class Dog(db.Model):
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
-
-# Create DB and admin user inside app context (Flask 3.x compatible).
-@app.route("/create_admin")
-def create_admin():
-    with app.app_context():
-        db.create_all()
-        admin_email = os.environ.get('ADMIN_EMAIL', 'admin@gmail.com')
-        admin_pass = os.environ.get('ADMIN_PASSWORD', 'admin123')
-        admin = User.query.filter_by(email=admin_email).first()
-        if not admin:
-            admin = User(email=admin_email, name='Administrator', role='admin')
-            admin.set_password(admin_pass)
-            db.session.add(admin)
-            db.session.commit()
-            return f"✅ Admin created: {admin_email}"
-        return f"ℹ️ Admin already exists: {admin_email}"
 
 # Routes
 @app.route('/scan')
@@ -179,6 +163,21 @@ def export_csv():
     output = io.BytesIO(si.getvalue().encode())
     output.seek(0)
     return send_file(output, mimetype='text/csv', as_attachment=True, download_name='dogs.csv')
+
+# Auto-create admin during deployment
+with app.app_context():
+    db.create_all()
+    admin_email = os.environ.get('ADMIN_EMAIL', 'admin@gmail.com')
+    admin_pass = os.environ.get('ADMIN_PASSWORD', 'admin123')
+    admin = User.query.filter_by(email=admin_email).first()
+    if not admin:
+        admin = User(email=admin_email, name='Administrator', role='admin')
+        admin.set_password(admin_pass)
+        db.session.add(admin)
+        db.session.commit()
+        print(f"✅ Created admin: {admin_email}")
+    else:
+        print(f"ℹ️ Admin already exists: {admin_email}")
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT',5000)), debug=True)
