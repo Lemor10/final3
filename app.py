@@ -68,7 +68,6 @@ if __name__ == '__main__':
 
     app.run(debug=True)
 
-
 # Routes
 @app.route('/scan')
 def scan_qr():
@@ -181,6 +180,23 @@ def export_csv():
     output = io.BytesIO(si.getvalue().encode())
     output.seek(0)
     return send_file(output, mimetype='text/csv', as_attachment=True, download_name='dogs.csv')
+
+def init_admin():
+    """Create admin user on first run if it doesn't exist."""
+    with app.app_context():
+        db.create_all()
+        admin_email = os.environ.get('ADMIN_EMAIL', 'admin@gmail.com')
+        admin_pass = os.environ.get('ADMIN_PASSWORD', 'admin123')
+
+        admin = User.query.filter_by(email=admin_email).first()
+        if not admin:
+            admin = User(email=admin_email, name='Administrator', role='admin')
+            admin.set_password(admin_pass)
+            db.session.add(admin)
+            db.session.commit()
+            print("✅ Created admin user:", admin_email)
+        else:
+            print("ℹ️ Admin already exists:", admin_email)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT',5000)), debug=True)
