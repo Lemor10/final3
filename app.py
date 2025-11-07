@@ -52,18 +52,22 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 # Create DB and admin user inside app context (Flask 3.x compatible).
-with app.app_context():
-    db.create_all()
-    admin_email = os.environ.get('ADMIN_EMAIL', 'admin@gmail.com')
-    admin_pass = os.environ.get('ADMIN_PASSWORD', 'admin12345')
-    if admin_email:
-        admin = User.query.filter_by(email=admin_email).first()
-        if not admin:
-            admin = User(email=admin_email, name='Administrator', role='admin')
-            admin.set_password(admin_pass)
-            db.session.add(admin)
-            db.session.commit()
-            print("Created admin user:", admin_email)
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
+        admin_email = os.environ.get('ADMIN_EMAIL', 'admin@gmail.com')
+        admin_pass = os.environ.get('ADMIN_PASSWORD', 'admin123')
+        if admin_email:
+            admin = User.query.filter_by(email=admin_email).first()
+            if not admin:
+                admin = User(email=admin_email, name='Administrator', role='admin')
+                admin.set_password(admin_pass)
+                db.session.add(admin)
+                db.session.commit()
+                print("Created admin user:", admin_email)
+
+    app.run(debug=True)
+
 
 # Routes
 @app.route('/scan')
