@@ -1,7 +1,138 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin Dashboard</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"></head><body class="p-4"><div class="container">
-<div class="d-flex justify-content-between align-items-center"><h3>Admin Dashboard</h3><div><a class="btn btn-outline-primary" href="{{ url_for('index') }}">Public</a><a class="btn btn-danger" href="{{ url_for('logout') }}">Logout</a></div></div>
-<p><a class="btn btn-success" href="{{ url_for('export_csv') }}">Export CSV</a></p>
-<h5>Users</h5><table class="table"><thead><tr><th>ID</th><th>Email</th><th>Name</th><th>Role</th></tr></thead><tbody>{% for u in users %}<tr><td>{{ u.id }}</td><td>{{ u.email }}</td><td>{{ u.name }}</td><td>{{ u.role }}</td></tr>{% endfor %}</tbody></table>
-<h5>Dogs</h5><table class="table"><thead><tr><th>ID</th><th>Name</th><th>Owner</th><th>QR</th></tr></thead><tbody>{% for d in dogs %}<tr><td>{{ d.id }}</td><td>{{ d.name }}</td><td>{{ d.owner_name }}</td><td>{% if d.qr_code %}<img src='{{ url_for('qrcodes', filename=d.qr_code) }}' width='80'>{% endif %}</td></tr>{% endfor %}</tbody></table>
-</div></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f8f9fa;
+      font-family: "Poppins", sans-serif;
+    }
+    .navbar-brand {
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    .card {
+      border-radius: 1rem;
+      border: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    table {
+      background-color: #fff;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+    }
+    th {
+      background-color: #0d6efd;
+      color: white;
+    }
+    td img {
+      border-radius: 6px;
+      border: 1px solid #dee2e6;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="{{ url_for('admin_dashboard') }}">🐾 DogRegistration Admin</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item"><a class="nav-link active" href="{{ url_for('admin_dashboard') }}">Dashboard</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('index') }}">Public</a></li>
+        </ul>
+        <span class="navbar-text text-white me-3">Admin Panel</span>
+        <a class="btn btn-outline-light btn-sm" href="{{ url_for('logout') }}">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main content -->
+  <div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h3 class="fw-semibold text-primary">Admin Dashboard</h3>
+      <a class="btn btn-success" href="{{ url_for('export_csv') }}">⬇ Export CSV</a>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="card-title text-secondary mb-3">👤 Users</h5>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Email</th>
+                <th>Name</th>
+                <th>Role</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for u in users %}
+              <tr>
+                <td>{{ u.id }}</td>
+                <td>{{ u.email }}</td>
+                <td>{{ u.name }}</td>
+                <td>{{ u.role }}</td>
+              </tr>
+              {% else %}
+              <tr><td colspan="4" class="text-center text-muted">No users found.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dogs Table -->
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title text-secondary mb-3">🐶 Registered Dogs</h5>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Owner</th>
+                <th>QR Code</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for d in dogs %}
+              <tr>
+                <td>{{ d.id }}</td>
+                <td>{{ d.name }}</td>
+                <td>{{ d.owner_name }}</td>
+                <td>
+                  {% if d.qr_code %}
+                  <img src="{{ url_for('qrcodes', filename=d.qr_code) }}" width="80" alt="QR">
+                  {% else %}
+                  <span class="text-muted">No QR</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% else %}
+              <tr><td colspan="4" class="text-center text-muted">No dogs registered.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
