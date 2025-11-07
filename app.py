@@ -55,7 +55,7 @@ def load_user(user_id):
 with app.app_context():
     db.create_all()
     admin_email = os.environ.get('ADMIN_EMAIL', 'admin@gmail.com')
-    admin_pass = os.environ.get('ADMIN_PASSWORD', 'admin123')
+    admin_pass = os.environ.get('ADMIN_PASSWORD', 'admin12345')
     if admin_email:
         admin = User.query.filter_by(email=admin_email).first()
         if not admin:
