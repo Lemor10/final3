@@ -19,7 +19,7 @@ login_manager.login_view = 'login'
 login_manager.init_app(app)
 
 # ensure QR folder exists
-QR_FOLDER = os.path.join('/static', 'qrcodes')
+QR_FOLDER = os.path.join('/tmp', 'qrcodes')
 os.makedirs(QR_FOLDER, exist_ok=True)
 
 # Models
