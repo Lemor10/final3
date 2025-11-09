@@ -63,17 +63,31 @@ class Dog(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+# --- Ensure DB tables exist and admin is created ---
 with app.app_context():
+    # Create all tables
     db.create_all()
-    ADMIN_EMAIL = 'admin@gmail.com'
-    ADMIN_PASSWORD = 'admin123'
+
+    # Get admin credentials from environment or use defaults
+    ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'admin@gmail.com')
+    ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin123')
+
+    # Check if admin exists
     admin = User.query.filter_by(email=ADMIN_EMAIL).first()
     if not admin:
+        # Create admin if it doesn't exist
         admin = User(email=ADMIN_EMAIL, name='Administrator', role='admin')
         admin.set_password(ADMIN_PASSWORD)
         db.session.add(admin)
         db.session.commit()
-        print("✅ Admin created:", ADMIN_EMAIL)
+        print(f"✅ Admin created: {ADMIN_EMAIL}")
+    else:
+        # Ensure role is correct
+        if admin.role != 'admin':
+            admin.role = 'admin'
+            db.session.commit()
+            print(f"⚠️ Admin role fixed for {ADMIN_EMAIL}")
+        print(f"ℹ️ Admin already exists: {ADMIN_EMAIL}")
 
 # Routes
 @app.route('/scan')
@@ -187,21 +201,6 @@ def export_csv():
     output = io.BytesIO(si.getvalue().encode())
     output.seek(0)
     return send_file(output, mimetype='text/csv', as_attachment=True, download_name='dogs.csv')
-
-# Auto-create admin during deployment
-with app.app_context():
-    db.create_all()
-    admin_email = os.environ.get('ADMIN_EMAIL', 'admin@gmail.com')
-    admin_pass = os.environ.get('ADMIN_PASSWORD', 'admin123')
-    admin = User.query.filter_by(email=admin_email).first()
-    if not admin:
-        admin = User(email=admin_email, name='Administrator', role='admin')
-        admin.set_password(admin_pass)
-        db.session.add(admin)
-        db.session.commit()
-        print(f"✅ Created admin: {admin_email}")
-    else:
-        print(f"ℹ️ Admin already exists: {admin_email}")
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT',5000)), debug=True)
