@@ -10,8 +10,20 @@ BASE_URL = os.environ.get('BASE_URL', 'http://localhost:5000')
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Identification')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'postgresql://final3_a8kp_user:GvUqHBlfoAyUeWq5N5I5VTZ0e5EOZWg1@dpg-d40baa2li9vc73c4f0v0-a/final3_a8kp')
+
+# Detect if running on Render (Render sets this environment variable automatically)
+on_render = os.environ.get('RENDER') is not None
+
+if on_render:
+    # Use Render PostgreSQL45\
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
+else:
+    # Use local SQLite for development
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://final3_a8kp_user:GvUqHBlfoAyUeWq5N5I5VTZ0e5EOZWg1@dpg-d40baa2li9vc73c4f0v0-a.oregon-postgres.render.com/final3_a8kp'
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Initialize database
 db = SQLAlchemy(app)
 
 login_manager = LoginManager()
