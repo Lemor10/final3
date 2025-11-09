@@ -181,6 +181,8 @@ def download_qr(dog_uuid):
 @app.route('/admin')
 @login_required
 def admin_dashboard():
+    print("DEBUG: current_user.email =", current_user.email)
+    print("DEBUG: current_user.role =", current_user.role)
     if current_user.role != 'admin':
         abort(403)
     users = User.query.all()
