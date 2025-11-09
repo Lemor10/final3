@@ -63,6 +63,18 @@ class Dog(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+with app.app_context():
+    db.create_all()
+    ADMIN_EMAIL = 'admin@gmail.com'
+    ADMIN_PASSWORD = 'admin123'
+    admin = User.query.filter_by(email=ADMIN_EMAIL).first()
+    if not admin:
+        admin = User(email=ADMIN_EMAIL, name='Administrator', role='admin')
+        admin.set_password(ADMIN_PASSWORD)
+        db.session.add(admin)
+        db.session.commit()
+        print("✅ Admin created:", ADMIN_EMAIL)
+
 # Routes
 @app.route('/scan')
 def scan_qr():
