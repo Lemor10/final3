@@ -63,31 +63,16 @@ class Dog(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# --- Ensure DB tables exist and admin is created ---
 with app.app_context():
-    # Create all tables
-    db.create_all()
-
-    # Get admin credentials from environment or use defaults
-    ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'admin@gmail.com')
-    ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin123')
-
-    # Check if admin exists
-    admin = User.query.filter_by(email=ADMIN_EMAIL).first()
+    admin_email = os.environ.get('ADMIN_EMAIL', 'admin@gmail.com')
+    admin_pass = os.environ.get('ADMIN_PASSWORD', 'admin123')
+    admin = User.query.filter_by(email=admin_email).first()
     if not admin:
-        # Create admin if it doesn't exist
-        admin = User(email=ADMIN_EMAIL, name='Administrator', role='admin')
-        admin.set_password(ADMIN_PASSWORD)
+        admin = User(email=admin_email, name='Administrator', role='admin')
+        admin.set_password(admin_pass)
         db.session.add(admin)
         db.session.commit()
-        print(f"✅ Admin created: {ADMIN_EMAIL}")
-    else:
-        # Ensure role is correct
-        if admin.role != 'admin':
-            admin.role = 'admin'
-            db.session.commit()
-            print(f"⚠️ Admin role fixed for {ADMIN_EMAIL}")
-        print(f"ℹ️ Admin already exists: {ADMIN_EMAIL}")
+        print(f"✅ Created admin: {admin_email}")
 
 # Routes
 @app.route('/scan')
@@ -142,9 +127,9 @@ def login():
 
         # Redirect based on role
         if user.role == 'admin':
-            return redirect(url_for('admin_dashboard.html'))
+            return redirect(url_for('admin_dashboard'))
         else:
-            return redirect(url_for('owner_dashboard.html'))
+            return redirect(url_for('owner_dashboard'))
 
     return render_template('login.html')
 
