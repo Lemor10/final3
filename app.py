@@ -9,7 +9,7 @@ import qrcode, io, csv
 BASE_URL = os.environ.get('BASE_URL', 'http://localhost:5000')
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Identification')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Dog_Registration_Secret_Key')
 
 # Detect if running on Render (Render sets this environment variable automatically)
 on_render = os.environ.get('RENDER') is not None
@@ -121,17 +121,31 @@ def signup():
         return redirect(url_for('login'))
     return render_template('signup.html')
 
-@app.route('/login', methods=['GET','POST'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
+        email = request.form.get('email')
+        password = request.form.get('password')
+
         user = User.query.filter_by(email=email).first()
-        if user and user.check_password(password):
-            login_user(user)
-            next_page = request.args.get('next')
-            return redirect(next_page or (url_for('admin_dashboard') if user.role=='admin' else url_for('owner_dashboard')))
-        flash('Invalid credentials', 'danger')
+
+        # Check if user exists and password matches
+        if not user or not user.check_password(password):
+            flash('Invalid email or password', 'danger')
+            return redirect(url_for('login'))
+
+        # Log in user
+        login_user(user)
+
+        # Debug (optional)
+        print(f"✅ Login successful: {user.email} | Role: {user.role}")
+
+        # Redirect based on role
+        if user.role == 'admin':
+            return redirect(url_for('admin_dashboard'))
+        else:
+            return redirect(url_for('owner_dashboard'))
+
     return render_template('login.html')
 
 @app.route('/logout')
@@ -181,12 +195,17 @@ def download_qr(dog_uuid):
 @app.route('/admin')
 @login_required
 def admin_dashboard():
-    print("DEBUG: current_user.email =", current_user.email)
-    print("DEBUG: current_user.role =", current_user.role)
+    # Ensure only admins can access
     if current_user.role != 'admin':
-        abort(403)
+        flash("You don't have permission to access this page.", "danger")
+        return redirect(url_for('login'))
+
     users = User.query.all()
     dogs = Dog.query.all()
+
+    # Debug
+    print(f"DEBUG: {current_user.email} | {current_user.role}")
+
     return render_template('admin_dashboard.html', users=users, dogs=dogs)
 
 @app.route('/admin/export_csv')
@@ -203,6 +222,11 @@ def export_csv():
     output = io.BytesIO(si.getvalue().encode())
     output.seek(0)
     return send_file(output, mimetype='text/csv', as_attachment=True, download_name='dogs.csv')
+
+@app.route('/whoami')
+@login_required
+def whoami():
+    return f"Logged in as {current_user.email} with role {current_user.role}"
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT',5000)), debug=True)
