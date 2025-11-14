@@ -6,32 +6,13 @@
   <title>Owner Dashboard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body {
-      background-color: #f8f9fa;
-      font-family: "Poppins", sans-serif;
-    }
-    .navbar-brand {
-      font-weight: 600;
-      letter-spacing: 0.5px;
-    }
-    .card {
-      border: none;
-      border-radius: 1rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      transition: transform 0.2s ease;
-    }
-    .card:hover {
-      transform: translateY(-4px);
-    }
-    .dog-qr {
-      border-radius: 8px;
-      background-color: #fff;
-      padding: 8px;
-      border: 1px solid #dee2e6;
-    }
+    body { background-color: #f8f9fa; font-family: "Poppins", sans-serif; }
+    .card { border-radius: 1rem; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s ease; }
+    .card:hover { transform: translateY(-4px); }
+    .dog-qr { border-radius: 8px; background-color: #fff; padding: 8px; border: 1px solid #dee2e6; }
+    .btn-action { margin: 0 4px; }
   </style>
 </head>
-
 <body>
   <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
@@ -40,17 +21,13 @@
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
-
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item"><a class="nav-link active" href="{{ url_for('owner_dashboard') }}">Dashboard</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('register_dog') }}">Register Dog</a></li>
           <li class="nav-item"><a class="nav-link" href="{{ url_for('scan_qr') }}">Scan QR</a></li>
           <li class="nav-item"><a class="nav-link" href="{{ url_for('index') }}">Public</a></li>
         </ul>
-        <span class="navbar-text text-white me-3">
-          Hello, {{ current_user.name }}
-        </span>
+        <span class="navbar-text text-white me-3">Hello, {{ current_user.name }}</span>
         <a class="btn btn-outline-light btn-sm" href="{{ url_for('logout') }}">Logout</a>
       </div>
     </div>
@@ -58,39 +35,121 @@
 
   <!-- Content -->
   <div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center mb-4">
       <h3 class="fw-semibold text-primary">Your Registered Dogs</h3>
-      <div>
-        <a class="btn btn-success me-2" href="{{ url_for('register_dog') }}">+ Register Dog</a>
-        <a class="btn btn-outline-secondary" href="{{ url_for('scan_qr') }}">📷 Scan QR</a>
-      </div>
+      <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addDogModal">+ Add Dog</button>
+    </div>
+
+  <!-- Dog Image -->
+    <div class="me-3">
+      {% if dog.image %}
+        <img src="{{ url_for('static', filename='dog_images/' ~ dog.image) }}" 
+             alt="{{ dog.name }}" width="100" height="100" class="rounded">
+      {% else %}
+        <img src="{{ url_for('static', filename='dog_images/default.png') }}" 
+             alt="No Image" width="100" height="100" class="rounded">
+      {% endif %}
     </div>
 
     <div class="row">
       {% for dog in dogs %}
       <div class="col-md-4 mb-4">
-        <div class="card p-3">
-          <div class="card-body text-center">
+        <div class="card p-3 text-center">
+          <div class="card-body">
             <h5 class="card-title text-primary mb-2">{{ dog.name }}</h5>
             <p class="mb-1"><strong>Breed:</strong> {{ dog.breed }}</p>
-            <p class="mb-3"><strong>Age:</strong> {{ dog.age }}</p>
+            <p class="mb-1"><strong>Age:</strong> {{ dog.age }}</p>
+            <p class="mb-1"><strong>Status:</strong> {{ dog.vaccinated }}</p>
 
             {% if dog.qr_code %}
               <div class="dog-qr d-inline-block mb-2">
                 <img src="{{ url_for('qrcodes', filename=dog.qr_code) }}" width="120" alt="QR Code">
               </div><br>
-              <a class="btn btn-sm btn-outline-primary" href="{{ url_for('download_qr', dog_uuid=dog.uuid) }}">
-                ⬇ Download QR
-              </a>
+              <a class="btn btn-sm btn-outline-primary" href="{{ url_for('download_qr', dog_uuid=dog.uuid) }}">⬇ Download QR</a>
             {% endif %}
+
+            <div class="mt-3">
+              <button class="btn btn-sm btn-warning btn-action" data-bs-toggle="modal" data-bs-target="#editDogModal{{ dog.id }}">Edit</button>
+              <form style="display:inline" method="POST" action="{{ url_for('owner_delete_dog', dog_id=dog.id) }}">
+                <button type="submit" class="btn btn-sm btn-danger btn-action" onclick="return confirm('Delete this dog?');">Delete</button>
+              </form>
+            </div>
           </div>
         </div>
       </div>
+
+      <!-- Edit Dog Modal -->
+      <div class="modal fade" id="editDogModal{{ dog.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <form method="POST" action="{{ url_for('owner_edit_dog', dog_id=dog.id) }}">
+              <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Edit Dog</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label>Name</label>
+                  <input type="text" name="name" class="form-control" value="{{ dog.name }}" required>
+                </div>
+                <div class="mb-3">
+                  <label>Breed</label>
+                  <input type="text" name="breed" class="form-control" value="{{ dog.breed }}" required>
+                </div>
+                <div class="mb-3">
+                  <label>Age</label>
+                  <input type="number" name="age" class="form-control" value="{{ dog.age }}" required>
+                </div>
+                <div class="mb-3">
+                  <label>Vaccination Status</label>
+                  <select name="status" class="form-select" required>
+                    <option value="Vaccinated" {% if dog.vaccinated == "Vaccinated" %}selected{% endif %}>Vaccinated</option>
+                    <option value="Not Vaccinated" {% if dog.vaccinated == "Not Vaccinated" %}selected{% endif %}>Not Vaccinated</option>
+                  </select>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
       {% else %}
       <div class="col-12 text-center text-muted mt-5">
         <p>No dogs registered yet. 🐾</p>
       </div>
       {% endfor %}
+    </div>
+  </div>
+
+  <!-- Add Dog Modal -->
+  <div class="modal fade" id="addDogModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form method="POST" action="{{ url_for('owner_add_dog') }}">
+          <div class="modal-header bg-success text-white">
+            <h5 class="modal-title">Add New Dog</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3"><label>Name</label><input type="text" name="name" class="form-control" required></div>
+            <div class="mb-3"><label>Breed</label><input type="text" name="breed" class="form-control" required></div>
+            <div class="mb-3"><label>Age</label><input type="number" name="age" class="form-control" required></div>
+            <select name="status" class="form-select" required>
+              <option value="" disabled selected>Select Vaccination Status</option>
+              <option value="Vaccinated">Vaccinated</option>
+              <option value="Not Vaccinated">Not Vaccinated</option>
+            </select>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-success">Add Dog</button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 
