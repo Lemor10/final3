@@ -6,21 +6,17 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, curren
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import qrcode, io, csv
-import uuid
+import uuid, qrcode
+from io import BytesIO
 
-BASE_URL = os.environ.get('BASE_URL', 'http://localhost:5000')
-
-app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Dog_Registration_Secret_Key')
-
-# Detect if running on Render
-on_render = os.environ.get('RENDER') is not None
-
-if on_render:
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
-else:
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://final3_a8kp_user:GvUqHBlfoAyUeWq5N5I5VTZ0e5EOZWg1@dpg-d40baa2li9vc73c4f0v0-a.oregon-postgres.render.com/final3_a8kp'
-
+BASE_URL = os.environ.get('BASE_URL', 'http://localhost:5000') 
+app = Flask(__name__) 
+app.config['UPLOAD_FOLDER_PROFILE'] = os.path.join('static', 'profile_images')
+os.makedirs(app.config['UPLOAD_FOLDER_PROFILE'], exist_ok=True)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Dog_Registration_Secret_Key') # Detect if running on Render 
+on_render = os.environ.get('RENDER') is not None 
+if on_render: app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') 
+else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://final3_a8kp_user:GvUqHBlfoAyUeWq5N5I5VTZ0e5EOZWg1@dpg-d40baa2li9vc73c4f0v0-a.oregon-postgres.render.com/final3_a8kp' 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -32,12 +28,15 @@ login_manager.init_app(app)
 # Ensure QR folder exists
 QR_FOLDER = os.path.join('/tmp', 'qrcodes')
 os.makedirs(QR_FOLDER, exist_ok=True)
-
+from werkzeug.utils import secure_filename
 # ------------------ Models ------------------
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(150), unique=True, nullable=False)
     name = db.Column(db.String(150))
+    contact = db.Column(db.String(20))
+    address = db.Column(db.String(255))
+    profile_photo = db.Column(db.String(200))
     password_hash = db.Column(db.String(200), nullable=False)
     role = db.Column(db.String(20), default='owner')  # 'owner' or 'admin'
     dogs = db.relationship('Dog', backref='owner', lazy=True)
@@ -101,6 +100,9 @@ def signup():
     if request.method == 'POST':
         email = request.form['email']
         name = request.form['name']
+        contact = request.form['contact']
+        address = request.form['address']
+        profile_photo = request.form.get('profile_photo')
         password = request.form['password']
         if User.query.filter_by(email=email).first():
             flash('Email already registered', 'danger')
@@ -146,7 +148,30 @@ def owner_dashboard():
     dogs = Dog.query.filter_by(owner_id=current_user.id).all() if current_user.role=='owner' else Dog.query.all()
     return render_template('owner_dashboard.html', dogs=dogs)
 
+@app.route('/owner/profile', methods=['GET', 'POST'])
+@login_required
+def owner_profile():
+    user = current_user
+    dogs = Dog.query.filter_by(owner_id=user.id).all()  # 👈 Pass the owner’s dogs
 
+    if request.method == 'POST':
+        user.name = request.form['name']
+        user.contact = request.form['contact']
+        user.address = request.form['address']
+
+        # Handle profile photo upload
+        if 'profile_photo' in request.files:
+            photo = request.files['profile_photo']
+            if photo.filename != '':
+                filename = secure_filename(photo.filename)
+                photo.save(os.path.join(app.config['UPLOAD_FOLDER_PROFILE'], filename))
+                user.profile_photo = filename
+
+        db.session.commit()
+        flash("Profile updated successfully!", "success")
+        return redirect(url_for('owner_profile'))
+
+    return render_template('owner_profile.html', dogs=dogs)
 
 # Owner register dog
 @app.route('/owner/register_dog', methods=['GET','POST'])
@@ -175,7 +200,7 @@ def owner_add_dog():
     name = request.form['name']
     breed = request.form['breed']
     age = request.form['age']
-    vaccinated = request.form.get('status') == "Vaccinated"
+    vaccinated = request.form['status']
 
     new_dog = Dog(
         uuid=str(uuid.uuid4()),   # 👈 THIS IS REQUIRED
@@ -192,7 +217,7 @@ def owner_add_dog():
     db.session.add(new_dog)
     db.session.commit()
 
-    return redirect(url_for('owner_dashboard'))
+    return redirect(url_for('owner_profile'))
 
 @app.route('/owner_delete_dog/<int:dog_id>', methods=['POST'])
 @login_required
@@ -211,7 +236,7 @@ def owner_delete_dog(dog_id):
     db.session.delete(dog)
     db.session.commit()
     flash('Dog deleted successfully!', 'success')
-    return redirect(url_for('owner_dashboard'))
+    return redirect(url_for('owner_profile'))
 
 @app.route('/owner/edit_dog/<int:dog_id>', methods=['POST'])
 @login_required
@@ -238,6 +263,23 @@ def owner_edit_dog(dog_id):
     return redirect(url_for('owner_dashboard'))
 
 # QR code serving
+@app.route('/generate_qr/<dog_uuid>')
+def generate_qr(dog_uuid):
+    # Generate QR code for a dog
+    qr = qrcode.QRCode(
+        version=1,
+        box_size=10,
+        border=5
+    )
+    qr.add_data(f'https://yourdomain.com/dog/{dog_uuid}')  # Link encoded in QR
+    qr.make(fit=True)
+
+    img = qr.make_image(fill='black', back_color='white')
+    buf = BytesIO()
+    img.save(buf)
+    buf.seek(0)
+    return send_file(buf, mimetype='image/png')
+
 @app.route('/qrcodes/<path:filename>')
 def qrcodes(filename):
     return send_from_directory(QR_FOLDER, filename)
