@@ -43,7 +43,7 @@
 
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('owner_dashboard') }}">Register Dog</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('owner_dashboard') }}">Dashboard</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url_for('scan_qr') }}">Scan QR</a></li>
                 <li class="nav-item"><a class="nav-link active" href="{{ url_for('owner_profile') }}">Profile</a></li>
             </ul>
@@ -130,11 +130,12 @@
             <p class="mb-1"><strong>Status:</strong> {{ dog.vaccinated }}</p>
 
             {% if dog.qr_code %}
-              <div class="dog-qr d-inline-block mb-2">
-                <img src="{{ url_for('generate_qr', dog_uuid=dog.uuid) }}" width="120" alt="QR Code">
-              </div><br>
-              <a class="btn btn-sm btn-outline-primary" href="{{ url_for('download_qr', dog_uuid=dog.uuid) }}">⬇ Download QR</a>
+            <div class="dog-qr d-inline-block mb-2">
+                <img src="{{ url_for('qrcodes', filename=dog.qr_code) }}" width="120" alt="QR Code">
+            </div><br>
+            <a class="btn btn-sm btn-outline-primary" href="{{ url_for('download_qr', dog_uuid=dog.uuid) }}">⬇ Download QR</a>
             {% endif %}
+
 
             <div class="mt-3">
               <button class="btn btn-sm btn-warning btn-action" data-bs-toggle="modal" data-bs-target="#editDogModal{{ dog.id }}">Edit</button>

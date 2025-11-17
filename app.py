@@ -2,7 +2,9 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory, send_file, abort, session
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
+from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import qrcode, io, csv
@@ -20,6 +22,7 @@ else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://final3_a8kp_user:GvU
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 login_manager = LoginManager()
 login_manager.login_view = 'login'
@@ -28,7 +31,6 @@ login_manager.init_app(app)
 # Ensure QR folder exists
 QR_FOLDER = os.path.join('/tmp', 'qrcodes')
 os.makedirs(QR_FOLDER, exist_ok=True)
-from werkzeug.utils import secure_filename
 # ------------------ Models ------------------
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -169,7 +171,7 @@ def owner_profile():
 
         db.session.commit()
         flash("Profile updated successfully!", "success")
-        return redirect(url_for('owner_profile'))
+        return redirect(url_for('owner_add_dog'))
 
     return render_template('owner_profile.html', dogs=dogs)
 
@@ -199,25 +201,37 @@ def register_dog():
 def owner_add_dog():
     name = request.form['name']
     breed = request.form['breed']
-    age = request.form['age']
+    age = int(request.form['age'])
     vaccinated = request.form['status']
 
+    # Generate a unique UUID
+    dog_uuid = str(uuid.uuid4())
+
+    # Generate QR code pointing to dog's info page
+    qr_data = f"{request.url_root}dog/{dog_uuid}"
+    img = qrcode.make(qr_data)
+    qr_filename = f"{dog_uuid}.png"
+    img.save(os.path.join(QR_FOLDER, qr_filename))
+
+    # Create the dog entry
     new_dog = Dog(
-        uuid=str(uuid.uuid4()),   # 👈 THIS IS REQUIRED
+        uuid=dog_uuid,
         name=name,
         breed=breed,
         age=age,
         vaccinated=vaccinated,
         owner_id=current_user.id,
         owner_name=current_user.name,
-        
+        qr_code=qr_filename,
         created_at=datetime.utcnow()
     )
 
     db.session.add(new_dog)
     db.session.commit()
 
+    flash("Dog registered successfully! QR code generated.", "success")
     return redirect(url_for('owner_profile'))
+
 
 @app.route('/owner_delete_dog/<int:dog_id>', methods=['POST'])
 @login_required
@@ -306,26 +320,56 @@ def admin_dashboard():
 def admin_data_analysis():
     if current_user.role != 'admin':
         abort(403)
+
+    # Summary
     total_users = User.query.count()
-    total_dogs = Dog.query.count()
     total_owners = User.query.filter_by(role='owner').count()
-    total_admins = User.query.filter_by(role='admin').count()
-    breed_counts = db.session.query(Dog.breed, db.func.count(Dog.id)).group_by(Dog.breed).all()
+    total_dogs = Dog.query.count()
+
+    # Bar Chart (Dogs per breed)
+    breed_counts = (
+        db.session.query(Dog.breed, db.func.count(Dog.id))
+        .group_by(Dog.breed)
+        .all()
+    )
     breeds = [b[0] or "Unknown" for b in breed_counts]
     breed_numbers = [b[1] for b in breed_counts]
-    return render_template('admin_data_analysis.html',
-                           total_users=total_users,
-                           total_dogs=total_dogs,
-                           total_owners=total_owners,
-                           total_admins=total_admins,
-                           breeds=breeds,
-                           breed_numbers=breed_numbers)
+
+    # Pie Chart (Vaccinated vs Not)
+    vaccinated_count = Dog.query.filter_by(vaccinated="Vaccinated").count()
+    unvaccinated_count = Dog.query.filter_by(vaccinated="Not Vaccinated").count()
+
+    # Line Chart (Monthly registrations)
+    monthly_data = db.session.query(
+        db.func.date_trunc('month', Dog.created_at),
+        db.func.count(Dog.id)
+    ).group_by(
+        db.func.date_trunc('month', Dog.created_at)
+    ).order_by(
+        db.func.date_trunc('month', Dog.created_at)
+    ).all()
+
+    months = [m[0].strftime("%b %Y") for m in monthly_data]
+    month_counts = [m[1] for m in monthly_data]
+
+    return render_template(
+        'admin_data_analysis.html',
+        total_users=total_users,
+        total_owners=total_owners,
+        total_dogs=total_dogs,
+        breeds=breeds,
+        breed_numbers=breed_numbers,
+        vaccinated_count=vaccinated_count,
+        unvaccinated_count=unvaccinated_count,
+        months=months,
+        month_counts=month_counts
+    )
 
 @app.route('/admin/register_dog', methods=['POST'])
 def admin_register_dog():
     if 'user_id' not in session or session.get('role') != 'admin':
         flash("Access denied.", "danger")
-        return redirect(url_for('signin'))
+        return redirect(url_for('admin_dashboard'))
 
     name = request.form['name']
     breed = request.form['breed']
