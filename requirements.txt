@@ -6,3 +6,5 @@ Pillow
 gunicorn
 Werkzeug
 psycopg2-binary
+Flask-Migrate
+alembic
