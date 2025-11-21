@@ -105,13 +105,31 @@
                 <td>{{ d.name }}</td>
                 <td>{{ d.owner_name or "Stray" }}</td>
                 <td>{{ "Yes" if d.vaccinated else "No" }}</td>
-                <td>
-                  {% if d.qr_code %}
-                  <img src="{{ url_for('qrcodes', filename=d.qr_code) }}" width="80" alt="QR">
-                  {% else %}
-                  <span class="text-muted">No QR</span>
-                  {% endif %}
-                </td>
+<td>
+  {% if d.qr_code %}
+  <img src="{{ url_for('qrcodes', filename=d.qr_code) }}" width="80" alt="QR">
+  {% else %}
+  <span class="text-muted">No QR</span>
+  {% endif %}
+</td>
+
+<td>
+  <!-- Edit button -->
+  <button class="btn btn-primary btn-sm"
+          data-bs-toggle="modal"
+          data-bs-target="#editDogModal{{ d.id }}">
+      Edit
+  </button>
+
+  <!-- Delete form button -->
+  <form method="POST"
+        action="{{ url_for('admin_delete_dog', dog_id=d.id) }}"
+        style="display:inline-block;"
+        onsubmit="return confirm('Delete this dog?');">
+      <button class="btn btn-danger btn-sm">Delete</button>
+  </form>
+</td>
+
               </tr>
               {% else %}
               <tr><td colspan="5" class="text-center text-muted">No dogs registered.</td></tr>
@@ -122,6 +140,55 @@
       </div>
     </div>
   </div>
+  
+{% for d in dogs %}
+<div class="modal fade" id="editDogModal{{ d.id }}" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST" action="{{ url_for('admin_edit_dog', dog_id=d.id) }}">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">Edit Dog Info</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="mb-3">
+            <label>Name</label>
+            <input type="text" name="name" class="form-control" value="{{ d.name }}" required>
+          </div>
+
+          <div class="mb-3">
+            <label>Breed</label>
+            <input type="text" name="breed" class="form-control" value="{{ d.breed }}" required>
+          </div>
+
+          <div class="mb-3">
+            <label>Age</label>
+            <input type="number" name="age" class="form-control" value="{{ d.age }}" required>
+          </div>
+
+          <div class="mb-3">
+            <label>Status</label>
+            <select name="status" class="form-select">
+              <option {% if d.vaccinated == 'Vaccinated' %}selected{% endif %}>
+                Vaccinated
+              </option>
+              <option {% if d.vaccinated == 'Not Vaccinated' %}selected{% endif %}>
+                Not Vaccinated
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endfor %}
 
   <!-- Register Stray Dog Modal -->
   <div class="modal fade" id="registerStrayDogModal" tabindex="-1" aria-hidden="true">

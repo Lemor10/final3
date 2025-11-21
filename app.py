@@ -28,9 +28,10 @@ login_manager = LoginManager()
 login_manager.login_view = 'login'
 login_manager.init_app(app)
 
-# Ensure QR folder exists
-QR_FOLDER = os.path.join('/tmp', 'qrcodes')
+# Persistent QR folder
+QR_FOLDER = os.path.join('static', 'qr_dogs')
 os.makedirs(QR_FOLDER, exist_ok=True)
+
 # ------------------ Models ------------------
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -171,30 +172,9 @@ def owner_profile():
 
         db.session.commit()
         flash("Profile updated successfully!", "success")
-        return redirect(url_for('owner_add_dog'))
+        return redirect(url_for('owner_profile'))
 
     return render_template('owner_profile.html', dogs=dogs)
-
-# Owner register dog
-@app.route('/owner/register_dog', methods=['GET','POST'])
-@login_required
-def register_dog():
-    if request.method == 'POST':
-        name = request.form['name']
-        breed = request.form.get('breed')
-        age = request.form.get('age') or 0
-        owner_name = current_user.name or current_user.email
-        dog_uuid = os.urandom(16).hex()
-        qr_data = f"{request.url_root}/dog/{dog_uuid}"
-        img = qrcode.make(qr_data)
-        qr_filename = f"{dog_uuid}.png"
-        img.save(os.path.join(QR_FOLDER, qr_filename))
-        dog = Dog(uuid=dog_uuid, name=name, breed=breed, age=int(age), owner_name=owner_name, owner_id=current_user.id, qr_code=qr_filename)
-        db.session.add(dog)
-        db.session.commit()
-        flash('Dog registered successfully', 'success')
-        return redirect(url_for('owner_dashboard'))
-    return render_template('register.html')
 
 @app.route('/owner_add_dog', methods=['POST'])
 @login_required
@@ -203,9 +183,16 @@ def owner_add_dog():
     breed = request.form['breed']
     age = int(request.form['age'])
     vaccinated = request.form['status']
+    image = request.files.get("dog_image")
 
     # Generate a unique UUID
     dog_uuid = str(uuid.uuid4())
+
+    if image:
+        filename = secure_filename(image.filename)
+        image.save(os.path.join("static/dog_images", filename))
+    else:
+        filename = None
 
     # Generate QR code pointing to dog's info page
     qr_data = f"{request.url_root}dog/{dog_uuid}"
@@ -223,6 +210,7 @@ def owner_add_dog():
         owner_id=current_user.id,
         owner_name=current_user.name,
         qr_code=qr_filename,
+        image=filename,
         created_at=datetime.utcnow()
     )
 
@@ -367,7 +355,7 @@ def admin_data_analysis():
 
 @app.route('/admin/register_dog', methods=['POST'])
 def admin_register_dog():
-    if 'user_id' not in session or session.get('role') != 'admin':
+    if current_user.role != 'admin':
         flash("Access denied.", "danger")
         return redirect(url_for('admin_dashboard'))
 
@@ -376,22 +364,79 @@ def admin_register_dog():
     age = request.form['age']
     status = request.form['status']
 
-    # Convert vaccinated status to boolean
-    vaccinated = True if status == 'Vaccinated' else False
+    vaccinated = "Vaccinated" if status == "Vaccinated" else "Not Vaccinated"
 
+    # Generate unique UUID
+    dog_uuid = str(uuid.uuid4())
+
+    # Generate QR code URL
+    qr_data = f"{request.url_root}dog/{dog_uuid}"
+
+    # Generate QR image
+    img = qrcode.make(qr_data)
+
+    # Save QR to /tmp/qrcodes
+    qr_filename = f"{dog_uuid}.png"
+    img.save(os.path.join(QR_FOLDER, qr_filename))
+
+    # Save dog entry
     new_dog = Dog(
+        uuid=dog_uuid,
         name=name,
         breed=breed,
         age=age,
-        owner_name=None,   # because it's a stray
+        owner_name="Stray (Admin Registered)",
         owner_id=None,
-        vaccinated=vaccinated
+        vaccinated=vaccinated,
+        qr_code=qr_filename,
+        created_at=datetime.utcnow()
     )
 
     db.session.add(new_dog)
     db.session.commit()
-    flash("Stray dog registered successfully!", "success")
+
+    flash("Stray dog registered successfully! QR code created.", "success")
     return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/edit_dog/<int:dog_id>', methods=['POST'])
+@login_required
+def admin_edit_dog(dog_id):
+    if current_user.role != 'admin':
+        abort(403)
+
+    dog = Dog.query.get_or_404(dog_id)
+
+    dog.name = request.form['name']
+    dog.breed = request.form['breed']
+    dog.age = request.form['age']
+    dog.vaccinated = request.form['status']
+
+    db.session.commit()
+
+    flash("Dog information updated successfully!", "success")
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin_delete_dog/<int:dog_id>', methods=['POST'])
+@login_required
+def admin_delete_dog(dog_id):
+    if current_user.role != 'admin':
+        abort(403)
+
+    dog = Dog.query.get_or_404(dog_id)
+
+    # Delete QR if exists
+    if dog.qr_code:
+        try:
+            os.remove(os.path.join(QR_FOLDER, dog.qr_code))
+        except:
+            pass
+
+    db.session.delete(dog)
+    db.session.commit()
+
+    flash("Dog deleted successfully!", "success")
+    return redirect(url_for('admin_dashboard'))
+
 
 # Export CSV
 @app.route('/admin/export_csv')
