@@ -363,8 +363,15 @@ def admin_register_dog():
     breed = request.form['breed']
     age = request.form['age']
     status = request.form['status']
-
     vaccinated = "Vaccinated" if status == "Vaccinated" else "Not Vaccinated"
+
+    image_file = request.files.get("dog_image")
+    image_filename = None
+
+    if image_file and image_file.filename != "":
+        image_filename = secure_filename(image_file.filename)
+        save_path = os.path.join("static/dog_images", image_filename)
+        image_file.save(save_path)
 
     # Generate unique UUID
     dog_uuid = str(uuid.uuid4())
@@ -389,6 +396,7 @@ def admin_register_dog():
         owner_id=None,
         vaccinated=vaccinated,
         qr_code=qr_filename,
+        image=image_filename,
         created_at=datetime.utcnow()
     )
 
