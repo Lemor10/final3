@@ -5,9 +5,10 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Login | DogRegistration</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
   <style>
     body {
-      background: linear-gradient(135deg, #6f42c1, #007bff);
+      background: linear-gradient(135deg, #ffffff, #007bff);
       min-height: 100vh;
       display: flex;
       align-items: center;
@@ -25,8 +26,7 @@
       to { opacity: 1; transform: translateY(0); }
     }
     .card-header {
-      background-color: #6f42c1;
-      color: white;
+      color: rgb(0, 0, 0);
       text-align: center;
       font-size: 1.4rem;
       font-weight: 600;
@@ -41,28 +41,85 @@
       background-color: #512d8b;
       transform: scale(1.02);
     }
+
+    /* Social Buttons */
+    .btn-google {
+      background: white;
+      border: 1px solid #ddd;
+      color: #525252;
+      border-radius: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-weight: 500;
+      transition: 0.2s ease;
+    }
+    .btn-google:hover {
+      background: #d3d3d3;
+    }
+
+    .btn-facebook {
+      background: #ffffff;
+      border: 1px solid #ddd;
+      color: #525252;
+      border-radius: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-weight: 500;
+      transition: 0.2s ease;
+    }
+    .btn-facebook:hover {
+      background: #d3d3d3;
+    }
   </style>
 </head>
 
 <body>
   <div class="card p-4" style="max-width: 420px; width: 100%;">
     <div class="card-header py-3">
-      🔐 Welcome Back
+      Welcome Back
     </div>
+
     <div class="card-body">
       <form method="POST">
         <div class="mb-3">
           <label class="form-label">Email</label>
-          <input type="email" class="form-control" name="email" placeholder="you@example.com" required>
+          <input type="email" class="form-control" name="email" placeholder="your@example.com" required>
         </div>
+
         <div class="mb-3">
           <label class="form-label">Password</label>
           <input type="password" class="form-control" name="password" placeholder="••••••••" required>
         </div>
+
         <button type="submit" class="btn btn-primary w-100 py-2 mt-2">Sign In</button>
       </form>
+
+      <!-- Divider -->
+      <div class="d-flex align-items-center my-3">
+        <hr class="flex-grow-1">
+        <span class="px-2 text-muted">or</span>
+        <hr class="flex-grow-1">
+      </div>
+
+      <!-- Google Login -->
+      <a href="/auth/google" class="btn btn-google w-100 mb-2">
+        <img src="https://www.svgrepo.com/show/475656/google-color.svg" width="20">
+        Sign in with Google
+      </a>
+
+      <!-- Facebook Login -->
+      <a href="/auth/facebook" class="btn btn-facebook w-100 mb-2">
+        <img src="https://www.svgrepo.com/show/448224/facebook.svg" width="20">
+        Sign in with Facebook
+      </a>
+
       <p class="text-center text-muted mt-3 mb-0">
-        Don't have an account? <a href="{{ url_for('signup') }}" class="text-primary fw-semibold text-decoration-none">Create one</a>
+        Don't have an account?
+        <a href="{{ url_for('signup') }}" class="text-primary fw-semibold text-decoration-none">Create one</a>
       </p>
     </div>
   </div>

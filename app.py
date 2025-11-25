@@ -6,7 +6,7 @@ from flask_migrate import Migrate
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import date, datetime
 import qrcode, io, csv
 import uuid, qrcode
 from io import BytesIO
@@ -61,7 +61,10 @@ class Dog(db.Model):
     qr_code = db.Column(db.String(200))
     vaccinated = db.Column(db.String(50), nullable=False, default="Not Vaccinated")
     image = db.Column(db.String(200))  # store image filename or URL
+    last_vaccination = db.Column(db.Date)
+    next_vaccination = db.Column(db.Date)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -96,6 +99,11 @@ def scan_qr():
 def dog_info(dog_uuid):
     dog = Dog.query.filter_by(uuid=dog_uuid).first_or_404()
     return render_template('dog_info.html', dog=dog)
+
+def format_breed(breed):
+    if not breed:
+        return "Unknown"
+    return breed.strip().lower().title()
 
 # ------------------ Authentication ------------------
 @app.route('/signup', methods=['GET','POST'])
@@ -146,41 +154,54 @@ def logout():
 @app.route('/owner/dashboard')
 @login_required
 def owner_dashboard():
+    dogs = Dog.query.filter_by(owner_id=current_user.id).all() if current_user.role=='owner' else Dog.query.all()
+
+    alerts = []
+    for dog in dogs:
+        if dog.next_vaccination:
+            days_left = (dog.next_vaccination - date.today()).days
+            if days_left <= 7:  # 7 days before due
+                alerts.append(f"{dog.name} needs vaccination in {days_left} days!")
+
     if current_user.role not in ['owner', 'admin']:
         abort(403)
-    dogs = Dog.query.filter_by(owner_id=current_user.id).all() if current_user.role=='owner' else Dog.query.all()
     return render_template('owner_dashboard.html', dogs=dogs)
 
 @app.route('/owner/profile', methods=['GET', 'POST'])
 @login_required
 def owner_profile():
     user = current_user
-    dogs = Dog.query.filter_by(owner_id=user.id).all()  # 👈 Pass the owner’s dogs
+    dogs = Dog.query.filter_by(owner_id=user.id).all()
 
     if request.method == 'POST':
-        user.name = request.form['name']
-        user.contact = request.form['contact']
-        user.address = request.form['address']
-
-        # Handle profile photo upload
-        if 'profile_photo' in request.files:
+        # Check if this POST is for profile info or photo
+        if 'name' in request.form:
+            # Update profile info
+            user.name = request.form.get('name')
+            user.contact = request.form.get('contact')
+            user.address = request.form.get('address')
+            db.session.commit()
+            flash("Profile updated successfully!", "success")
+        elif 'profile_photo' in request.files:
+            # Update profile photo
             photo = request.files['profile_photo']
             if photo.filename != '':
                 filename = secure_filename(photo.filename)
                 photo.save(os.path.join(app.config['UPLOAD_FOLDER_PROFILE'], filename))
                 user.profile_photo = filename
+                db.session.commit()
+                flash("Profile photo updated successfully!", "success")
 
-        db.session.commit()
-        flash("Profile updated successfully!", "success")
         return redirect(url_for('owner_profile'))
 
     return render_template('owner_profile.html', dogs=dogs)
+
 
 @app.route('/owner_add_dog', methods=['POST'])
 @login_required
 def owner_add_dog():
     name = request.form['name']
-    breed = request.form['breed']
+    breed = format_breed(request.form['breed'])
     age = int(request.form['age'])
     vaccinated = request.form['status']
     image = request.files.get("dog_image")
@@ -315,13 +336,19 @@ def admin_data_analysis():
     total_dogs = Dog.query.count()
 
     # Bar Chart (Dogs per breed)
+    # Normalize breed (capitalize first letter)
     breed_counts = (
-        db.session.query(Dog.breed, db.func.count(Dog.id))
-        .group_by(Dog.breed)
+        db.session.query(
+            db.func.initcap(db.func.lower(Dog.breed)),  # Normalize case
+            db.func.count(Dog.id)
+        )
+        .group_by(db.func.initcap(db.func.lower(Dog.breed)))
         .all()
     )
+
     breeds = [b[0] or "Unknown" for b in breed_counts]
     breed_numbers = [b[1] for b in breed_counts]
+
 
     # Pie Chart (Vaccinated vs Not)
     vaccinated_count = Dog.query.filter_by(vaccinated="Vaccinated").count()
@@ -360,7 +387,7 @@ def admin_register_dog():
         return redirect(url_for('admin_dashboard'))
 
     name = request.form['name']
-    breed = request.form['breed']
+    breed = format_breed(request.form['breed'])
     age = request.form['age']
     status = request.form['status']
     vaccinated = "Vaccinated" if status == "Vaccinated" else "Not Vaccinated"
@@ -418,7 +445,8 @@ def admin_edit_dog(dog_id):
     dog.breed = request.form['breed']
     dog.age = request.form['age']
     dog.vaccinated = request.form['status']
-
+    dog.last_vaccination = request.form.get('last_vaccination') or None
+    dog.next_vaccination = request.form.get('next_vaccination') or None
     db.session.commit()
 
     flash("Dog information updated successfully!", "success")
@@ -443,6 +471,25 @@ def admin_delete_dog(dog_id):
     db.session.commit()
 
     flash("Dog deleted successfully!", "success")
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/delete_owner/<int:owner_id>', methods=['POST'])
+def admin_delete_owner(owner_id):
+    owner = User.query.get(owner_id)
+
+    if not owner:
+        flash("Owner not found.", "danger")
+        return redirect(url_for('admin_dashboard'))
+
+    # Optional: delete owner's dogs as well
+    dogs = Dog.query.filter_by(owner_id=owner_id).all()
+    for dog in dogs:
+        db.session.delete(dog)
+
+    db.session.delete(owner)
+    db.session.commit()
+
+    flash("Owner deleted successfully.", "success")
     return redirect(url_for('admin_dashboard'))
 
 
