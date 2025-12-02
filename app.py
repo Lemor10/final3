@@ -18,7 +18,7 @@ os.makedirs(app.config['UPLOAD_FOLDER_PROFILE'], exist_ok=True)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Dog_Registration_Secret_Key') # Detect if running on Render 
 on_render = os.environ.get('RENDER') is not None 
 if on_render: app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') 
-else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://final4_hjjt_user:lV5ehY1ZDuYkzouBcPLSn29g30w8y4UH@dpg-d4n9slmuk2gs739lqsg0-a/final4_hjjt' 
+else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://final4_hjjt_user:lV5ehY1ZDuYkzouBcPLSn29g30w8y4UH@dpg-d4n9slmuk2gs739lqsg0-a.oregon-postgres.render.com/final4_hjjt' 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
