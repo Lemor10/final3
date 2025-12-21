@@ -18,38 +18,7 @@
 <body>
 
 <!-- NAVBAR -->
-<nav class="navbar navbar-expand-lg shadow-sm" style="background-color:#4DA6FF;">
-  <div class="container-fluid">
-    <a class="navbar-brand text-white fw-bold" href="{{ url_for('admin_dashboard') }}">
-      <i class="bi bi-gear-fill me-2"></i>Admin Panel
-    </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbar">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="adminNavbar">
-      <ul class="navbar-nav me-auto">
-        <li class="nav-item">
-          <a class="nav-link text-white" href="{{ url_for('admin_dashboard') }}">
-            <i class="bi bi-speedometer2 me-1"></i> Dashboard
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link active text-white" href="{{ url_for('admin_data_analysis') }}">
-            <i class="bi bi-bar-chart-line-fill me-1"></i> Analytics
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-white" href="{{ url_for('export_csv') }}">
-            <i class="bi bi-download me-1"></i> Export CSV
-          </a>
-        </li>
-      </ul>
-      <a class="btn btn-outline-light btn-sm" href="{{ url_for('logout') }}">
-        <i class="bi bi-box-arrow-right me-1"></i> Logout
-      </a>
-    </div>
-  </div>
-</nav>
+{% include 'navbar_admin.html' %}
 <div class="container">
 
     <!-- SUMMARY CARDS -->
