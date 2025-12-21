@@ -13,6 +13,8 @@ from io import BytesIO
 
 if os.environ.get("RENDER"):
     BASE_URL = os.environ.get("BASE_URL")
+    if not BASE_URL:
+        raise RuntimeError("❌ BASE_URL is NOT set in Render environment variables")
 else:
     BASE_URL = "http://localhost:5000"
 app = Flask(__name__) 
