@@ -6,6 +6,7 @@ from flask_migrate import Migrate
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.middleware.proxy_fix import ProxyFix
 from datetime import date, datetime
 import qrcode, io, csv, uuid
 from io import BytesIO
@@ -17,7 +18,14 @@ if os.environ.get("RENDER"):
 else:
     BASE_URL = "http://localhost:5000"
 
-app = Flask(__name__) 
+app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+# Session / cookie settings for HTTPS on Render
+app.config.update(
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_SAMESITE="Lax"
+)
+
 app.config['UPLOAD_FOLDER_PROFILE'] = os.path.join('static', 'profile_images')
 os.makedirs(app.config['UPLOAD_FOLDER_PROFILE'], exist_ok=True)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Dog_Registration_Secret_Key') # Detect if running on Render 
@@ -102,7 +110,9 @@ def scan_qr():
 # Dog info
 @app.route('/dog/<string:dog_uuid>')
 def dog_info(dog_uuid):
-    dog = Dog.query.filter_by(uuid=dog_uuid).first_or_404()
+    dog = Dog.query.filter_by(uuid=dog_uuid).first()
+    if not dog:
+        abort(404)
     return render_template('dog_info.html', dog=dog)
 
 def format_breed(breed):
@@ -118,17 +128,27 @@ def signup():
         name = request.form['name']
         contact = request.form['contact']
         address = request.form['address']
-        profile_photo = request.form.get('profile_photo')
         password = request.form['password']
+
         if User.query.filter_by(email=email).first():
             flash('Email already registered', 'danger')
             return redirect(url_for('signup'))
-        user = User(email=email, name=name, role='owner')
+
+        user = User(
+            email=email,
+            name=name,
+            contact=contact,
+            address=address,
+            role='owner'
+        )
         user.set_password(password)
+
         db.session.add(user)
         db.session.commit()
-        flash('Account created. Please login.', 'success')
+
+        flash('Account created successfully. Please login.', 'success')
         return redirect(url_for('login'))
+
     return render_template('signup.html')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -221,7 +241,7 @@ def owner_add_dog():
         filename = None
 
     # Generate QR code pointing to dog's info page
-    qr_data =  f"/dog/{dog_uuid}"
+    qr_data = f"{BASE_URL}/dog/{dog_uuid}"
     img = qrcode.make(qr_data)
     qr_filename = f"{dog_uuid}.png"
     DOG_IMAGE_FOLDER = os.path.join('static', 'dog_images')
@@ -301,7 +321,8 @@ def generate_qr(dog_uuid):
         box_size=10,
         border=5
     )
-    qr.add_data(f'https://yourdomain.com/dog/{dog_uuid}')  # Link encoded in QR
+    qr.add_data(f"{BASE_URL}/dog/{dog_uuid}")
+  # Link encoded in QR
     qr.make(fit=True)
 
     img = qr.make_image(fill='black', back_color='white')
@@ -411,7 +432,7 @@ def admin_register_dog():
     dog_uuid = str(uuid.uuid4())
 
     # Generate QR code URL
-    qr_data = f"/dog/{dog_uuid}"
+    qr_data = f"{BASE_URL}/dog/{dog_uuid}"
 
     # Generate QR image
     img = qrcode.make(qr_data)
