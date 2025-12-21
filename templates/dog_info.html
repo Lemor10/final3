@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ dog.name }} – Dog Information</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: #f5f7fa;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .dog-card {
+            max-width: 500px;
+            margin: 40px auto;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            background: #fff;
+            overflow: hidden;
+        }
+
+        .dog-image {
+            width: 100%;
+            height: 260px;
+            object-fit: cover;
+            background: #eee;
+        }
+
+        .badge-status {
+            font-size: 0.9rem;
+        }
+
+        .label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .value {
+            color: #222;
+        }
+
+        .footer-note {
+            font-size: 0.85rem;
+            color: #777;
+            text-align: center;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="dog-card">
+
+    {% if dog.image %}
+        <img src="{{ url_for('static', filename='dog_images/' + dog.image) }}" class="dog-image">
+    {% else %}
+        <img src="https://via.placeholder.com/500x260?text=No+Image" class="dog-image">
+    {% endif %}
+
+    <div class="p-4">
+
+        <h3 class="mb-1">{{ dog.name }}</h3>
+
+        {% if dog.vaccinated == "Vaccinated" %}
+            <span class="badge bg-success badge-status">Vaccinated</span>
+        {% else %}
+            <span class="badge bg-danger badge-status">Not Vaccinated</span>
+        {% endif %}
+
+        <hr>
+
+        <div class="mb-2">
+            <span class="label">Breed:</span>
+            <span class="value">{{ dog.breed or "Unknown" }}</span>
+        </div>
+
+        <div class="mb-2">
+            <span class="label">Age:</span>
+            <span class="value">{{ dog.age }} year(s)</span>
+        </div>
+
+        <div class="mb-2">
+            <span class="label">Owner:</span>
+            <span class="value">{{ dog.owner_name or "Not Available" }}</span>
+        </div>
+
+        {% if dog.last_vaccination %}
+        <div class="mb-2">
+            <span class="label">Last Vaccination:</span>
+            <span class="value">{{ dog.last_vaccination.strftime('%B %d, %Y') }}</span>
+        </div>
+        {% endif %}
+
+        {% if dog.next_vaccination %}
+        <div class="mb-2">
+            <span class="label">Next Vaccination:</span>
+            <span class="value">{{ dog.next_vaccination.strftime('%B %d, %Y') }}</span>
+        </div>
+        {% endif %}
+
+        <div class="footer-note">
+            If this dog is lost, please contact the owner or local authorities.
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>
