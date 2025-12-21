@@ -7,8 +7,7 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, curren
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import date, datetime
-import qrcode, io, csv
-import uuid, qrcode
+import qrcode, io, csv, uuid
 from io import BytesIO
 
 if os.environ.get("RENDER"):
@@ -17,6 +16,7 @@ if os.environ.get("RENDER"):
         raise RuntimeError("❌ BASE_URL is NOT set in Render environment variables")
 else:
     BASE_URL = "http://localhost:5000"
+
 app = Flask(__name__) 
 app.config['UPLOAD_FOLDER_PROFILE'] = os.path.join('static', 'profile_images')
 os.makedirs(app.config['UPLOAD_FOLDER_PROFILE'], exist_ok=True)
@@ -221,9 +221,11 @@ def owner_add_dog():
         filename = None
 
     # Generate QR code pointing to dog's info page
-    qr_data = f"{BASE_URL}/dog/{dog_uuid}"
+    qr_data =  f"/dog/{dog_uuid}"
     img = qrcode.make(qr_data)
     qr_filename = f"{dog_uuid}.png"
+    DOG_IMAGE_FOLDER = os.path.join('static', 'dog_images')
+    os.makedirs(DOG_IMAGE_FOLDER, exist_ok=True)
     img.save(os.path.join(QR_FOLDER, qr_filename))
 
     # Create the dog entry
@@ -252,7 +254,7 @@ def owner_add_dog():
 def owner_delete_dog(dog_id):
     if current_user.role != 'owner':
         flash('Unauthorized access', 'danger')
-        return redirect(url_for('signin'))
+        return redirect(url_for('login'))
     
     dog = Dog.query.get_or_404(dog_id)
     
@@ -409,7 +411,7 @@ def admin_register_dog():
     dog_uuid = str(uuid.uuid4())
 
     # Generate QR code URL
-    qr_data = f"{BASE_URL}/dog/{dog_uuid}"
+    qr_data = f"/dog/{dog_uuid}"
 
     # Generate QR image
     img = qrcode.make(qr_data)
