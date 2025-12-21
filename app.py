@@ -241,7 +241,7 @@ def owner_add_dog():
         filename = None
 
     # Generate QR code pointing to dog's info page
-    qr_data = f"{BASE_URL}/dog/{dog_uuid}"
+    qr_data = url_for("dog_info", dog_uuid=dog_uuid, _external=True)
     img = qrcode.make(qr_data)
     qr_filename = f"{dog_uuid}.png"
     DOG_IMAGE_FOLDER = os.path.join('static', 'dog_images')
@@ -321,7 +321,8 @@ def generate_qr(dog_uuid):
         box_size=10,
         border=5
     )
-    qr.add_data(f"{BASE_URL}/dog/{dog_uuid}")
+
+    qr.add_data(url_for("dog_info", dog_uuid=dog_uuid, _external=True))
   # Link encoded in QR
     qr.make(fit=True)
 
@@ -432,7 +433,7 @@ def admin_register_dog():
     dog_uuid = str(uuid.uuid4())
 
     # Generate QR code URL
-    qr_data = f"{BASE_URL}/dog/{dog_uuid}"
+    qr_data = url_for("dog_info", dog_uuid=dog_uuid, _external=True)
 
     # Generate QR image
     img = qrcode.make(qr_data)
