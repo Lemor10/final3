@@ -11,7 +11,10 @@ import qrcode, io, csv
 import uuid, qrcode
 from io import BytesIO
 
-BASE_URL = os.environ.get('BASE_URL', 'http://localhost:5000') 
+if os.environ.get("RENDER"):
+    BASE_URL = os.environ.get("BASE_URL")
+else:
+    BASE_URL = "http://localhost:5000"
 app = Flask(__name__) 
 app.config['UPLOAD_FOLDER_PROFILE'] = os.path.join('static', 'profile_images')
 os.makedirs(app.config['UPLOAD_FOLDER_PROFILE'], exist_ok=True)
@@ -216,7 +219,7 @@ def owner_add_dog():
         filename = None
 
     # Generate QR code pointing to dog's info page
-    qr_data = f"{request.url_root}dog/{dog_uuid}"
+    qr_data = f"{BASE_URL}/dog/{dog_uuid}"
     img = qrcode.make(qr_data)
     qr_filename = f"{dog_uuid}.png"
     img.save(os.path.join(QR_FOLDER, qr_filename))
@@ -404,7 +407,7 @@ def admin_register_dog():
     dog_uuid = str(uuid.uuid4())
 
     # Generate QR code URL
-    qr_data = f"{request.url_root}dog/{dog_uuid}"
+    qr_data = f"{BASE_URL}/dog/{dog_uuid}"
 
     # Generate QR image
     img = qrcode.make(qr_data)
