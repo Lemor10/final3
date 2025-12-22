@@ -1,4 +1,12 @@
-<style>.navbar-nav .nav-link:hover {
+<style>
+.navbar-nav .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 20px;
+}
+
+.navbar-nav .nav-link:hover {
   color: white !important;
   transform: translateY(-2px);
 }</style>
@@ -26,7 +34,7 @@
     </button>
 
     <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav me-auto">
+      <ul class="navbar-nav ms-auto">
 
         <li class="nav-item">
           <a class="nav-link {% if request.endpoint=='owner_dashboard' %}active{% endif %}" 
@@ -50,15 +58,23 @@
         </li>
 
         <li class="nav-item">
-  <a class="nav-link {% if request.endpoint=='owner_notifications' %}active{% endif %} position-relative" href="{{ url_for('owner_notifications') }}">
-    <i class="bi bi-bell-fill fs-5"></i> Notifications
+          <a class="nav-link position-relative d-flex align-items-center gap-1
+            {% if request.endpoint=='owner_notifications' %}active{% endif %}"
+            href="{{ url_for('owner_notifications') }}">
 
-    <!-- Red Dot -->
-    <span id="notif-dot"
-          class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle d-none">
-    </span>
-  </a>
-</li>
+            <i class="bi bi-bell-fill"></i>
+            <span>Notifications</span>
+
+            <!-- Red Dot -->
+            <span id="notif-dot"
+              class="position-absolute top-0 start-100 translate-middle
+                    p-1 bg-danger border border-light rounded-circle d-none">
+            </span>
+
+          </a>
+        </li>
+
+
       </ul>
 
       <a class="btn btn-outline-light btn-sm" href="{{ url_for('logout') }}">
