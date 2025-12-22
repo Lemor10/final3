@@ -417,7 +417,17 @@ def qrcodes(filename):
 @app.route('/download_qr/<string:dog_uuid>')
 def download_qr(dog_uuid):
     dog = Dog.query.filter_by(uuid=dog_uuid).first_or_404()
-    return send_from_directory(QR_FOLDER, dog.qr_code, as_attachment=True)
+
+    if not dog.qr_code:
+        abort(404, description="QR code not found")
+
+    # Absolute path to file
+    file_path = os.path.join(app.root_path, 'static', 'qr_dogs', dog.qr_code)
+
+    if not os.path.exists(file_path):
+        abort(404, description="QR file not found on server")
+
+    return send_file(file_path, as_attachment=True)
 
 # ------------------ Admin Dashboard ------------------
 @app.route('/admin')
