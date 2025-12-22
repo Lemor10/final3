@@ -99,8 +99,8 @@ def get_vaccination_notifications(user_id):
         if 0 <= days_left <= 7:
             notifications.append({
                 "type": "reminder",
-                "title": "Vaccination Due Soon",
-                "message": f"{dog.name} needs vaccination in {days_left} days",
+                "title": "⚠️Vaccination Due Soon",
+                "message": f"{dog.name} needs vaccination in {days_left} days!",
                 "date": dog.next_vaccination,
                 "dog_id": dog.id
             })
