@@ -91,7 +91,7 @@
     </div>
 
     <!-- Buttons -->
-    <button type="button" id="editBtn" class="btn btn-primary w-100 mt-3">Edit Profile</button>
+    <button type="button" id="editBtn" class="btn btn-outline-primary w-100 mt-3">Edit Profile</button>
     <div id="saveCancelBtns" class="mt-3 d-none">
       <button type="submit" class="btn btn-success w-100 mb-2">Save Changes</button>
       <button type="button" id="cancelBtn" class="btn btn-secondary w-100">Cancel</button>
@@ -123,10 +123,10 @@
             <p class="mb-1"><strong>Breed:</strong> {{ dog.breed }}</p>
             <p class="mb-1"><strong>Age:</strong> {{ dog.age }} yrs</p>
             {% if dog.qr_code %}
-            <a href="{{ url_for('download_qr', dog_uuid=dog.uuid) }}" class="btn btn-sm btn-outline-primary w-50 mb-2">⬇ Download QR</a>
+            <a href="{{ url_for('download_qr', dog_uuid=dog.uuid) }}" class="btn btn-sm btn-primary w-50 mb-2">Download QR</a>
             {% endif %}
             <div class="d-flex gap-2 mt-2 flex-wrap">
-              <button class="btn btn-warning btn-sm w-50" data-bs-toggle="modal" data-bs-target="#editDogModal{{ dog.id }}">Edit</button>
+              <button class="btn btn-outline-primary btn-sm w-50" data-bs-toggle="modal" data-bs-target="#editDogModal{{ dog.id }}">Edit</button>
               <form method="POST" action="{{ url_for('owner_delete_dog', dog_id=dog.id) }}" class="w-50">
                 <button type="submit" class="btn btn-danger btn-sm w-100" onclick="return confirm('Delete this dog?');">Delete</button>
               </form>
