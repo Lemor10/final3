@@ -12,16 +12,6 @@
       background: #f4f6f9;
       font-family: "Poppins", sans-serif;
     }
-
-        .navbar-brand { font-weight: 600; letter-spacing: 0.5px; }
-    .navbar-nav .nav-link { transition: all 0.2s ease; margin: 0 5px; border-radius: 6px; }
-    .navbar-nav .nav-link:hover { background-color: #0b5ed7; color: white !important; transform: translateY(-2px); }
-    .profile-card {
-      border-radius: 1rem;
-      background: #fff;
-      padding: 20px;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-    }
     .profile-photo {
       width: 120px;
       height: 120px;
@@ -164,7 +154,6 @@
 
 
 <!-- Modals: Change Photo, Add Dog, Edit Dog -->
-<!-- Change Profile Photo Modal -->
 <div class="modal fade" id="changePhotoModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -186,7 +175,6 @@
   </div>
 </div>
 
-<!-- Add Dog Modal -->
 <!-- Add Dog Modal -->
 <div class="modal fade" id="addDogModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
@@ -266,19 +254,53 @@
 <div class="modal fade" id="editDogModal{{ dog.id }}" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <form method="POST" action="{{ url_for('owner_edit_dog', dog_id=dog.id) }}">
+      <form method="POST" action="{{ url_for('owner_edit_dog', dog_id=dog.id) }}" enctype="multipart/form-data">
         <div class="modal-header bg-primary text-white">
           <h5 class="modal-title">Edit Dog</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <div class="mb-3"><input type="text" name="name" class="form-control" value="{{ dog.name }}" required></div>
-          <div class="mb-3"><input type="text" name="breed" class="form-control" value="{{ dog.breed }}" required></div>
-          <div class="mb-3"><input type="number" name="age" class="form-control" value="{{ dog.age }}" required></div>
-          <select name="status" class="form-select" required>
+
+          <!-- Dog Image -->
+          <div class="mb-3 text-center">
+            <label class="form-label fw-bold">Upload Dog Image (optional)</label>
+            <input type="file" name="dog_image" class="form-control" accept="image/*">
+            {% if dog.image %}
+            <img src="{{ url_for('static', filename='dog_images/' ~ dog.image) }}" class="img-fluid mt-2 rounded" style="max-height: 150px;">
+            {% endif %}
+          </div>
+
+          <!-- Dog Name -->
+          <div class="mb-3">
+            <input type="text" name="name" class="form-control" value="{{ dog.name }}" required>
+          </div>
+
+          <!-- Breed -->
+          <div class="mb-3">
+            <input type="text" name="breed" list="breed-list" class="form-control" value="{{ dog.breed }}" required>
+          </div>
+
+          <!-- Age -->
+          <div class="mb-3">
+            <input type="number" name="age" class="form-control" value="{{ dog.age }}" required>
+          </div>
+
+          <!-- Vaccination Dates -->
+          <div class="mb-3">
+            <label>Last Vaccination Date</label>
+            <input type="date" name="last_vaccination" class="form-control" value="{{ dog.last_vaccination }}">
+          </div>
+          <div class="mb-3">
+            <label>Next Vaccination Due</label>
+            <input type="date" name="next_vaccination" class="form-control" value="{{ dog.next_vaccination }}">
+          </div>
+
+          <!-- Vaccination Status -->
+          <select name="status" class="form-select mb-3" required>
             <option value="Vaccinated" {% if dog.vaccinated=="Vaccinated" %}selected{% endif %}>Vaccinated</option>
             <option value="Not Vaccinated" {% if dog.vaccinated=="Not Vaccinated" %}selected{% endif %}>Not Vaccinated</option>
           </select>
+
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

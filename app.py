@@ -26,8 +26,12 @@ app.config.update(
     SESSION_COOKIE_SAMESITE="Lax"
 )
 
+app.config['DOG_UPLOAD_FOLDER'] = os.path.join('static', 'dog_images')
+os.makedirs(app.config['DOG_UPLOAD_FOLDER'], exist_ok=True)
+
 app.config['UPLOAD_FOLDER_PROFILE'] = os.path.join('static', 'profile_images')
 os.makedirs(app.config['UPLOAD_FOLDER_PROFILE'], exist_ok=True)
+
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Dog_Registration_Secret_Key') # Detect if running on Render 
 on_render = os.environ.get('RENDER') is not None 
 if on_render: app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') 
@@ -78,6 +82,55 @@ class Dog(db.Model):
     next_vaccination = db.Column(db.Date)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+
+def get_vaccination_notifications(user_id):
+    today = date.today()
+    notifications = []
+
+    dogs = Dog.query.filter_by(owner_id=user_id).all()
+
+    for dog in dogs:
+        if not dog.next_vaccination:
+            continue
+
+        days_left = (dog.next_vaccination - today).days
+
+        # Reminder
+        if 0 <= days_left <= 7:
+            notifications.append({
+                "type": "reminder",
+                "title": "Vaccination Due Soon",
+                "message": f"{dog.name} needs vaccination in {days_left} days",
+                "date": dog.next_vaccination,
+                "dog_id": dog.id
+            })
+
+        # Overdue
+        elif days_left < 0:
+            notifications.append({
+                "type": "overdue",
+                "title": "Vaccination Overdue",
+                "message": f"{dog.name}'s vaccination is overdue!",
+                "date": dog.next_vaccination,
+                "dog_id": dog.id
+            })
+
+    return notifications
+
+@app.route('/api/notification-count')
+@login_required
+def notification_count():
+    notifs = get_vaccination_notifications(current_user.id)
+    return {"count": len(notifs)}
+
+@app.route('/owner/notifications')
+@login_required
+def owner_notifications():
+    notifications = get_vaccination_notifications(current_user.id)
+    return render_template(
+        'owner_notifications.html',
+        notifications=notifications
+    )
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -231,12 +284,23 @@ def owner_add_dog():
     vaccinated = request.form['status']
     image = request.files.get("dog_image")
 
+    # Read vaccination dates
+    last_vaccination = request.form.get("last_vaccination")
+    next_vaccination = request.form.get("next_vaccination")
+
+    # Convert to date objects
+    last_vac_date = datetime.strptime(last_vaccination, "%Y-%m-%d").date() if last_vaccination else None
+    next_vac_date = datetime.strptime(next_vaccination, "%Y-%m-%d").date() if next_vaccination else None
+
     # Generate a unique UUID
     dog_uuid = str(uuid.uuid4())
 
-    if image:
+    # Save dog image if uploaded
+    if image and image.filename != '':
         filename = secure_filename(image.filename)
-        image.save(os.path.join("static/dog_images", filename))
+        DOG_IMAGE_FOLDER = os.path.join('static', 'dog_images')
+        os.makedirs(DOG_IMAGE_FOLDER, exist_ok=True)
+        image.save(os.path.join(DOG_IMAGE_FOLDER, filename))
     else:
         filename = None
 
@@ -244,8 +308,7 @@ def owner_add_dog():
     qr_data = url_for("dog_info", dog_uuid=dog_uuid, _external=True)
     img = qrcode.make(qr_data)
     qr_filename = f"{dog_uuid}.png"
-    DOG_IMAGE_FOLDER = os.path.join('static', 'dog_images')
-    os.makedirs(DOG_IMAGE_FOLDER, exist_ok=True)
+    os.makedirs(QR_FOLDER, exist_ok=True)
     img.save(os.path.join(QR_FOLDER, qr_filename))
 
     # Create the dog entry
@@ -259,6 +322,8 @@ def owner_add_dog():
         owner_name=current_user.name,
         qr_code=qr_filename,
         image=filename,
+        last_vaccination=last_vac_date,
+        next_vaccination=next_vac_date,
         created_at=datetime.utcnow()
     )
 
@@ -267,7 +332,6 @@ def owner_add_dog():
 
     flash("Dog registered successfully! QR code generated.", "success")
     return redirect(url_for('owner_profile'))
-
 
 @app.route('/owner_delete_dog/<int:dog_id>', methods=['POST'])
 @login_required
@@ -301,16 +365,30 @@ def owner_edit_dog(dog_id):
     # Make sure the logged-in owner owns this dog
     if dog.owner_id != current_user.id:
         flash("You cannot edit this dog.", "danger")
-        return redirect(url_for('owner_dashboard'))
+        return redirect(url_for('owner_profile'))
 
     dog.name = request.form['name']
     dog.breed = request.form['breed']
     dog.age = request.form['age']
     dog.vaccinated = request.form['status']
 
+    last_vac = request.form.get('last_vaccination')
+    next_vac = request.form.get('next_vaccination')
+    dog.last_vaccination = datetime.strptime(last_vac, "%Y-%m-%d").date() if last_vac else None
+    dog.next_vaccination = datetime.strptime(next_vac, "%Y-%m-%d").date() if next_vac else None
+
+        # Optional image upload
+    if 'dog_image' in request.files:
+        file = request.files['dog_image']
+        if file.filename != '':
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(app.config['DOG_UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+            dog.image = filename
+
     db.session.commit()
     flash("Dog information updated successfully!", "success")
-    return redirect(url_for('owner_dashboard'))
+    return redirect(url_for('owner_profile'))
 
 # QR code serving
 @app.route('/generate_qr/<dog_uuid>')
@@ -543,6 +621,41 @@ def export_csv():
 @login_required
 def whoami():
     return f"Logged in as {current_user.email} with role {current_user.role}"
+
+@app.route('/api/notifications')
+@login_required
+def api_notifications():
+    today = date.today()
+    notifications = []
+
+    dogs = Dog.query.filter_by(owner_id=current_user.id).all()
+
+    for dog in dogs:
+        if not dog.next_vaccination:
+            continue
+
+        days_left = (dog.next_vaccination - today).days
+
+        # 🔔 Reminder (7 days before)
+        if 0 <= days_left <= 7:
+            notifications.append({
+                "type": "reminder",
+                "message": f"Vaccination for {dog.name} is due in {days_left} days",
+                "date": dog.next_vaccination.strftime("%b %d, %Y")
+            })
+
+        # ⚠️ Overdue
+        elif days_left < 0:
+            notifications.append({
+                "type": "overdue",
+                "message": f"Vaccination overdue for {dog.name}",
+                "date": dog.next_vaccination.strftime("%b %d, %Y")
+            })
+
+    return {
+        "count": len(notifications),
+        "notifications": notifications
+    }
 
 # ------------------ Run App ------------------
 if __name__ == '__main__':

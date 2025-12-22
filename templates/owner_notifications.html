@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Notifications</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+
+{% include 'navbar_owner.html' %}
+
+<div class="container mt-4">
+  {% if notifications %}
+    {% for n in notifications %}
+      <div class="alert {% if n.type=='overdue' %}alert-danger{% else %}alert-warning{% endif %}">
+        <h6 class="fw-bold">{{ n.title }}</h6>
+        <p class="mb-1">{{ n.message }}</p>
+        <small class="text-muted">
+          Due date: {{ n.date.strftime('%b %d, %Y') }}
+        </small>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="alert alert-success">
+      🎉 All vaccinations are up to date!
+    </div>
+  {% endif %}
+</div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -9,6 +9,8 @@
         <i class="bi bi-qr-code-scan me-2"></i> Scan QR
       {% elif request.endpoint == 'owner_profile' %}
         <i class="bi bi-person-fill me-2"></i> Profile
+      {% elif request.endpoint == 'owner_notifications' %}
+        <i class="bi bi-bell-fill me-2"></i> Notifications
       {% else %}
         <i class="bi bi-info-circle me-2"></i> Page
       {% endif %}
@@ -42,6 +44,16 @@
           </a>
         </li>
 
+        <li class="nav-item">
+  <a class="nav-link {% if request.endpoint=='owner_notifications' %}active{% endif %} position-relative" href="{{ url_for('owner_notifications') }}">
+    <i class="bi bi-bell-fill fs-5"></i> Notifications
+
+    <!-- Red Dot -->
+    <span id="notif-dot"
+          class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle d-none">
+    </span>
+  </a>
+</li>
       </ul>
 
       <a class="btn btn-outline-light btn-sm" href="{{ url_for('logout') }}">
