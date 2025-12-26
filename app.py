@@ -1,7 +1,6 @@
 # app.py - Flask 3.x compatible
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory, send_file, abort, session
-from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
@@ -13,6 +12,7 @@ import qrcode, io, csv, uuid
 from io import BytesIO
 from authlib.integrations.flask_client import OAuth
 import requests
+from flask_session import Session
 from urllib.parse import urlparse
 
 if os.environ.get("RENDER"):
