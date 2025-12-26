@@ -1,6 +1,7 @@
 # app.py - Flask 3.x compatible
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory, send_file, abort, session
+from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
@@ -26,9 +27,15 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 # Session / cookie settings for HTTPS on Render
 if os.environ.get("RENDER"):
     app.config.update(
-        SESSION_COOKIE_SECURE=True,
+        SESSION_COOKIE_SECURE=False,
         SESSION_COOKIE_SAMESITE="Lax"
     )
+
+app.config['SESSION_TYPE'] = 'filesystem'  # store session on server
+app.config['SESSION_FILE_DIR'] = os.path.join(app.root_path, 'flask_session')
+os.makedirs(app.config['SESSION_FILE_DIR'], exist_ok=True)
+app.config['SESSION_PERMANENT'] = False
+Session(app)
 
 app.config['DOG_UPLOAD_FOLDER'] = os.path.join('static', 'dog_images')
 os.makedirs(app.config['DOG_UPLOAD_FOLDER'], exist_ok=True)
@@ -175,20 +182,24 @@ def google_login():
 
 @app.route('/auth/google/callback')
 def google_callback():
-    token = oauth.google.authorize_access_token()
+    try:
+        token = oauth.google.authorize_access_token()
+    except Exception as e:
+        flash(f"Google login failed: {e}", "danger")
+        return redirect(url_for('login'))
+
     user_info = token.get('userinfo')
 
     if not user_info:
-        flash("Google login failed", "danger")
+        flash("Failed to fetch user info from Google.", "danger")
         return redirect(url_for('login'))
 
     email = user_info['email']
     name = user_info.get('name')
-    picture = user_info.get('picture')  # 👈 Google photo
+    picture = user_info.get('picture')
 
     user = User.query.filter_by(email=email).first()
 
-    # 🆕 First-time Google signup
     if not user:
         photo_filename = save_google_profile_photo(picture)
 
@@ -201,8 +212,6 @@ def google_callback():
         )
         db.session.add(user)
         db.session.commit()
-
-    # 🔄 Existing user but no photo yet
     elif not user.profile_photo and picture:
         user.profile_photo = save_google_profile_photo(picture)
         db.session.commit()
@@ -299,7 +308,7 @@ def signup():
         flash('Account created successfully. Please login.', 'success')
         return redirect(url_for('login'))
 
-    return render_template('signup.html')
+    return render_template('login.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
