@@ -1,8 +1,7 @@
 # app.py - Flask 3.x compatible
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory, send_file, abort, session
-from flask_session import Session
-from flask_sqlalchemy import SQLAlchemy
+from flask_session.session import Session  # type: ignore
 from flask_migrate import Migrate
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
 from werkzeug.utils import secure_filename
@@ -25,17 +24,17 @@ else:
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 # Session / cookie settings for HTTPS on Render
-if os.environ.get("RENDER"):
-    app.config.update(
-        SESSION_COOKIE_SECURE=False,
-        SESSION_COOKIE_SAMESITE="Lax"
-    )
 
 app.config['SESSION_TYPE'] = 'filesystem'  # store session on server
 app.config['SESSION_FILE_DIR'] = os.path.join(app.root_path, 'flask_session')
 os.makedirs(app.config['SESSION_FILE_DIR'], exist_ok=True)
 app.config['SESSION_PERMANENT'] = False
-Session(app)
+
+if os.environ.get("RENDER"):
+    app.config.update(
+        SESSION_COOKIE_SECURE=False,
+        SESSION_COOKIE_SAMESITE="Lax"
+    )
 
 app.config['DOG_UPLOAD_FOLDER'] = os.path.join('static', 'dog_images')
 os.makedirs(app.config['DOG_UPLOAD_FOLDER'], exist_ok=True)
@@ -62,6 +61,7 @@ login_manager.login_view = 'login'
 login_manager.init_app(app)
 
 oauth = OAuth(app)
+Session(app)
 
 oauth.register(
     name='google',
