@@ -10,6 +10,9 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from datetime import date, datetime
 import qrcode, io, csv, uuid
 from io import BytesIO
+from authlib.integrations.flask_client import OAuth
+import requests
+from urllib.parse import urlparse
 
 if os.environ.get("RENDER"):
     BASE_URL = os.environ.get("BASE_URL")
@@ -21,10 +24,11 @@ else:
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 # Session / cookie settings for HTTPS on Render
-app.config.update(
-    SESSION_COOKIE_SECURE=True,
-    SESSION_COOKIE_SAMESITE="Lax"
-)
+if os.environ.get("RENDER"):
+    app.config.update(
+        SESSION_COOKIE_SECURE=True,
+        SESSION_COOKIE_SAMESITE="Lax"
+    )
 
 app.config['DOG_UPLOAD_FOLDER'] = os.path.join('static', 'dog_images')
 os.makedirs(app.config['DOG_UPLOAD_FOLDER'], exist_ok=True)
@@ -45,6 +49,18 @@ login_manager = LoginManager()
 login_manager.login_view = 'login'
 login_manager.init_app(app)
 
+oauth = OAuth(app)
+
+oauth.register(
+    name='google',
+    client_id=os.environ.get("GOOGLE_CLIENT_ID"),
+    client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={
+        'scope': 'openid email profile'
+    }
+)
+
 # Persistent QR folder
 QR_FOLDER = os.path.join('static', 'qr_dogs')
 os.makedirs(QR_FOLDER, exist_ok=True)
@@ -57,7 +73,7 @@ class User(UserMixin, db.Model):
     contact = db.Column(db.String(20))
     address = db.Column(db.String(255))
     profile_photo = db.Column(db.String(200))
-    password_hash = db.Column(db.String(200), nullable=False)
+    password_hash = db.Column(db.String(200), nullable=True)
     role = db.Column(db.String(20), default='owner')  # 'owner' or 'admin'
     dogs = db.relationship('Dog', backref='owner', lazy=True)
 
@@ -82,6 +98,28 @@ class Dog(db.Model):
     next_vaccination = db.Column(db.Date)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+def save_google_profile_photo(photo_url):
+    if not photo_url:
+        return None
+
+    try:
+        response = requests.get(photo_url, timeout=5)
+        if response.status_code != 200:
+            return None
+
+        # Generate unique filename
+        ext = os.path.splitext(urlparse(photo_url).path)[1] or ".jpg"
+        filename = f"google_{uuid.uuid4().hex}{ext}"
+
+        save_path = os.path.join(app.config['UPLOAD_FOLDER_PROFILE'], filename)
+
+        with open(save_path, "wb") as f:
+            f.write(response.content)
+
+        return filename
+    except Exception as e:
+        print("Google photo save failed:", e)
+        return None
 
 def get_vaccination_notifications(user_id):
     today = date.today()
@@ -116,6 +154,60 @@ def get_vaccination_notifications(user_id):
             })
 
     return notifications
+
+@app.route("/debug/google")
+def debug_google():
+    return {
+        "GOOGLE_CLIENT_ID": os.environ.get("GOOGLE_CLIENT_ID"),
+        "GOOGLE_CLIENT_SECRET_EXISTS": bool(os.environ.get("GOOGLE_CLIENT_SECRET")),
+        "BASE_URL": BASE_URL
+    }
+
+@app.route('/login/google')
+def google_login():
+    redirect_uri = url_for('google_callback', _external=True)
+    return oauth.google.authorize_redirect(redirect_uri)
+
+@app.route('/auth/google/callback')
+def google_callback():
+    token = oauth.google.authorize_access_token()
+    user_info = token.get('userinfo')
+
+    if not user_info:
+        flash("Google login failed", "danger")
+        return redirect(url_for('login'))
+
+    email = user_info['email']
+    name = user_info.get('name')
+    picture = user_info.get('picture')  # 👈 Google photo
+
+    user = User.query.filter_by(email=email).first()
+
+    # 🆕 First-time Google signup
+    if not user:
+        photo_filename = save_google_profile_photo(picture)
+
+        user = User(
+            email=email,
+            name=name,
+            role='owner',
+            password_hash=None,
+            profile_photo=photo_filename
+        )
+        db.session.add(user)
+        db.session.commit()
+
+    # 🔄 Existing user but no photo yet
+    elif not user.profile_photo and picture:
+        user.profile_photo = save_google_profile_photo(picture)
+        db.session.commit()
+
+    login_user(user)
+
+    if user.role == 'admin':
+        return redirect(url_for('admin_dashboard'))
+
+    return redirect(url_for('owner_dashboard'))
 
 @app.route('/api/notification-count')
 @login_required

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Login | DogRegistration</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 
   <style>
     body {
@@ -74,6 +75,11 @@
     .btn-facebook:hover {
       background: #d3d3d3;
     }
+
+    .form-control:focus {
+      border-color: #6f42c1;
+      box-shadow: 0 0 0 0.15rem rgba(111,66,193,0.25);
+    }
   </style>
 </head>
 
@@ -81,8 +87,10 @@
   <div class="card p-4" style="max-width: 420px; width: 100%;">
     <div class="card-header py-3">
       Welcome Back
+      <div class="text-muted fs-6 fw-normal">
+        Sign in to manage your dogs
+      </div>
     </div>
-
     <div class="card-body">
       <form method="POST">
         <div class="mb-3">
@@ -90,14 +98,19 @@
           <input type="email" class="form-control" name="email" placeholder="your@example.com" required>
         </div>
 
-        <div class="mb-3">
-          <label class="form-label">Password</label>
-          <input type="password" class="form-control" name="password" placeholder="••••••••" required>
-        </div>
+      <div class="mb-3"> 
+        <label class="form-label">Password</label> 
+        <input type="password" class="form-control" name="password" placeholder="••••••••" required> 
+      </div>
 
         <button type="submit" class="btn btn-primary w-100 py-2 mt-2">Sign In</button>
       </form>
-
+      </p>
+      <div class="text-center mb-2">
+        <a href="#" class="text-muted small text-decoration-none">
+          Forgot password?
+        </a>
+      </div>
       <!-- Divider -->
       <div class="d-flex align-items-center my-3">
         <hr class="flex-grow-1">
@@ -108,19 +121,18 @@
       <!-- Google Login -->
       <a href="/auth/google" class="btn btn-google w-100 mb-2">
         <img src="https://www.svgrepo.com/show/475656/google-color.svg" width="20">
-        Sign in with Google
+        Continue with Google
       </a>
 
       <!-- Facebook Login -->
       <a href="/auth/facebook" class="btn btn-facebook w-100 mb-2">
         <img src="https://www.svgrepo.com/show/448224/facebook.svg" width="20">
-        Sign in with Facebook
+        Continue with Facebook
       </a>
 
       <p class="text-center text-muted mt-3 mb-0">
         Don't have an account?
         <a href="{{ url_for('signup') }}" class="text-primary fw-semibold text-decoration-none">Create one</a>
-      </p>
     </div>
   </div>
 </body>
