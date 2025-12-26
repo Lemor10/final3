@@ -290,7 +290,7 @@ def signup():
 
         if User.query.filter_by(email=email).first():
             flash('Email already registered', 'danger')
-            return redirect(url_for('signup'))
+            return redirect(url_for('login'))
 
         user = User(
             email=email,
@@ -307,7 +307,7 @@ def signup():
         flash('Account created successfully. Please login.', 'success')
         return redirect(url_for('login'))
 
-    return render_template('login.html')
+    return render_template('signup.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
