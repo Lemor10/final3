@@ -60,9 +60,7 @@ migrate = Migrate(app, db)
 login_manager = LoginManager()
 login_manager.login_view = 'login'
 login_manager.init_app(app)
-
 oauth = OAuth(app)
-Session(app)
 
 oauth.register(
     name='google',
