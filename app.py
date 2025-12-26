@@ -12,7 +12,6 @@ import qrcode, io, csv, uuid
 from io import BytesIO
 from authlib.integrations.flask_client import OAuth
 import requests
-from flask_session import Session
 from urllib.parse import urlparse
 
 if os.environ.get("RENDER"):
@@ -26,10 +25,11 @@ app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 # Session / cookie settings for HTTPS on Render
 
-app.config['SESSION_TYPE'] = 'filesystem'  # store session on server
-app.config['SESSION_FILE_DIR'] = os.path.join(app.root_path, 'flask_session')
-os.makedirs(app.config['SESSION_FILE_DIR'], exist_ok=True)
-app.config['SESSION_PERMANENT'] = False
+app.config["SESSION_TYPE"] = "filesystem"
+app.config["SESSION_FILE_DIR"] = "/tmp/flask_session"
+app.config["SESSION_PERMANENT"] = False
+app.config["SESSION_USE_SIGNER"] = True
+os.makedirs(app.config["SESSION_FILE_DIR"], exist_ok=True)
 
 if os.environ.get("RENDER"):
     app.config.update(
