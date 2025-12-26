@@ -2,6 +2,7 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory, send_file, abort, session
 from flask_session.session import Session  # type: ignore
+from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
 from werkzeug.utils import secure_filename
