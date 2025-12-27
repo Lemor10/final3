@@ -22,20 +22,6 @@ else:
     BASE_URL = "http://localhost:5000"
 
 app = Flask(__name__)
-app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
-# Session / cookie settings for HTTPS on Render
-
-app.config["SESSION_TYPE"] = "filesystem"
-app.config["SESSION_FILE_DIR"] = "/tmp/flask_session"
-app.config["SESSION_PERMANENT"] = False
-app.config["SESSION_USE_SIGNER"] = True
-os.makedirs(app.config["SESSION_FILE_DIR"], exist_ok=True)
-
-if os.environ.get("RENDER"):
-    app.config.update(
-        SESSION_COOKIE_SECURE=False,
-        SESSION_COOKIE_SAMESITE="Lax"
-    )
 
 app.config['DOG_UPLOAD_FOLDER'] = os.path.join('static', 'dog_images')
 os.makedirs(app.config['DOG_UPLOAD_FOLDER'], exist_ok=True)
@@ -45,14 +31,9 @@ os.makedirs(app.config['UPLOAD_FOLDER_PROFILE'], exist_ok=True)
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Dog_Registration_Secret_Key') # Detect if running on Render 
 on_render = os.environ.get('RENDER') is not None 
-if on_render:
-    database_url = os.environ.get('DATABASE_URL')
-    if database_url.startswith("postgres://"):
-        database_url = database_url.replace("postgres://", "postgresql://", 1)
-    database_url += "?sslmode=require"
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-else:
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://final4_hjjt_user:lV5ehY1ZDuYkzouBcPLSn29g30w8y4UH@dpg-d4n9slmuk2gs739lqsg0-a.oregon-postgres.render.com/final4_hjjt'
+if on_render: app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') 
+else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://final4_hjjt_user:lV5ehY1ZDuYkzouBcPLSn29g30w8y4UH@dpg-d4n9slmuk2gs739lqsg0-a.oregon-postgres.render.com/final4_hjjt' 
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -60,17 +41,6 @@ migrate = Migrate(app, db)
 login_manager = LoginManager()
 login_manager.login_view = 'login'
 login_manager.init_app(app)
-oauth = OAuth(app)
-
-oauth.register(
-    name='google',
-    client_id=os.environ.get("GOOGLE_CLIENT_ID"),
-    client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
-    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
-    client_kwargs={
-        'scope': 'openid email profile'
-    }
-)
 
 # Persistent QR folder
 QR_FOLDER = os.path.join('static', 'qr_dogs')
@@ -109,29 +79,6 @@ class Dog(db.Model):
     next_vaccination = db.Column(db.Date)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-def save_google_profile_photo(photo_url):
-    if not photo_url:
-        return None
-
-    try:
-        response = requests.get(photo_url, timeout=5)
-        if response.status_code != 200:
-            return None
-
-        # Generate unique filename
-        ext = os.path.splitext(urlparse(photo_url).path)[1] or ".jpg"
-        filename = f"google_{uuid.uuid4().hex}{ext}"
-
-        save_path = os.path.join(app.config['UPLOAD_FOLDER_PROFILE'], filename)
-
-        with open(save_path, "wb") as f:
-            f.write(response.content)
-
-        return filename
-    except Exception as e:
-        print("Google photo save failed:", e)
-        return None
-
 def get_vaccination_notifications(user_id):
     today = date.today()
     notifications = []
@@ -165,62 +112,6 @@ def get_vaccination_notifications(user_id):
             })
 
     return notifications
-
-@app.route("/debug/google")
-def debug_google():
-    return {
-        "GOOGLE_CLIENT_ID": os.environ.get("GOOGLE_CLIENT_ID"),
-        "GOOGLE_CLIENT_SECRET_EXISTS": bool(os.environ.get("GOOGLE_CLIENT_SECRET")),
-        "BASE_URL": BASE_URL
-    }
-
-@app.route('/login/google')
-def google_login():
-    redirect_uri = url_for('google_callback', _external=True)
-    return oauth.google.authorize_redirect(redirect_uri)
-
-@app.route('/auth/google/callback')
-def google_callback():
-    try:
-        token = oauth.google.authorize_access_token()
-    except Exception as e:
-        flash(f"Google login failed: {e}", "danger")
-        return redirect(url_for('login'))
-
-    user_info = token.get('userinfo')
-
-    if not user_info:
-        flash("Failed to fetch user info from Google.", "danger")
-        return redirect(url_for('login'))
-
-    email = user_info['email']
-    name = user_info.get('name')
-    picture = user_info.get('picture')
-
-    user = User.query.filter_by(email=email).first()
-
-    if not user:
-        photo_filename = save_google_profile_photo(picture)
-
-        user = User(
-            email=email,
-            name=name,
-            role='owner',
-            password_hash=None,
-            profile_photo=photo_filename
-        )
-        db.session.add(user)
-        db.session.commit()
-    elif not user.profile_photo and picture:
-        user.profile_photo = save_google_profile_photo(picture)
-        db.session.commit()
-
-    login_user(user)
-
-    if user.role == 'admin':
-        return redirect(url_for('admin_dashboard'))
-
-    return redirect(url_for('owner_dashboard'))
 
 @app.route('/api/notification-count')
 @login_required
