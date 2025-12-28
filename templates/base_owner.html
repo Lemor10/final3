@@ -19,15 +19,93 @@
   </main>
 
   <script>
-    async function updateNotificationDot() {
+    async function fetchNotificationCount() {
       const res = await fetch("/api/notification-count");
       const data = await res.json();
       const dot = document.getElementById("notif-dot");
       if (dot) dot.classList.toggle("d-none", data.count === 0);
     }
-    updateNotificationDot();
-    setInterval(updateNotificationDot, 30000);
-  </script>
+
+    function setupNotificationItems() {
+      const readNotifications =
+        JSON.parse(localStorage.getItem("readNotifications") || "[]");
+
+      document.querySelectorAll(".notification-item").forEach(item => {
+        const id = item.dataset.id;
+
+        // Hide if already read
+        if (readNotifications.includes(id)) {
+          item.remove();
+        }
+
+        // Handle mark as read
+        item.querySelector(".mark-read-btn")?.addEventListener("click", () => {
+          readNotifications.push(id);
+          localStorage.setItem(
+            "readNotifications",
+            JSON.stringify(readNotifications)
+          );
+          item.remove();
+          updateDotDisplay();
+        });
+      });
+
+      updateDotDisplay();
+    }
+
+async function updateNotifDot() {
+    const res = await fetch('{{ url_for("notification_count") }}');
+    const data = await res.json();
+    const dot = document.getElementById('notif-dot');
+    if(data.count > 0){
+        dot.classList.remove('d-none');
+    } else {
+        dot.classList.add('d-none');
+    }
+}
+
+updateNotifDot();
+setInterval(updateNotifDot, 30000);
+
+document.querySelectorAll('.notif-item').forEach(item => {
+    item.addEventListener('click', async () => {
+        const notifId = item.dataset.id;
+
+        // Send POST request to mark as read
+        const res = await fetch(`/notifications/read/${notifId}`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token() if csrf_token else "" }}'
+            }
+        });
+
+        if(res.ok){
+            // Remove "New" badge and bold style
+            item.querySelector('.badge')?.remove();
+            item.classList.remove('fw-bold');
+
+            // Update red dot in navbar
+            updateNotifDot();
+        }
+    });
+});
+
+// Mark all as read
+document.getElementById('mark-all-read').addEventListener('click', async () => {
+    const unreadIds = Array.from(document.querySelectorAll('li[data-id]')).map(li => li.dataset.id);
+
+    for(const id of unreadIds){
+        await fetch(`/notifications/read/${id}`, { method: 'POST' });
+        const li = document.querySelector(`li[data-id='${id}']`);
+        li.querySelector('.badge')?.remove();
+        li.querySelector('.mark-read-btn')?.remove();
+    }
+
+    updateNotifDot();
+});
+
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 </body>
 </html>

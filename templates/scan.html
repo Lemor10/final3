@@ -16,7 +16,7 @@
         }
         #reader {
             margin: 0 auto 20px;
-            width: 300px;
+            width: 70%;
             border-radius: 1rem;
             box-shadow: 0 2px 12px rgba(0,0,0,0.1);
             padding: 10px;
@@ -49,46 +49,51 @@
     </div>
 </div>
 
-   <script>
-    let html5QrCode;
-    let scanned = false;
+<script>
+let html5QrCode;
+let scanned = false;
 
-    function startScanner() {
-        scanned = false;
-        html5QrCode = new Html5Qrcode("reader");
+function startScanner() {
+    if (!Html5Qrcode) {
+        alert("QR library not loaded");
+        return;
+    }
+
+    scanned = false;
+    html5QrCode = new Html5Qrcode("reader");
+
+    Html5Qrcode.getCameras().then(cameras => {
+        if (cameras.length === 0) {
+            alert("No camera found");
+            return;
+        }
 
         html5QrCode.start(
-            { facingMode: "environment" },
+            cameras[0].id,
             { fps: 10, qrbox: 250 },
-            qrCodeMessage => {
-
-                if (scanned) return; // prevent multiple scans
+            (qrCodeMessage) => {
+                if (scanned) return;
                 scanned = true;
-
-                console.log("QR detected:", qrCodeMessage);
 
                 html5QrCode.stop();
 
-                // If QR is a full URL, go directly
                 if (qrCodeMessage.startsWith("http")) {
                     window.location.href = qrCodeMessage;
-                } 
-                // If QR is only UUID
-                else {
+                } else {
                     window.location.href = `/dog/${qrCodeMessage}`;
                 }
-            },
-            errorMessage => {}
-        ).catch(err => {
-            alert("Camera access denied or unavailable.");
-            console.error(err);
-        });
-    }
+            }
+        );
+    }).catch(err => {
+        console.error(err);
+        alert("Camera permission denied");
+    });
+}
 
-    function stopScanner() {
-        if (html5QrCode) {
-            html5QrCode.stop();
-        }
+function stopScanner() {
+    if (html5QrCode) {
+        html5QrCode.stop();
     }
+}
 </script>
 {% endblock %}

@@ -10,9 +10,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from datetime import date, datetime
 import qrcode, io, csv, uuid
 from io import BytesIO
-from authlib.integrations.flask_client import OAuth
-import requests
-from urllib.parse import urlparse
+from flask import g
 
 if os.environ.get("RENDER"):
     BASE_URL = os.environ.get("BASE_URL")
@@ -79,10 +77,25 @@ class Dog(db.Model):
     next_vaccination = db.Column(db.Date)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-def get_vaccination_notifications(user_id):
-    today = date.today()
-    notifications = []
+class Notification(db.Model):
+        __tablename__ = "notifications"
+        id = db.Column(db.Integer, primary_key=True)
+        user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+        dog_id = db.Column(db.Integer, db.ForeignKey("dog.id"), nullable=True)
+        title = db.Column(db.String(150), nullable=False)
+        message = db.Column(db.Text, nullable=False)
+        type = db.Column(db.String(50), nullable=False)
+        due_date = db.Column(db.Date, nullable=True)
+        is_read = db.Column(db.Boolean, default=False)
+        created_at = db.Column(db.DateTime, default=datetime.utcnow)
+        user = db.relationship("User", backref="notifications")
+        dog = db.relationship("Dog", backref="notifications")
 
+def __repr__(self):
+    return f"<Notification {self.id} - User {self.user_id} - Read {self.is_read}>"
+
+def generate_vaccination_notifications(user_id):
+    today = date.today()
     dogs = Dog.query.filter_by(owner_id=user_id).all()
 
     for dog in dogs:
@@ -91,46 +104,78 @@ def get_vaccination_notifications(user_id):
 
         days_left = (dog.next_vaccination - today).days
 
-        # Reminder
+        # Prevent duplicates
+        existing = Notification.query.filter_by(
+            user_id=user_id,
+            dog_id=dog.id,
+            due_date=dog.next_vaccination
+        ).first()
+
+        if existing:
+            continue
+
         if 0 <= days_left <= 7:
-            notifications.append({
-                "type": "reminder",
-                "title": "⚠️Vaccination Due Soon",
-                "message": f"{dog.name} needs vaccination in {days_left} days!",
-                "date": dog.next_vaccination,
-                "dog_id": dog.id
-            })
+            notif = Notification(
+                user_id=user_id,
+                dog_id=dog.id,
+                title="Vaccination Due Soon",
+                message=f"{dog.name} needs vaccination in {days_left} days!",
+                type="reminder",
+                due_date=dog.next_vaccination
+            )
 
-        # Overdue
         elif days_left < 0:
-            notifications.append({
-                "type": "overdue",
-                "title": "Vaccination Overdue",
-                "message": f"{dog.name}'s vaccination is overdue!",
-                "date": dog.next_vaccination,
-                "dog_id": dog.id
-            })
+            notif = Notification(
+                user_id=user_id,
+                dog_id=dog.id,
+                title="Vaccination Overdue",
+                message=f"{dog.name}'s vaccination is overdue!",
+                type="overdue",
+                due_date=dog.next_vaccination
+            )
+        else:
+            continue
 
-    return notifications
+        db.session.add(notif)
+
+    db.session.commit()
 
 @app.route('/api/notification-count')
 @login_required
 def notification_count():
-    notifs = get_vaccination_notifications(current_user.id)
-    return {"count": len(notifs)}
+
+    generate_vaccination_notifications(current_user.id)
+
+    count = Notification.query.filter_by(
+        user_id=current_user.id,
+        is_read=False
+    ).count()
+    return {"count": count}
 
 @app.route('/owner/notifications')
 @login_required
 def owner_notifications():
-    notifications = get_vaccination_notifications(current_user.id)
-    return render_template(
-        'owner_notifications.html',
-        notifications=notifications
-    )
+    notifications = Notification.query.filter_by(
+        user_id=current_user.id
+    ).order_by(Notification.created_at.desc()).all()
+
+    return render_template('owner_notifications.html')
 
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+@app.route('/notifications/read/<int:notif_id>', methods=['POST'])
+@login_required
+def mark_notification_read(notif_id):
+    notif = Notification.query.get_or_404(notif_id)
+
+    if notif.user_id != current_user.id:
+        abort(403)
+
+    notif.is_read = True
+    db.session.commit()
+    return {"success": True}
 
 # ------------------ Ensure Admin Exists ------------------
 with app.app_context():
@@ -145,6 +190,15 @@ with app.app_context():
         print(f"✅ Created admin: {admin_email}")
 
 # ------------------ Routes ------------------
+@app.before_request
+def load_notifications():
+    if current_user.is_authenticated:
+        # Get all notifications for current user
+        g.notifications = Notification.query.filter_by(
+            user_id=current_user.id
+        ).order_by(Notification.created_at.desc()).all()
+    else:
+        g.notifications = []
 
 # Welcome page
 @app.route('/')
