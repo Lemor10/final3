@@ -19,39 +19,6 @@
   </main>
 
   <script>
-    async function fetchNotificationCount() {
-      const res = await fetch("/api/notification-count");
-      const data = await res.json();
-      const dot = document.getElementById("notif-dot");
-      if (dot) dot.classList.toggle("d-none", data.count === 0);
-    }
-
-    function setupNotificationItems() {
-      const readNotifications =
-        JSON.parse(localStorage.getItem("readNotifications") || "[]");
-
-      document.querySelectorAll(".notification-item").forEach(item => {
-        const id = item.dataset.id;
-
-        // Hide if already read
-        if (readNotifications.includes(id)) {
-          item.remove();
-        }
-
-        // Handle mark as read
-        item.querySelector(".mark-read-btn")?.addEventListener("click", () => {
-          readNotifications.push(id);
-          localStorage.setItem(
-            "readNotifications",
-            JSON.stringify(readNotifications)
-          );
-          item.remove();
-          updateDotDisplay();
-        });
-      });
-
-      updateDotDisplay();
-    }
 
 async function updateNotifDot() {
     const res = await fetch('{{ url_for("notification_count") }}');
@@ -90,22 +57,28 @@ document.querySelectorAll('.notif-item').forEach(item => {
     });
 });
 
-// Mark all as read
-document.getElementById('mark-all-read').addEventListener('click', async () => {
-    const unreadIds = Array.from(document.querySelectorAll('li[data-id]')).map(li => li.dataset.id);
+document.addEventListener("DOMContentLoaded", function () {
+    fetch("/api/notification-count")
+        .then(res => res.json())
+        .then(data => {
+            const dot = document.getElementById("notif-dot");
+            if (!dot) return;
 
-    for(const id of unreadIds){
-        await fetch(`/notifications/read/${id}`, { method: 'POST' });
-        const li = document.querySelector(`li[data-id='${id}']`);
-        li.querySelector('.badge')?.remove();
-        li.querySelector('.mark-read-btn')?.remove();
-    }
-
-    updateNotifDot();
+            if (data.count > 0) {
+                dot.classList.remove("d-none");          
+            if (window.location.pathname === "/owner/notifications") {
+                dot.classList.add("d-none");
+            }
+            } else {
+                dot.classList.add("d-none");
+            }
+        })
+        .catch(err => console.error("Notification count error:", err));
 });
 
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="owner_notifications.html"></script>
 </body>
 </html>

@@ -143,9 +143,6 @@ def generate_vaccination_notifications(user_id):
 @app.route('/api/notification-count')
 @login_required
 def notification_count():
-
-    generate_vaccination_notifications(current_user.id)
-
     count = Notification.query.filter_by(
         user_id=current_user.id,
         is_read=False
@@ -175,6 +172,20 @@ def mark_notification_read(notif_id):
 
     notif.is_read = True
     db.session.commit()
+    return {"success": True}
+
+@app.route('/notifications/delete/<int:notif_id>', methods=['POST'])
+@login_required
+def delete_notification(notif_id):
+    notif = Notification.query.get_or_404(notif_id)
+
+    # Security check
+    if notif.user_id != current_user.id:
+        abort(403)
+
+    db.session.delete(notif)
+    db.session.commit()
+
     return {"success": True}
 
 # ------------------ Ensure Admin Exists ------------------
@@ -265,6 +276,7 @@ def login():
             return redirect(url_for('login'))
 
         login_user(user)
+        generate_vaccination_notifications(user.id)
         # Redirect based on role
         if user.role == 'admin':
             return redirect(url_for('admin_dashboard'))
