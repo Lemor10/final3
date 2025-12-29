@@ -87,6 +87,7 @@ class Notification(db.Model):
         type = db.Column(db.String(50), nullable=False)
         due_date = db.Column(db.Date, nullable=True)
         is_read = db.Column(db.Boolean, default=False)
+        dismissed = db.Column(db.Boolean, default=False)  # ✅ NEW
         created_at = db.Column(db.DateTime, default=datetime.utcnow)
         user = db.relationship("User", backref="notifications")
         dog = db.relationship("Dog", backref="notifications")
@@ -108,7 +109,7 @@ def generate_vaccination_notifications(user_id):
         existing = Notification.query.filter_by(
             user_id=user_id,
             dog_id=dog.id,
-            due_date=dog.next_vaccination
+            due_date=dog.next_vaccination,
         ).first()
 
         if existing:
@@ -145,17 +146,14 @@ def generate_vaccination_notifications(user_id):
 def notification_count():
     count = Notification.query.filter_by(
         user_id=current_user.id,
-        is_read=False
+        is_read=False,
+        dismissed=False
     ).count()
     return {"count": count}
 
 @app.route('/owner/notifications')
 @login_required
 def owner_notifications():
-    notifications = Notification.query.filter_by(
-        user_id=current_user.id
-    ).order_by(Notification.created_at.desc()).all()
-
     return render_template('owner_notifications.html')
 
 @login_manager.user_loader
@@ -179,12 +177,11 @@ def mark_notification_read(notif_id):
 def delete_notification(notif_id):
     notif = Notification.query.get_or_404(notif_id)
 
-    # Security check
     if notif.user_id != current_user.id:
         abort(403)
 
-    db.session.delete(notif)
-    db.session.commit()
+    notif.dismissed = True     # ✅ change first
+    db.session.commit()       # ✅ then commit
 
     return {"success": True}
 
@@ -204,9 +201,11 @@ with app.app_context():
 @app.before_request
 def load_notifications():
     if current_user.is_authenticated:
+        generate_vaccination_notifications(current_user.id)
         # Get all notifications for current user
         g.notifications = Notification.query.filter_by(
-            user_id=current_user.id
+            user_id=current_user.id,
+            dismissed=False
         ).order_by(Notification.created_at.desc()).all()
     else:
         g.notifications = []
@@ -276,7 +275,6 @@ def login():
             return redirect(url_for('login'))
 
         login_user(user)
-        generate_vaccination_notifications(user.id)
         # Redirect based on role
         if user.role == 'admin':
             return redirect(url_for('admin_dashboard'))
@@ -671,7 +669,6 @@ def admin_delete_owner(owner_id):
     flash("Owner deleted successfully.", "success")
     return redirect(url_for('admin_dashboard'))
 
-
 # Export CSV
 @app.route('/admin/export_csv')
 @login_required
@@ -693,42 +690,6 @@ def export_csv():
 @login_required
 def whoami():
     return f"Logged in as {current_user.email} with role {current_user.role}"
-
-@app.route('/api/notifications')
-@login_required
-def api_notifications():
-    today = date.today()
-    notifications = []
-
-    dogs = Dog.query.filter_by(owner_id=current_user.id).all()
-
-    for dog in dogs:
-        if not dog.next_vaccination:
-            continue
-
-        days_left = (dog.next_vaccination - today).days
-
-        # 🔔 Reminder (7 days before)
-        if 0 <= days_left <= 7:
-            notifications.append({
-                "type": "reminder",
-                "message": f"Vaccination for {dog.name} is due in {days_left} days",
-                "date": dog.next_vaccination.strftime("%b %d, %Y")
-            })
-
-        # ⚠️ Overdue
-        elif days_left < 0:
-            notifications.append({
-                "type": "overdue",
-                "message": f"Vaccination overdue for {dog.name}",
-                "date": dog.next_vaccination.strftime("%b %d, %Y")
-            })
-
-    return {
-        "count": len(notifications),
-        "notifications": notifications
-    }
-
 # ------------------ Run App ------------------
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT',5000)), debug=True)

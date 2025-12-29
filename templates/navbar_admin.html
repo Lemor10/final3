@@ -1,12 +1,125 @@
+<style>
+.navbar-nav .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 20px;
+  transition: all 0.2s ease;
+}
+
+.navbar-nav .nav-link:hover {
+  color: white !important;
+  transform: translateY(-2px);
+}
+
+/* ===============================
+   MOBILE BOTTOM NAV (FB / IG)
+   =============================== */
+@media (max-width: 576px) {
+
+  /* Hide brand + toggler */
+  .navbar-brand,
+  .navbar-toggler {
+    display: none;
+  }
+
+  /* Move navbar to bottom */
+  .navbar {
+    position: fixed;
+    bottom: 0;
+    top: auto;
+    width: 100%;
+    z-index: 1050;
+    padding: 0.3rem 0;
+  }
+
+  /* Horizontal icons */
+  .navbar-collapse {
+    display: flex !important;
+    justify-content: center;
+  }
+
+  .navbar-nav {
+    flex-direction: row;
+    justify-content: space-around;
+    width: 100%;
+    margin: 0;
+  }
+
+  .navbar-nav .nav-item {
+    flex: 1;
+    text-align: center;
+  }
+
+  /* Stack icon + title */
+  .navbar-nav .nav-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    color: rgba(255,255,255,0.7);
+    position: relative;
+    transition: transform 0.3s ease, color 0.3s ease;
+  }
+
+  .navbar-nav .nav-link i,
+  .navbar-nav .nav-link .nav-title {
+    transition: transform 0.3s ease, color 0.3s ease;
+  }
+
+  /* Active icon + title scale */
+  .navbar-nav .nav-link.active i,
+  .navbar-nav .nav-link.active .nav-title {
+    transform: scale(1.3) translateY(-2px);
+    color: #fff;
+  }
+
+  /* Active dot indicator */
+  .navbar-nav .nav-link.active::after {
+    display: none; /* removed dot */
+  }
+
+  /* Small title below icons */
+  .nav-title {
+    font-size: 0.75rem;
+    font-weight: 500;
+    opacity: 0.9;
+  }
+
+  /* Icon sizing */
+  .navbar-nav .nav-link i {
+    font-size: 1.4rem;
+  }
+
+  /* Logout link styling */
+  .logout-link i {
+    font-size: 1.4rem;
+  }
+  .logout-link .nav-title {
+    font-size: 0.75rem;
+  }
+
+  /* Hide desktop-only logout button */
+  .navbar .btn {
+    display: none;
+  }
+
+  /* Prevent content being hidden behind navbar */
+  body {
+    padding-bottom: 65px;
+  }
+}
+</style>
+
 <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color:#4DA6FF;">
   <div class="container-fluid">
 
     <!-- Dynamic Brand Icon & Title -->
     <a class="navbar-brand fw-bold">
       {% if request.endpoint == 'admin_dashboard' %}
-        <i class="bi bi-shield-lock-fill me-2"></i>Admin Dashboard
+        <i class="bi bi-shield-lock-fill me-1"></i> Admin Dashboard
       {% elif request.endpoint == 'admin_data_analysis' %}
-        <i class="bi bi-bar-chart-fill me-1"></i> Data Analysis
+        <i class="bi bi-bar-chart-fill me-2"></i> Data Analysis
       {% else %}
         <i class="bi bi-info-circle me-2"></i> Page
       {% endif %}
@@ -17,24 +130,77 @@
     </button>
 
     <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav me-auto">
+      <ul class="navbar-nav ms-auto">
 
-        <li class="nav-item">
+        <li class="nav-item" title="Dashboard">
           <a class="nav-link {% if request.endpoint=='admin_dashboard' %}active{% endif %}" 
              href="{{ url_for('admin_dashboard') }}">
-             <i class="bi bi-shield-lock-fill me-2"></i> Dashboard
+             <i class="bi bi-shield-lock-fill me-1"></i>
+             <span class="nav-title">Dashboard</span>
           </a>
         </li>
-         <li class="nav-item">
+
+        <li class="nav-item" title="Data Analysis">
           <a class="nav-link {% if request.endpoint=='admin_data_analysis' %}active{% endif %}" 
              href="{{ url_for('admin_data_analysis') }}">
-             <i class="bi bi-bar-chart-fill me-1"></i> Data Analysis
+             <i class="bi bi-bar-chart-fill me-1"></i>
+             <span class="nav-title">Data Analysis</span>
           </a>
         </li>
+
+        <li class="nav-item" title="Logout">
+          <a class="nav-link logout-link" href="#" data-bs-toggle="modal" data-bs-target="#adminLogoutModal">
+            <i class="bi bi-box-arrow-right"></i>
+            <span class="nav-title">Logout</span>
+          </a>
+        </li>
+
       </ul>
-      <a class="btn btn-outline-light btn-sm" href="{{ url_for('logout') }}">
-        <i class="bi bi-box-arrow-right me-1"></i> Logout
-      </a>
     </div>
   </div>
 </nav>
+
+<!-- Logout Confirmation Modal -->
+<div class="modal fade" id="adminLogoutModal" tabindex="-1" aria-labelledby="adminLogoutModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content border-0 shadow-sm rounded-3">
+
+      <!-- Modal Header -->
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold text-primary" id="adminLogoutModalLabel">
+          <i class="bi bi-box-arrow-right me-2"></i> Logout
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body text-center py-4">
+        <p class="mb-0 fw-semibold">Are you sure you want to log out?</p>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer justify-content-center border-0 pb-3">
+        <button type="button" class="btn btn-outline-secondary btn-sm px-4" data-bs-dismiss="modal">
+          Cancel
+        </button>
+        <a href="{{ url_for('logout') }}" class="btn btn-primary btn-sm px-4">
+          Logout
+        </a>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  if (window.innerWidth <= 576) {
+    document.querySelectorAll('.navbar-nav .nav-link').forEach(link => {
+      link.addEventListener('click', () => {
+        document.querySelectorAll('.navbar-nav .nav-link.active .nav-title').forEach(active => {
+          active.classList.remove('active');
+        });
+        link.classList.add('active');
+      });
+    });
+  }
+</script>

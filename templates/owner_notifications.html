@@ -35,46 +35,11 @@ h3 {
   overflow: hidden;
 }
 
-/* Undo Toast */
-#undo-toast {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: #212529;
-  color: #fff;
-  padding: 12px 16px;
-  border-radius: 8px;
-  display: none;
-  align-items: center;
-  gap: 12px;
-  z-index: 9999;
-}
-
-#undo-toast button {
-  border: none;
-  background: none;
-  color: #4DA6FF;
-  font-weight: 600;
-}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="fw-bold">Notifications</h3>
-    <div class="d-flex gap-2">
-    <button id="select-btn" class="btn btn-sm btn-outline-secondary">
-        Select
-    </button>
-
-    <button id="select-all-btn" class="btn btn-sm btn-outline-primary d-none">
-        Select All
-    </button>
-
-    <button id="delete-selected-btn" class="btn btn-sm btn-danger d-none">
-        Delete
-    </button>
-
+<div class="d-flex justify-content-end align-items-center mb-4">
     <button id="mark-all-read" class="btn btn-sm btn-primary">
         Mark All as Read
     </button>
@@ -104,11 +69,7 @@ h3 {
       <div class="d-flex align-items-center gap-2">
           {% if not notif.is_read %}
           <span class="badge bg-primary py-1 px-2">New</span>
-          <button class="btn btn-outline-primary btn-sm mark-read-btn">Mark as Read</button>
           {% endif %}
-              <!-- Checkbox (hidden by default) -->
-    <input type="checkbox"
-           class="form-check-input notif-checkbox d-none">
       </div>
   </li>
   {% endfor %}
@@ -116,12 +77,6 @@ h3 {
 {% else %}
 <div class="alert alert-info rounded shadow-sm">No notifications at this time.</div>
 {% endif %}
-
-<div id="undo-toast">
-  Notifications deleted
-  <button id="undo-btn">UNDO</button>
-</div>
-
 <script>
     // Mark all as read
 document.getElementById('mark-all-read').addEventListener('click', async () => {
@@ -170,86 +125,5 @@ document.getElementById('mark-all-read').addEventListener('click', async () => {
 
       updateDotDisplay();
     }
-
-// Selection & Deletion Logic
-let selectionMode = false;
-let deletedItems = [];
-let undoTimeout;
-
-const selectBtn = document.getElementById('select-btn');
-const selectAllBtn = document.getElementById('select-all-btn');
-const deleteBtn = document.getElementById('delete-selected-btn');
-const undoToast = document.getElementById('undo-toast');
-const undoBtn = document.getElementById('undo-btn');
-
-selectBtn.addEventListener('click', () => {
-  selectionMode = !selectionMode;
-
-  document.querySelectorAll('.notif-checkbox').forEach(cb => {
-    cb.classList.toggle('d-none', !selectionMode);
-    cb.checked = false;
-  });
-
-  selectAllBtn.classList.toggle('d-none', !selectionMode);
-  deleteBtn.classList.toggle('d-none', !selectionMode);
-
-  selectBtn.textContent = selectionMode ? 'Cancel' : 'Select';
-});
-
-// SELECT ALL
-selectAllBtn.addEventListener('click', () => {
-  document.querySelectorAll('.notif-checkbox').forEach(cb => cb.checked = true);
-});
-
-// DELETE SELECTED (with animation + undo)
-deleteBtn.addEventListener('click', async () => {
-  const selected = [...document.querySelectorAll('.notif-checkbox:checked')];
-
-  if (!selected.length) {
-    alert('Select at least one notification.');
-    return;
-  }
-
-  deletedItems = [];
-
-  selected.forEach(cb => {
-    const li = cb.closest('.notification-item');
-    deletedItems.push(li);
-    li.classList.add('fade-out');
-  });
-
-  showUndoToast();
-
-  undoTimeout = setTimeout(async () => {
-    for (const li of deletedItems) {
-      const id = li.dataset.id;
-      await fetch(`/notifications/delete/${id}`, { method: 'POST' });
-      li.remove();
-    }
-    deletedItems = [];
-    updateNotifDot?.();
-  }, 4000);
-});
-
-// UNDO DELETE
-undoBtn.addEventListener('click', () => {
-  clearTimeout(undoTimeout);
-
-  deletedItems.forEach(li => {
-    li.classList.remove('fade-out');
-  });
-
-  deletedItems = [];
-  hideUndoToast();
-});
-
-function showUndoToast() {
-  undoToast.style.display = 'flex';
-  setTimeout(hideUndoToast, 4000);
-}
-
-function hideUndoToast() {
-  undoToast.style.display = 'none';
-}
 </script>
 {% endblock %}
