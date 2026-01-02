@@ -1,110 +1,186 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Admin Data Analysis</title>
+{% extends "base_admin.html" %}
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+{% block title %}Admin Data Analysis{% endblock %}
 
-    <style>
-        body { background: #f8f9fa; font-family: "Poppins", sans-serif; }
-        .card { border-radius: 1rem; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .chart-container { background: white; padding: 30px; border-radius: 1rem; margin-bottom: 20px; }
-    </style>
-</head>
+{% block styles %}
+<style>
+    body { background: #f8f9fa; font-family: "Poppins", sans-serif; }
+    .card { border-radius: 1rem; border: none; box-shadow: 0 2px 12px rgba(0,0,0,0.1); transition: transform 0.2s; }
+    .card:hover { transform: translateY(-5px); }
+    .chart-container { background: white; padding: 30px; border-radius: 1rem; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .summary-header { margin-bottom: 20px; font-weight: 600; color: #333; }
+    .date-filter { margin-bottom: 30px; }
+    .date-filter label { font-weight: 500; margin-right: 10px; }
+    .btn-primary { border-radius: 0.5rem; }
+</style>
+{% endblock %}
 
-<body>
-
-<!-- NAVBAR -->
-{% include 'navbar_admin.html' %}
+{% block content %}
 <div class="container">
 
     <!-- SUMMARY CARDS -->
-    <div class="row text-center mb-4">
-
-        <div class="col-md-4">
-            <div class="card p-3">
-                <h5>Total Users</h5>
-                <h2>{{ total_users }}</h2>
-            </div>
-        </div>
-
-        <div class="col-md-4">
+    <div class="row d-flex justify-content-center text-center mb-4">
+        <div class="col-md-4 mb-3">
             <div class="card p-3">
                 <h5>Total Owners</h5>
                 <h2>{{ total_owners }}</h2>
             </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-4 mb-3">
             <div class="card p-3">
-                <h5>Total Dogs</h5>
+                <h5>Total Dogs Registered</h5>
                 <h2>{{ total_dogs }}</h2>
             </div>
         </div>
+    </div>
 
+    <!-- DATE RANGE FILTER -->
+    <div class="date-filter d-flex align-items-center justify-content-center gap-3">
+        <label for="startMonth">From:</label>
+        <input type="month" id="startMonth" class="form-control" value="{{ start_month }}">
+        <label for="endMonth">To:</label>
+        <input type="month" id="endMonth" class="form-control" value="{{ end_month }}">
+        <button class="btn btn-primary" id="filterBtn">Filter</button>
+        <button class="btn btn-secondary" id="resetBtn">Reset</button>
     </div>
 
     <!-- BAR CHART -->
-    <div class="chart-container">
-        <h5 class="text-center">Dogs per Breed</h5>
-        <canvas id="breedChart"></canvas>
+        <div class="chart-container mx-auto" style="max-width: 700px;">
+            <h5 class="text-center summary-header">Dogs per Breed</h5>
+            <canvas id="breedChart"></canvas>
+            <p class="no-data d-none">No data available for this date range.</p>
+        </div>
     </div>
 
     <!-- PIE CHART -->
-    <div class="chart-container">
-        <h5 class="text-center">Vaccination Status</h5>
+    <div class="chart-container mx-auto" style="max-width: 700px;">
+        <h5 class="text-center summary-header">Vaccination Status</h5>
         <canvas id="vaccineChart"></canvas>
+        
+    </div>
     </div>
 
-    <!-- LINE CHART -->
-    <div class="chart-container mb-5">
-        <h5 class="text-center">Monthly Dog Registrations</h5>
+    <!-- LINE CHART -->    <div class="chart-container mx-auto" style="max-width: 700px;">
+        <h5 class="text-center summary-header">Monthly Dog Registrations</h5>
         <canvas id="monthlyChart"></canvas>
+        <p class="no-data d-none">No data available for this date range.</p>
+    </div>
     </div>
 
-</div>
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
-    // BAR CHART: Dogs per breed
-    new Chart(document.getElementById('breedChart'), {
-        type: 'bar',
-        data: {
-            labels: {{ breeds|tojson }},
-            datasets: [{
-                label: 'Number of Dogs',
-                data: {{ breed_numbers|tojson }},
-            }]
-        }
-    });
+let breedChart, vaccineChart, monthlyChart;
 
-    // PIE CHART: Vaccinated vs Not
-    new Chart(document.getElementById('vaccineChart'), {
-        type: 'pie',
-        data: {
-            labels: ['Vaccinated', 'Not Vaccinated'],
-            datasets: [{
-                data: [{{ vaccinated_count }}, {{ unvaccinated_count }}],
-            }]
-        }
-    });
+// Render charts function (same as before)
+function renderCharts(data) {
+    // Update summary cards
+    document.querySelector('div.card h2:nth-child(2)').textContent = data.total_owners;
+    document.querySelectorAll('div.card h2:nth-child(2)')[1].textContent = data.total_dogs;
 
-    // LINE CHART: Monthly registrations
-    new Chart(document.getElementById('monthlyChart'), {
-        type: 'line',
-        data: {
-            labels: {{ months|tojson }},
-            datasets: [{
-                label: 'Dogs Registered',
-                data: {{ month_counts|tojson }},
-                fill: false,
-                tension: 0.2
-            }]
-        }
-    });
+    // BAR CHART
+    if (data.breeds.length > 0) {
+        document.querySelector('#breedChart').style.display = 'block';
+        document.querySelector('#breedChart').nextElementSibling?.classList.add('d-none');
+        if (breedChart) breedChart.destroy();
+        breedChart = new Chart(document.getElementById('breedChart'), {
+            type: 'bar',
+            data: {
+                labels: data.breeds,
+                datasets: [{
+                    label: 'Number of Dogs',
+                    data: data.breed_numbers,
+                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true
+            }
+        });
+    } else {
+        document.querySelector('#breedChart').style.display = 'none';
+        document.querySelector('#breedChart').nextElementSibling?.classList.remove('d-none');
+    }
+
+    // PIE CHART
+    if (data.vaccinated_count + data.unvaccinated_count > 0) {
+        document.querySelector('#vaccineChart').style.display = 'block';
+        document.querySelector('#vaccineChart').nextElementSibling?.classList.add('d-none');
+        if (vaccineChart) vaccineChart.destroy();
+        vaccineChart = new Chart(document.getElementById('vaccineChart'), {
+            type: 'pie',
+            data: {
+                labels: ['Vaccinated', 'Not Vaccinated'],
+                datasets: [{
+                    data: [data.vaccinated_count, data.unvaccinated_count],
+                    backgroundColor: ['#4BC0C0', '#FF6384']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: true }
+        });
+    } else {
+        document.querySelector('#vaccineChart').style.display = 'none';
+        document.querySelector('#vaccineChart').nextElementSibling?.classList.remove('d-none');
+    }
+
+    // LINE CHART
+    if (data.month_counts.length > 0) {
+        document.querySelector('#monthlyChart').style.display = 'block';
+        document.querySelector('#monthlyChart').nextElementSibling?.classList.add('d-none');
+        if (monthlyChart) monthlyChart.destroy();
+        monthlyChart = new Chart(document.getElementById('monthlyChart'), {
+            type: 'line',
+            data: {
+                labels: data.months,
+                datasets: [{
+                    label: 'Dogs Registered',
+                    data: data.month_counts,
+                    fill: false,
+                    tension: 0.2,
+                    borderColor: '#36A2EB',
+                    backgroundColor: '#36A2EB',
+                    pointRadius: 5
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: true }
+        });
+    } else {
+        document.querySelector('#monthlyChart').style.display = 'none';
+        document.querySelector('#monthlyChart').nextElementSibling?.classList.remove('d-none');
+    }
+}
+
+// Load charts immediately on page load
+window.addEventListener('DOMContentLoaded', () => {
+    axios.get(`/admin/data-analysis?ajax=1`)
+        .then(res => renderCharts(res.data))
+        .catch(err => console.error(err));
+});
+
+// FILTER BUTTON
+document.getElementById('filterBtn').addEventListener('click', () => {
+    const start = document.getElementById('startMonth').value;
+    const end = document.getElementById('endMonth').value;
+    if (!start || !end) return alert('Please select both start and end month.');
+
+    axios.get(`/admin/data-analysis?ajax=1&start_month=${start}&end_month=${end}`)
+        .then(res => renderCharts(res.data))
+        .catch(err => console.error(err));
+});
+
+// RESET BUTTON
+document.getElementById('resetBtn').addEventListener('click', () => {
+    document.getElementById('startMonth').value = "";
+    document.getElementById('endMonth').value = "";
+
+    axios.get(`/admin/data-analysis?ajax=1`)
+        .then(res => renderCharts(res.data))
+        .catch(err => console.error(err));
+});
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+{% endblock %}

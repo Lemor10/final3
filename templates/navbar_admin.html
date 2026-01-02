@@ -104,6 +104,11 @@
     display: none;
   }
 
+    #notif-dot {
+    top: 10px;
+    right: 5px;
+  }
+
   /* Prevent content being hidden behind navbar */
   body {
     padding-bottom: 65px;
@@ -120,6 +125,8 @@
         <i class="bi bi-shield-lock-fill me-1"></i> Admin Dashboard
       {% elif request.endpoint == 'admin_data_analysis' %}
         <i class="bi bi-bar-chart-fill me-2"></i> Data Analysis
+              {% elif request.endpoint == 'admin_notifications' %}
+        <i class="bi bi-bell me-2"></i> Notifications
       {% else %}
         <i class="bi bi-info-circle me-2"></i> Page
       {% endif %}
@@ -145,6 +152,20 @@
              href="{{ url_for('admin_data_analysis') }}">
              <i class="bi bi-bar-chart-fill me-1"></i>
              <span class="nav-title">Data Analysis</span>
+          </a>
+        </li>
+
+        <li class="nav-item position-relative" title="Notifications">
+          <a class="nav-link d-flex align-items-center gap-1
+              {% if request.endpoint=='admin_notifications' %}active{% endif %}"
+            href="{{ url_for('admin_notifications') }}">
+            <i class="bi bi-bell-fill"></i>
+            <span class="nav-title">Notifications</span>
+
+              <span id="notif-dot"
+                class="position-absolute top-10 start-55 translate-middle
+                      p-1 bg-danger border border-light rounded-circle d-none">
+          </span>
           </a>
         </li>
 

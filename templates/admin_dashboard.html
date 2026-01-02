@@ -1,11 +1,8 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Admin Dashboard</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+{% extends "base_admin.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block styles %}
   <style>
     body { background-color: #f8f9fa; font-family: "Poppins", sans-serif; }
     .card { border-radius: 1rem; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
@@ -23,28 +20,47 @@
     box-shadow: 0 4px 10px rgba(0,0,0,0.08);
 }
 
-.dog-img {
-    width: 150px;
-    height: 150px;
-    object-fit: cover;
-    border-radius: 8px;
-    border: 1px solid #ccc;
+.dog-img-wrapper {
+  height: 100%;
 }
 
+.dog-img {
+  padding: 10px;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.qr-clickable:hover {
+  transform: scale(1.05);
+  transition: 0.2s;
+}
+
+.qr-modal-bg {
+  background-color: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+@media (max-width: 1440px) {
+    .dog-img {
+        width: 100%;
+        height: 100%;
+    }
+}
 @media (max-width: 768px) {
     .dog-img {
-        width: 100px;
-        height: 100px;
+        width: 100%;
+        height: 100%;
+        border-radius: 15px 15px 0 0;
     }
 }
 
   </style>
-</head>
+{% endblock %}
 
-<body>
-  <!-- Navbar -->
-{% include 'navbar_admin.html' %}
-
+{% block content %}
   <!-- Main content -->
   <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -111,10 +127,12 @@
           <div class="row g-3 align-items-center">
             
             <!-- Dog Image -->
-            <div class="col-4 col-md-4">
+            <div class="col-lg-4 col-12 dog-img-wrapper">
               <img src="{{ url_for('static', filename='dog_images/' ~ d.image) }}"
-                   class="img-fluid rounded border"
-                   style="height: 160px; width: 100%; object-fit: cover;">
+                  class="dog-img"
+                  alt="{{ d.name }}"
+                  style="cursor: pointer;"
+                  onclick="openQrFullscreen(this.src)">
             </div>
 
             <!-- Dog Info -->
@@ -134,8 +152,9 @@
 
               <!-- QR Code -->
               <img src="{{ url_for('qrcodes', filename=d.qr_code) }}"
-                   class="border rounded p-1 mb-2"
-                   style="height: 90px; width: 90px;">
+                  class="border rounded p-1 mb-2 qr-clickable"
+                  style="height: 90px; width: 90px; cursor: pointer;"
+                  onclick="openQrFullscreen(this.src)">
 
               <div class="mt-2">
                 <button class="btn btn-primary btn-sm"
@@ -193,8 +212,9 @@
 
               <!-- QR Code -->
               <img src="{{ url_for('qrcodes', filename=d.qr_code) }}"
-                   class="border rounded p-1 mb-2"
-                   style="height: 90px; width: 90px;">
+                  class="border rounded p-1 mb-2 qr-clickable"
+                  style="height: 90px; width: 90px; cursor: pointer;"
+                  onclick="openQrFullscreen(this.src)">
 
               <div class="mt-2">
                 <button class="btn btn-primary btn-sm"
@@ -316,6 +336,17 @@
               <label>Age</label>
               <input type="number" name="age" class="form-control" required>
             </div>
+
+            <div class="mb-3">
+              <label>Last Vaccination Date</label>
+              <input type="date" name="last_vaccination" class="form-control">
+            </div>
+
+            <div class="mb-3">
+              <label>Next Vaccination Due</label>
+              <input type="date" name="next_vaccination" class="form-control">
+            </div>
+
             <div class="mb-3">
               <label>Status</label>
               <select name="status" class="form-select" required>
@@ -334,6 +365,39 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+  <!-- QR Fullscreen Modal -->
+<div class="modal fade" id="qrFullscreenModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-fullscreen">
+    <div class="modal-content qr-modal-bg">
+
+      <div class="modal-header border-0">
+        <button type="button" class="btn-close btn-close-white ms-auto"
+                data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body d-flex justify-content-center align-items-center">
+        <img id="qrFullscreenImg"
+             src=""
+             class="img-fluid"
+             style="max-height: 90vh; max-width: 90vw;">
+      </div>
+
+    </div>
+  </div>
+</div>
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- QR Fullscreen Script -->
+<script>
+function openQrFullscreen(src) {
+  const img = document.getElementById("qrFullscreenImg");
+  img.src = src;
+
+  const modal = new bootstrap.Modal(
+    document.getElementById("qrFullscreenModal")
+  );
+  modal.show();
+}
+</script>
+{% endblock %}

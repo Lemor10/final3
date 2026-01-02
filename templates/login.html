@@ -135,5 +135,49 @@
         <a href="{{ url_for('signup') }}" class="text-primary fw-semibold text-decoration-none">Create one</a>
     </div>
   </div>
+
+  <!-- Flash Message Modal -->
+<div class="modal fade" id="signupSuccessModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title">
+          <i class="bi bi-check-circle-fill me-2"></i>
+          Account Created
+        </h5>
+      </div>
+
+      <div class="modal-body text-center">
+        <p class="mb-0">
+          Your account was created successfully. You may now log in.
+        </p>
+      </div>
+
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-success px-4"
+                data-bs-dismiss="modal">
+          Continue
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for category, message in messages %}
+    {% if category == 'signup_success' %}
+      <script>
+        document.addEventListener("DOMContentLoaded", function () {
+          const modal = new bootstrap.Modal(
+            document.getElementById("signupSuccessModal")
+          );
+          modal.show();
+        });
+      </script>
+    {% endif %}
+  {% endfor %}
+{% endwith %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
