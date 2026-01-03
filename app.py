@@ -11,6 +11,7 @@ from datetime import date, datetime
 import qrcode, io, csv, uuid
 from io import BytesIO
 from flask import g
+import re
 
 if os.environ.get("RENDER"):
     BASE_URL = os.environ.get("BASE_URL")
@@ -344,7 +345,7 @@ def format_breed(breed):
     return breed.strip().lower().title()
 
 # ------------------ Authentication ------------------
-@app.route('/signup', methods=['GET','POST'])
+@app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
         email = request.form['email']
@@ -352,11 +353,30 @@ def signup():
         contact = request.form['contact']
         address = request.form['address']
         password = request.form['password']
+        confirm_password = request.form['confirm_password']  # 👈 ADD THIS
 
-        if User.query.filter_by(email=email).first():
-            flash('Email already registered', 'error')
+        # ✅ 1. Confirm password check (ADD HERE)
+        if password != confirm_password:
+            flash('Passwords do not match.', 'error')
             return redirect(url_for('signup'))
 
+        # ✅ 2. Optional: Password length validation
+        if len(password) < 6 \
+        or not re.search(r"[A-Z]", password) \
+        or not re.search(r"[0-9]", password) \
+        or not re.search(r"[^A-Za-z0-9]", password):
+            flash(
+                "Password must be at least 6 characters and include uppercase, number, and special character.",
+                "error"
+            )
+            return redirect(url_for("signup"))
+
+        # ✅ 3. Check if email already exists
+        if User.query.filter_by(email=email).first():
+            flash('Email already registered.', 'error')
+            return redirect(url_for('signup'))
+
+        # ✅ 4. Create user only if all validations pass
         user = User(
             email=email,
             name=name,
@@ -506,7 +526,7 @@ def owner_add_dog():
     db.session.add(new_dog)
     db.session.commit()
 
-    flash("Dog registered successfully! QR code generated.", "success")
+    flash("Dog registered successfully! QR code generated.", "dog_success")
     return redirect(url_for('owner_profile'))
 
 @app.route('/owner_delete_dog/<int:dog_id>', methods=['POST'])

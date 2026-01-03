@@ -305,6 +305,43 @@
 </div>
 {% endfor %}
 
+<!-- Dog Registered Success Modal -->
+<div class="modal fade" id="dogSuccessModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4 shadow">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title">Success</h5>
+      </div>
+      <div class="modal-body text-center">
+        <i class="bi bi-check-circle-fill text-success fs-1"></i>
+        <p class="mt-3">
+          Dog registered successfully! Qr code generated.
+        </p>
+      </div>
+      <div class="modal-footer justify-content-center">
+        <button class="btn btn-success w-50" data-bs-dismiss="modal">
+          OK
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for category, message in messages %}
+    {% if category == "dog_success" %}
+      <script>
+        document.addEventListener("DOMContentLoaded", function () {
+          const modalEl = document.getElementById("dogSuccessModal");
+          if (modalEl) {
+            const successModal = new bootstrap.Modal(modalEl);
+            successModal.show();
+          }
+        });
+      </script>
+    {% endif %}
+  {% endfor %}
+{% endwith %}
 <script>
 const editBtn = document.getElementById("editBtn");
 const saveCancelBtns = document.getElementById("saveCancelBtns");

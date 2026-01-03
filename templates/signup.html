@@ -151,6 +151,11 @@
       transform: scale(0.98);
     }
 
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
   </style>
 </head>
 
@@ -217,21 +222,44 @@
 
           <div class="mb-2">
             <label class="form-label">Password</label>
+
             <div class="input-group input-group-sm">
-              <input type="password" class="form-control" id="password" name="password" required>
+              <input type="password"
+                    class="form-control"
+                    id="password"
+                    name="password"
+                    required>
             </div>
+
+            <div class="mt-1">
+              <div class="progress" style="height:6px;">
+                <div id="passwordStrengthBar"
+                    class="progress-bar"
+                    style="width:0%"></div>
+              </div>
+              <small id="passwordStrengthText" class="text-muted"></small>
+            </div>
+
+          <small class="text-muted">
+            Must be at least 6 characters, include uppercase, number, and special character
+          </small>
           </div>
 
-          <small class="text-muted">Must be at least 8 characters</small>
 
           <div class="mb-2">
             <label class="form-label">Confirm Password</label>
             <div class="input-group input-group-sm">
               <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
             </div>
+            <div class="invalid-feedback">
+              Passwords do not match.
+            </div>
           </div>
 
-          <button type="submit" class="btn btn-primary w-100 mt-2">
+          <button type="submit"
+                  class="btn btn-primary w-100 mt-2"
+                  id="signupBtn"
+                  disabled>
             <i class="bi bi-paw-fill text-primary me-1"></i>
             Create Account
           </button>
@@ -383,6 +411,70 @@
       icon.classList.replace("bi-eye-slash", "bi-eye");
     }
   }
+</script>
+
+<script>
+  const password = document.getElementById("password");
+  const confirmPassword = document.getElementById("confirm_password");
+  const submitBtn = document.querySelector("button[type='submit']");
+
+  function validatePasswords() {
+    if (confirmPassword.value === "") {
+      confirmPassword.classList.remove("is-invalid", "is-valid");
+      submitBtn.disabled = false;
+      return;
+    }
+
+    if (password.value !== confirmPassword.value) {
+      confirmPassword.classList.add("is-invalid");
+      confirmPassword.classList.remove("is-valid");
+      submitBtn.disabled = true;
+    } else {
+      confirmPassword.classList.remove("is-invalid");
+      confirmPassword.classList.add("is-valid");
+      submitBtn.disabled = false;
+    }
+  }
+
+  password.addEventListener("input", validatePasswords);
+  confirmPassword.addEventListener("input", validatePasswords);
+</script>
+
+<script>
+const passwordInput = document.getElementById("password");
+const strengthBar = document.getElementById("passwordStrengthBar");
+const strengthText = document.getElementById("passwordStrengthText");
+const signupBtn = document.getElementById("signupBtn");
+
+passwordInput.addEventListener("input", () => {
+  const password = passwordInput.value;
+
+  const hasLength = password.length >= 6;
+  const hasUpper = /[A-Z]/.test(password);
+  const hasLower = /[a-z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecial = /[^A-Za-z0-9]/.test(password);
+
+  let strength = [hasLength, hasUpper, hasLower, hasNumber, hasSpecial]
+                   .filter(Boolean).length;
+
+  const strengthLevels = [
+    { text: "", color: "", width: "0%" },
+    { text: "Weak", color: "bg-danger", width: "25%" },
+    { text: "Fair", color: "bg-warning", width: "50%" },
+    { text: "Good", color: "bg-info", width: "75%" },
+    { text: "Strong", color: "bg-success", width: "100%" }
+  ];
+
+  const level = strengthLevels[strength];
+
+  strengthBar.className = `progress-bar ${level.color}`;
+  strengthBar.style.width = level.width;
+  strengthText.textContent = level.text;
+
+  // ✅ Enable button ONLY if all rules are met
+  signupBtn.disabled = !(hasLength && hasUpper && hasNumber && hasSpecial);
+});
 </script>
 
 </body>
