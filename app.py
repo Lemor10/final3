@@ -404,45 +404,53 @@ def signup():
         contact = request.form['contact']
         address = request.form['address']
         password = request.form['password']
-        confirm_password = request.form['confirm_password']  # 👈 ADD THIS
+        confirm_password = request.form['confirm_password']
 
-        # ✅ 1. Confirm password check (ADD HERE)
+        # 1️⃣ Confirm password
         if password != confirm_password:
             flash('Passwords do not match.', 'error')
             return redirect(url_for('signup'))
 
-        # ✅ 2. Optional: Password length validation
+        # 2️⃣ Password validation
         if len(password) < 8 \
-        or not re.search(r"[A-Z]", password) \
-        or not re.search(r"[0-9]", password) \
-        or not re.search(r"[^A-Za-z0-9]", password):
+           or not re.search(r"[A-Z]", password) \
+           or not re.search(r"[0-9]", password) \
+           or not re.search(r"[^A-Za-z0-9]", password):
             flash(
-                "Password must be at least 6 characters and include uppercase, number, and special character.",
+                "Password must be at least 8 characters and include uppercase, number, and special character.",
                 "error"
             )
             return redirect(url_for("signup"))
 
-        # ✅ 3. Check if email already exists
+        # 3️⃣ Check if email exists
         if User.query.filter_by(email=email).first():
             flash('Email already registered.', 'error')
             return redirect(url_for('signup'))
 
-        # ✅ 4. Create user only if all validations pass
+        # 4️⃣ Create user
         user = User(
             email=email,
             name=name,
             contact=contact,
             address=address,
-            role='owner'
+            role='owner',
+            email_verified=False if on_render else True  # ✅ Auto-verify locally
         )
         user.set_password(password)
-
         db.session.add(user)
         db.session.commit()
 
-        send_verification_email(user.email)  # ✅ send email
+        # 5️⃣ Send verification email only in Render
+        if on_render:
+            try:
+                send_verification_email(user.email)
+                flash("Verification email sent! Check your inbox.", "info")
+            except Exception as e:
+                print("❌ Failed to send verification email:", e)
+                flash("Could not send verification email. Contact admin.", "danger")
+        else:
+            flash("Signup successful (local). Email verification skipped.", "info")
 
-        flash("Verification email sent! Check your inbox.", "info")
         return redirect(url_for("login"))
 
     return render_template('signup.html')
