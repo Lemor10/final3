@@ -14,6 +14,8 @@ from io import BytesIO
 from flask import g
 import re
 from itsdangerous import URLSafeTimedSerializer
+from qrcode.image.pil import PilImage
+import threading
 
 if os.environ.get("RENDER"):
     BASE_URL = os.environ.get("BASE_URL")
@@ -31,6 +33,8 @@ app.config['MAIL_USE_SSL'] = True
 app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')  # your email
 app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')  # app password or SMTP password
 app.config['MAIL_DEFAULT_SENDER'] = app.config['MAIL_USERNAME']
+
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5 MB max
 
 app.config['DOG_UPLOAD_FOLDER'] = os.path.join('static', 'dog_images')
 os.makedirs(app.config['DOG_UPLOAD_FOLDER'], exist_ok=True)
@@ -286,6 +290,14 @@ def send_verification_email(user_email):
             "Please contact support or try again later.",
             "warning"
         )
+
+
+def send_email_async(user_email):
+    threading.Thread(target=send_verification_email, args=(user_email,)).start()
+        
+def save_qr_code(url, filename):
+    img = qrcode.make(url, image_factory=PilImage)
+    img.save(os.path.join(QR_FOLDER, filename))
 
 @app.route('/api/notification-count')
 @login_required
@@ -597,7 +609,7 @@ def owner_add_dog():
     img = qrcode.make(qr_data)
     qr_filename = f"{dog_uuid}.png"
     os.makedirs(QR_FOLDER, exist_ok=True)
-    img.save(os.path.join(QR_FOLDER, qr_filename))
+    save_qr_code(url_for("dog_info", dog_uuid=dog_uuid, _external=True), qr_filename)
 
     # Create the dog entry
     new_dog = Dog(
@@ -839,7 +851,7 @@ def admin_register_dog():
 
     # Save QR to /tmp/qrcodes
     qr_filename = f"{dog_uuid}.png"
-    img.save(os.path.join(QR_FOLDER, qr_filename))
+    save_qr_code(url_for("dog_info", dog_uuid=dog_uuid, _external=True), qr_filename)
 
     # Save dog entry
     new_dog = Dog(
@@ -860,7 +872,6 @@ def admin_register_dog():
     db.session.add(new_dog)
     db.session.commit()
 
-    flash("Stray dog registered successfully! QR code created.", "success")
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/edit_dog/<int:dog_id>', methods=['POST'])
