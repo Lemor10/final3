@@ -1,7 +1,6 @@
 # app.py - Flask 3.x compatible
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory, send_file, abort, jsonify ,session
-from flask_mail import Mail, Message
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
@@ -13,9 +12,6 @@ import qrcode, io, csv, uuid
 from io import BytesIO
 from flask import g
 import re
-from itsdangerous import URLSafeTimedSerializer
-from qrcode.image.pil import PilImage
-import threading
 
 if os.environ.get("RENDER"):
     BASE_URL = os.environ.get("BASE_URL")
@@ -25,16 +21,6 @@ else:
     BASE_URL = "http://localhost:5000"
 
 app = Flask(__name__)
-
-# ------------------ EMAIL CONFIG ------------------
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'  # or your SMTP server
-app.config['MAIL_PORT'] = 465
-app.config['MAIL_USE_SSL'] = True
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')  # your email
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')  # app password or SMTP password
-app.config['MAIL_DEFAULT_SENDER'] = app.config['MAIL_USERNAME']
-
-app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5 MB max
 
 app.config['DOG_UPLOAD_FOLDER'] = os.path.join('static', 'dog_images')
 os.makedirs(app.config['DOG_UPLOAD_FOLDER'], exist_ok=True)
@@ -50,7 +36,6 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
-mail = Mail(app)
 
 login_manager = LoginManager()
 login_manager.login_view = 'login'
@@ -79,7 +64,6 @@ class User(UserMixin, db.Model):
     )
 
     email = db.Column(db.String(150), unique=True, nullable=False)
-    email_verified = db.Column(db.Boolean, default=False)
     name = db.Column(db.String(150))
     contact = db.Column(db.String(20))
     address = db.Column(db.String(255))
@@ -243,62 +227,6 @@ def generate_admin_notifications(admin_user_id):
 
     db.session.commit()
 
-def generate_email_token(email):
-    serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
-    return serializer.dumps(email, salt='email-verify')
-
-def confirm_email_token(token, expiration=3600):
-    s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
-    return s.loads(token, salt='email-verify', max_age=expiration)
-
-def send_verification_email(user_email):
-    """
-    Send a verification email to the user.
-    Logs errors instead of crashing the app.
-    """
-    try:
-        # 1️⃣ Generate token & verification URL
-        token = generate_email_token(user_email)
-        verify_url = url_for('verify_email', token=token, _external=True)
-
-        # 2️⃣ Compose email HTML
-        html = f"""
-            <p>Hi!</p>
-            <p>Click the link below to verify your email:</p>
-            <a href="{verify_url}">Verify Email</a>
-            <p>This link will expire in 1 hour.</p>
-        """
-
-        # 3️⃣ Create Message
-        msg = Message(
-            subject="Verify Your Email",
-            recipients=[user_email],
-            html=html,
-            sender=app.config.get('MAIL_USERNAME') or 'noreply@example.com'
-        )
-
-        # 4️⃣ Send email
-        mail.send(msg)
-        print(f"✅ Verification email sent to {user_email}")
-
-    except Exception as e:
-        # 5️⃣ Catch all errors and log
-        print(f"❌ Failed to send verification email to {user_email}: {e}")
-        # Optional: flash message to user without breaking flow
-        flash(
-            "We could not send a verification email. "
-            "Please contact support or try again later.",
-            "warning"
-        )
-
-
-def send_email_async(user_email):
-    threading.Thread(target=send_verification_email, args=(user_email,)).start()
-        
-def save_qr_code(url, filename):
-    img = qrcode.make(url, image_factory=PilImage)
-    img.save(os.path.join(QR_FOLDER, filename))
-
 @app.route('/api/notification-count')
 @login_required
 def notification_count():
@@ -435,10 +363,11 @@ def signup():
         # ✅ 2. Optional: Password length validation
         if len(password) < 8 \
         or not re.search(r"[A-Z]", password) \
+        or not re.search(r"[a-z]", password) \
         or not re.search(r"[0-9]", password) \
         or not re.search(r"[^A-Za-z0-9]", password):
             flash(
-                "Password must be at least 6 characters and include uppercase, number, and special character.",
+                "Password must be at least 8 characters and include uppercase, lowercase, number, and special character.",
                 "error"
             )
             return redirect(url_for("signup"))
@@ -461,38 +390,10 @@ def signup():
         db.session.add(user)
         db.session.commit()
 
-        send_verification_email(user.email)  # ✅ send email
-
-        flash("Verification email sent! Check your inbox.", "info")
+        flash("Account created successfully! You may now log in.", "signup_success")
         return redirect(url_for("login"))
 
     return render_template('signup.html')
-
-@app.route('/verify_email/<token>')
-def verify_email(token):
-    # 1️⃣ Confirm token
-    email = confirm_email_token(token)
-    if not email:
-        flash("Verification link is invalid or has expired.", "danger")
-        return redirect(url_for('signup'))
-
-    # 2️⃣ Fetch the user
-    user = User.query.filter_by(email=email).first()
-    if not user:
-        flash("User not found.", "danger")
-        return redirect(url_for('signup'))
-
-    # 3️⃣ Check if already verified
-    if user.email_verified:
-        flash("Email already verified. You can log in.", "info")
-        return redirect(url_for('login'))
-
-    # 4️⃣ Mark as verified and save to DB
-    user.email_verified = True
-    db.session.commit()
-
-    flash("Email verified successfully! You can now log in.", "success")
-    return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -509,10 +410,6 @@ def login():
         if not user.check_password(password):
             flash("Incorrect password. Please try again.", "danger")
             return redirect(url_for('login'))
-        
-        if not user.email_verified and user.role != 'admin':
-            flash("Please verify your email before logging in.", "warning")
-            return redirect(url_for("login"))
 
         login_user(user)
 
@@ -609,7 +506,7 @@ def owner_add_dog():
     img = qrcode.make(qr_data)
     qr_filename = f"{dog_uuid}.png"
     os.makedirs(QR_FOLDER, exist_ok=True)
-    save_qr_code(url_for("dog_info", dog_uuid=dog_uuid, _external=True), qr_filename)
+    img.save(os.path.join(QR_FOLDER, qr_filename))
 
     # Create the dog entry
     new_dog = Dog(
@@ -851,7 +748,7 @@ def admin_register_dog():
 
     # Save QR to /tmp/qrcodes
     qr_filename = f"{dog_uuid}.png"
-    save_qr_code(url_for("dog_info", dog_uuid=dog_uuid, _external=True), qr_filename)
+    img.save(os.path.join(QR_FOLDER, qr_filename))
 
     # Save dog entry
     new_dog = Dog(
@@ -872,6 +769,7 @@ def admin_register_dog():
     db.session.add(new_dog)
     db.session.commit()
 
+    flash("Stray dog registered successfully! QR code created.", "success")
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/edit_dog/<int:dog_id>', methods=['POST'])
