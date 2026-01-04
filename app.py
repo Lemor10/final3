@@ -248,15 +248,29 @@ def confirm_email_token(token, expiration=3600):
     return s.loads(token, salt='email-verify', max_age=expiration)
 
 def send_verification_email(user_email):
-    # If running locally in debug mode, skip sending email
-    if app.debug:
-        print(f"⚠️ Debug mode: skipping email verification for {user_email}")
-        # Auto-verify user for local development
-        user = User.query.filter_by(email=user_email).first()
-        if user:
-            user.email_verified = True
-            db.session.commit()
-        return
+    token = generate_email_token(user_email)
+    # Use BASE_URL in production
+    verify_url = f"{BASE_URL}/verify_email/{token}" if on_render else url_for('verify_email', token=token, _external=True)
+
+    html = f"""
+        <p>Hi!</p>
+        <p>Click the link below to verify your email:</p>
+        <a href="{verify_url}">Verify Email</a>
+        <p>This link will expire in 1 hour.</p>
+    """
+
+    msg = Message(
+        subject="Verify Your Email",
+        recipients=[user_email],
+        html=html,
+        sender=app.config.get('MAIL_USERNAME', 'noreply@example.com')
+    )
+
+    try:
+        mail.send(msg)
+        print(f"✅ Verification email sent to {user_email}")
+    except Exception as e:
+        print("❌ Could not send verification email:", e)
 
     token = generate_email_token(user_email)
     verify_url = f"{BASE_URL}/verify_email/{token}"
