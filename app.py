@@ -26,8 +26,8 @@ app = Flask(__name__)
 
 # ------------------ EMAIL CONFIG ------------------
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'  # or your SMTP server
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_PORT'] = 465
+app.config['MAIL_USE_SSL'] = True
 app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')  # your email
 app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')  # app password or SMTP password
 app.config['MAIL_DEFAULT_SENDER'] = app.config['MAIL_USERNAME']
@@ -248,25 +248,44 @@ def confirm_email_token(token, expiration=3600):
     return s.loads(token, salt='email-verify', max_age=expiration)
 
 def send_verification_email(user_email):
-    token = generate_email_token(user_email)
-    verify_url = url_for('verify_email', token=token, _external=True)
-
-    html = f"""
-        <p>Hi!</p>
-        <p>Click the link below to verify your email:</p>
-        <a href="{verify_url}">Verify Email</a>
-        <p>This link will expire in 1 hour.</p>
     """
+    Send a verification email to the user.
+    Logs errors instead of crashing the app.
+    """
+    try:
+        # 1️⃣ Generate token & verification URL
+        token = generate_email_token(user_email)
+        verify_url = url_for('verify_email', token=token, _external=True)
 
-    msg = Message(
-        subject="Verify Your Email",
-        recipients=[user_email],
-        html=html,
-        sender=app.config['MAIL_USERNAME']  # ✅ REQUIRED
-    )
+        # 2️⃣ Compose email HTML
+        html = f"""
+            <p>Hi!</p>
+            <p>Click the link below to verify your email:</p>
+            <a href="{verify_url}">Verify Email</a>
+            <p>This link will expire in 1 hour.</p>
+        """
 
-    mail.send(msg)
-    print(f"✅ Verification email sent to {user_email}")
+        # 3️⃣ Create Message
+        msg = Message(
+            subject="Verify Your Email",
+            recipients=[user_email],
+            html=html,
+            sender=app.config.get('MAIL_USERNAME') or 'noreply@example.com'
+        )
+
+        # 4️⃣ Send email
+        mail.send(msg)
+        print(f"✅ Verification email sent to {user_email}")
+
+    except Exception as e:
+        # 5️⃣ Catch all errors and log
+        print(f"❌ Failed to send verification email to {user_email}: {e}")
+        # Optional: flash message to user without breaking flow
+        flash(
+            "We could not send a verification email. "
+            "Please contact support or try again later.",
+            "warning"
+        )
 
 @app.route('/api/notification-count')
 @login_required
