@@ -84,7 +84,7 @@
       border: none;
       border-radius: 1rem;
       box-shadow: 0 6px 18px rgba(0,0,0,0.15);
-      max-width: 420px;
+      max-width: 500px;
       width: 100%;
       padding: 20px;
       flex: 1;
@@ -241,7 +241,7 @@
             </div>
 
           <small class="text-muted">
-            Must be at least 6 characters, include uppercase, number, and special character
+            Must be at least 8 characters, include uppercase, number, and special character
           </small>
           </div>
 
@@ -449,7 +449,7 @@ const signupBtn = document.getElementById("signupBtn");
 passwordInput.addEventListener("input", () => {
   const password = passwordInput.value;
 
-  const hasLength = password.length >= 6;
+  const hasLength = password.length >= 8;
   const hasUpper = /[A-Z]/.test(password);
   const hasLower = /[a-z]/.test(password);
   const hasNumber = /[0-9]/.test(password);
