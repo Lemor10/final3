@@ -249,8 +249,7 @@ def confirm_email_token(token, expiration=3600):
 
 def send_verification_email(user_email):
     token = generate_email_token(user_email)
-    # Use BASE_URL in production
-    verify_url = f"{BASE_URL}/verify_email/{token}" if on_render else url_for('verify_email', token=token, _external=True)
+    verify_url = url_for('verify_email', token=token, _external=True)
 
     html = f"""
         <p>Hi!</p>
@@ -263,30 +262,7 @@ def send_verification_email(user_email):
         subject="Verify Your Email",
         recipients=[user_email],
         html=html,
-        sender=app.config.get('MAIL_USERNAME', 'noreply@example.com')
-    )
-
-    try:
-        mail.send(msg)
-        print(f"✅ Verification email sent to {user_email}")
-    except Exception as e:
-        print("❌ Could not send verification email:", e)
-
-    token = generate_email_token(user_email)
-    verify_url = f"{BASE_URL}/verify_email/{token}"
-
-    html = f"""
-        <p>Hi!</p>
-        <p>Click the link below to verify your email:</p>
-        <a href="{verify_url}">Verify Email</a>
-        <p>This link will expire in 1 hour.</p>
-    """
-
-    msg = Message(
-        subject="Verify Your Email",
-        recipients=[user_email],
-        html=html,
-        sender=app.config['MAIL_USERNAME']
+        sender=app.config['MAIL_USERNAME']  # ✅ REQUIRED
     )
 
     mail.send(msg)
@@ -418,53 +394,45 @@ def signup():
         contact = request.form['contact']
         address = request.form['address']
         password = request.form['password']
-        confirm_password = request.form['confirm_password']
+        confirm_password = request.form['confirm_password']  # 👈 ADD THIS
 
-        # 1️⃣ Confirm password
+        # ✅ 1. Confirm password check (ADD HERE)
         if password != confirm_password:
             flash('Passwords do not match.', 'error')
             return redirect(url_for('signup'))
 
-        # 2️⃣ Password validation
+        # ✅ 2. Optional: Password length validation
         if len(password) < 8 \
-           or not re.search(r"[A-Z]", password) \
-           or not re.search(r"[0-9]", password) \
-           or not re.search(r"[^A-Za-z0-9]", password):
+        or not re.search(r"[A-Z]", password) \
+        or not re.search(r"[0-9]", password) \
+        or not re.search(r"[^A-Za-z0-9]", password):
             flash(
-                "Password must be at least 8 characters and include uppercase, number, and special character.",
+                "Password must be at least 6 characters and include uppercase, number, and special character.",
                 "error"
             )
             return redirect(url_for("signup"))
 
-        # 3️⃣ Check if email exists
+        # ✅ 3. Check if email already exists
         if User.query.filter_by(email=email).first():
             flash('Email already registered.', 'error')
             return redirect(url_for('signup'))
 
-        # 4️⃣ Create user
+        # ✅ 4. Create user only if all validations pass
         user = User(
             email=email,
             name=name,
             contact=contact,
             address=address,
-            role='owner',
-            email_verified=False if on_render else True  # ✅ Auto-verify locally
+            role='owner'
         )
         user.set_password(password)
+
         db.session.add(user)
         db.session.commit()
 
-        # 5️⃣ Send verification email only in Render
-        if on_render:
-            try:
-                send_verification_email(user.email)
-                flash("Verification email sent! Check your inbox.", "info")
-            except Exception as e:
-                print("❌ Failed to send verification email:", e)
-                flash("Could not send verification email. Contact admin.", "danger")
-        else:
-            flash("Signup successful (local). Email verification skipped.", "info")
+        send_verification_email(user.email)  # ✅ send email
 
+        flash("Verification email sent! Check your inbox.", "info")
         return redirect(url_for("login"))
 
     return render_template('signup.html')
@@ -933,6 +901,7 @@ def admin_delete_owner(owner_id):
     db.session.delete(owner)
     db.session.commit()
 
+    flash("Owner deleted successfully.", "success")
     return redirect(url_for('admin_dashboard'))
 
 # Export CSV
