@@ -49,63 +49,56 @@
         <button class="btn btn-danger btn-qr" onclick="stopScanner()">Stop Camera</button>
     </div>
 </div>
+<div id="qr-reader" style="width: 100%; max-width: 350px; margin: auto;"></div>
+<div class="d-flex justify-content-center mt-2">
+    <button id="switchCamera" class="btn btn-outline-secondary btn-qr w-30">
+        Switch Camera
+    </button>
+</div>
 
 <script src="https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
 <script>
 let html5QrCode;
-let isScanning = false;
+let cameras = [];
+let currentCameraIndex = 0;
+let started = false;
 
-function startScanner() {
-    if (isScanning) return;
+async function initAndStart() {
+  if (started) return;
 
-    html5QrCode = new Html5Qrcode("reader");
-    isScanning = true;
+  cameras = await Html5Qrcode.getCameras();
+  if (!cameras.length) {
+    alert("No camera found");
+    return;
+  }
 
-    Html5Qrcode.getCameras().then(cameras => {
-        if (!cameras || cameras.length === 0) {
-            alert("No camera found on this device.");
-            return;
-        }
+  html5QrCode = new Html5Qrcode("qr-reader");
 
-        const cameraId = cameras[0].id;
+  await html5QrCode.start(
+    cameras[currentCameraIndex].id,
+    { fps: 10, qrbox: 250 },
+    decodedText => {
+      console.log("QR:", decodedText);
+      html5QrCode.stop();
+    }
+  );
 
-        html5QrCode.start(
-            cameraId,
-            {
-                fps: 10,
-                qrbox: { width: 220, height: 220 }
-            },
-            qrText => {
-                isScanning = false;
-                html5QrCode.stop().then(() => {
-                    window.location.href = qrText;
-                });
-            },
-            errorMessage => {
-                // optional: console.log(errorMessage);
-            }
-        );
-
-    }).catch(err => {
-        alert("Camera permission denied or not supported.");
-        console.error(err);
-    });
+  started = true;
 }
 
-function stopScanner() {
-    if (html5QrCode && isScanning) {
-        html5QrCode.stop().then(() => {
-            isScanning = false;
-        });
-    }
-}
-</script>
+/* FIRST USER INTERACTION */
+document.addEventListener("click", initAndStart, { once: true });
+document.addEventListener("touchstart", initAndStart, { once: true });
 
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    if (window.innerWidth <= 768) {
-        startScanner();
-    }
-});
+async function switchCamera() {
+  if (!html5QrCode || cameras.length < 2) return;
+
+  await html5QrCode.stop();
+  currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
+  initAndStart();
+}
+
+document.getElementById("switchCamera").addEventListener("click", switchCamera);
 </script>
 {% endblock %}
