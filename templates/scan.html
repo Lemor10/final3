@@ -14,17 +14,18 @@
             font-weight: 600;
             margin-bottom: 30px;
         }
+
         #reader {
-            margin: 0 auto 20px;
-            width: 70%;
+            width: 100%;
+            max-width: 320px;
+            margin: 0 auto 15px;
             border-radius: 1rem;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
-            padding: 10px;
-            background-color: #fff;
+            overflow: hidden;
         }
+
         .btn-qr {
-            padding: 10px 25px;
-            font-size: 16px;
+            padding: 8px 14px;
+            font-size: 14px;
             margin: 5px;
             border-radius: 0.5rem;
             font-weight: 500;
@@ -49,51 +50,62 @@
     </div>
 </div>
 
+<script src="https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js"></script>
 <script>
 let html5QrCode;
-let scanned = false;
+let isScanning = false;
 
 function startScanner() {
-    if (!Html5Qrcode) {
-        alert("QR library not loaded");
-        return;
-    }
+    if (isScanning) return;
 
-    scanned = false;
     html5QrCode = new Html5Qrcode("reader");
+    isScanning = true;
 
     Html5Qrcode.getCameras().then(cameras => {
-        if (cameras.length === 0) {
-            alert("No camera found");
+        if (!cameras || cameras.length === 0) {
+            alert("No camera found on this device.");
             return;
         }
 
+        const cameraId = cameras[0].id;
+
         html5QrCode.start(
-            cameras[0].id,
-            { fps: 10, qrbox: 250 },
-            (qrCodeMessage) => {
-                if (scanned) return;
-                scanned = true;
-
-                html5QrCode.stop();
-
-                if (qrCodeMessage.startsWith("http")) {
-                    window.location.href = qrCodeMessage;
-                } else {
-                    window.location.href = `/dog/${qrCodeMessage}`;
-                }
+            cameraId,
+            {
+                fps: 10,
+                qrbox: { width: 220, height: 220 }
+            },
+            qrText => {
+                isScanning = false;
+                html5QrCode.stop().then(() => {
+                    window.location.href = qrText;
+                });
+            },
+            errorMessage => {
+                // optional: console.log(errorMessage);
             }
         );
+
     }).catch(err => {
+        alert("Camera permission denied or not supported.");
         console.error(err);
-        alert("Camera permission denied");
     });
 }
 
 function stopScanner() {
-    if (html5QrCode) {
-        html5QrCode.stop();
+    if (html5QrCode && isScanning) {
+        html5QrCode.stop().then(() => {
+            isScanning = false;
+        });
     }
 }
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    if (window.innerWidth <= 768) {
+        startScanner();
+    }
+});
 </script>
 {% endblock %}
