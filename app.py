@@ -518,7 +518,7 @@ def login():
             flash("Incorrect password. Please try again.", "danger")
             return redirect(url_for('login'))
         
-        if not user.is_verified:
+        if user.role != 'admin' and not user.is_verified:
             flash("Please verify your email first!", "warning")
             return redirect(url_for("login"))
 
