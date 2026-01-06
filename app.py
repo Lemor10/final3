@@ -417,61 +417,74 @@ def format_breed(breed):
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
-        email = request.form['email']
-        name = request.form['name']
-        contact = request.form['contact']
-        address = request.form['address']
-        password = request.form['password']
-        confirm_password = request.form['confirm_password']  # 👈 ADD THIS
+        try:
+            email = request.form['email']
+            name = request.form['name']
+            contact = request.form['contact']
+            address = request.form['address']
+            password = request.form['password']
+            confirm_password = request.form['confirm_password']
 
-        # ✅ 1. Confirm password check (ADD HERE)
-        if password != confirm_password:
-            flash('Passwords do not match.', 'error')
-            return redirect(url_for('signup'))
+            # ✅ Password match
+            if password != confirm_password:
+                flash('Passwords do not match.', 'error')
+                return redirect(url_for('signup'))
 
-        # ✅ 2. Optional: Password length validation
-        if len(password) < 8 \
-        or not re.search(r"[A-Z]", password) \
-        or not re.search(r"[a-z]", password) \
-        or not re.search(r"[0-9]", password) \
-        or not re.search(r"[^A-Za-z0-9]", password):
-            flash(
-                "Password must be at least 8 characters and include uppercase, lowercase, number, and special character.",
-                "error"
+            # ✅ Password strength check
+            if len(password) < 8 \
+                or not re.search(r"[A-Z]", password) \
+                or not re.search(r"[a-z]", password) \
+                or not re.search(r"[0-9]", password) \
+                or not re.search(r"[^A-Za-z0-9]", password):
+                flash(
+                    "Password must be at least 8 characters and include uppercase, lowercase, number, and special character.",
+                    "error"
+                )
+                return redirect(url_for("signup"))
+
+            # ✅ Email already exists
+            if User.query.filter_by(email=email).first():
+                flash('Email already registered.', 'error')
+                return redirect(url_for('signup'))
+
+            # ✅ Create user
+            token = secrets.token_urlsafe(32)
+            user = User(
+                email=email,
+                name=name,
+                contact=contact,
+                address=address,
+                role='owner',
+                email_verification_token=token,
+                token_expires_at=datetime.utcnow() + timedelta(hours=24)
             )
+            user.set_password(password)
+            db.session.add(user)
+            db.session.commit()
+
+            # ✅ Only try sending email if Mail is configured
+            if app.config['MAIL_USERNAME'] and app.config['MAIL_PASSWORD']:
+                try:
+                    verify_link = url_for("verify_email", token=token, _external=True)
+                    msg = Message(
+                        "Verify Your DogRegistration Email",
+                        sender=app.config['MAIL_USERNAME'],
+                        recipients=[email]
+                    )
+                    msg.body = f"Hi {name},\n\nPlease verify your email by clicking this link:\n{verify_link}\n\nThis link expires in 24 hours."
+                    mail.send(msg)
+                except Exception as mail_error:
+                    print("⚠️ Failed to send email:", mail_error)
+                    flash("Could not send verification email. Please contact support.", "warning")
+
+            flash("Account created! Check your email to verify.", "success")
+            return redirect(url_for("login"))
+
+        except Exception as e:
+            # Catch-all for debugging in Render logs
+            print("❌ Signup error:", e)
+            flash("Something went wrong during signup. Try again.", "danger")
             return redirect(url_for("signup"))
-
-        # ✅ 3. Check if email already exists
-        if User.query.filter_by(email=email).first():
-            flash('Email already registered.', 'error')
-            return redirect(url_for('signup'))
-
-        # ✅ 4. Create user only if all validations pass
-        token = secrets.token_urlsafe(32)
-        user = User(
-            email=email,
-            name=name,
-            contact=contact,
-            address=address,
-            role='owner',
-            email_verification_token=token,
-            token_expires_at=datetime.utcnow() + timedelta(hours=24)
-        )
-        user.set_password(password)
-
-        db.session.add(user)
-        db.session.commit()
-
-              # Send verification email
-        verify_link = url_for("verify_email", token=token, _external=True)
-        msg = Message("Verify Your DogRegistration Email",
-                      sender=os.environ.get("MAIL_USERNAME"),
-                      recipients=[email])
-        msg.body = f"Hi {name},\n\nPlease verify your email by clicking this link:\n{verify_link}\n\nThis link expires in 24 hours."
-        mail.send(msg)
-
-        flash("Check your email to verify your account!", "info")
-        return redirect(url_for("login"))
 
     return render_template('signup.html')
 
