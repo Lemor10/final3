@@ -205,6 +205,22 @@
           </div>
 
           <div class="mb-2">
+            <label class="form-label">Username</label>
+            <input type="text"
+                  class="form-control"
+                  id="username"
+                  name="username"
+                  required
+                  minlength="4"
+                  maxlength="20"
+                  pattern="^[a-zA-Z0-9_]+$">
+            <small id="usernameFeedback" class="text-muted">
+              Letters, numbers, underscore (4–20 chars)
+            </small>
+          </div>
+
+
+          <div class="mb-2">
             <label class="form-label">Email address</label>
             <input type="email" class="form-control" name="email" required>
           </div>
@@ -485,6 +501,46 @@ passwordInput.addEventListener("input", () => {
     const pwd = document.querySelector("input[name='confirm_password']");
     pwd.type = this.checked ? "text" : "password";
   });
+</script>
+<script>
+const usernameInput = document.getElementById("username");
+const feedback = document.getElementById("usernameFeedback");
+
+let usernameValid = false;
+
+usernameInput.addEventListener("input", async () => {
+  const username = usernameInput.value.trim();
+
+  if (username.length < 4) {
+    feedback.textContent = "Minimum 4 characters";
+    feedback.className = "text-muted";
+    usernameValid = false;
+    signupBtn.disabled = true;
+    return;
+  }
+
+  try {
+    const res = await fetch(`/check-username?username=${encodeURIComponent(username)}`);
+    const data = await res.json();
+
+    feedback.textContent = data.message;
+
+    if (data.available) {
+      feedback.className = "text-success";
+      usernameValid = true;
+    } else {
+      feedback.className = "text-danger";
+      usernameValid = false;
+    }
+
+    signupBtn.disabled = !usernameValid;
+
+  } catch (err) {
+    feedback.textContent = "Unable to check username";
+    feedback.className = "text-danger";
+    signupBtn.disabled = true;
+  }
+});
 </script>
 </body>
 </html>

@@ -12,8 +12,8 @@ import qrcode, io, csv, uuid
 from io import BytesIO
 from flask import g
 import re
+from sqlalchemy import func
 from itsdangerous import URLSafeTimedSerializer
-from flask_mail import Mail, Message
 
 if os.environ.get("RENDER"):
     BASE_URL = os.environ.get("BASE_URL")
@@ -36,16 +36,7 @@ if on_render: app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_U
 else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:kTr9P7RtYrfQkSt3C5IunMp6nw23x7f5@dpg-d5b4l6re5dus73feks6g-a.oregon-postgres.render.com/drs' 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'  # or your provider
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
-app.config['MAIL_SUPPRESS_SEND'] = not (app.config['MAIL_USERNAME'] and app.config['MAIL_PASSWORD'])
-
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
-
-mail = Mail(app)
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -69,13 +60,7 @@ class User(UserMixin, db.Model):
     passive_deletes=True
     )
     
-    notifications = db.relationship(
-        "Notification",
-        backref="dog",
-        cascade="all, delete-orphan",
-        passive_deletes=True
-    )
-
+    username = db.Column(db.String(50), unique=True, nullable=False)  # 👈 ADD THIS
     email = db.Column(db.String(150), unique=True, nullable=False)
     name = db.Column(db.String(150))
     contact = db.Column(db.String(20))
@@ -257,6 +242,32 @@ def generate_admin_notifications(admin_user_id):
 
     db.session.commit()
 
+@app.route("/check-username")
+def check_username():
+    username = request.args.get("username", "").strip().lower()
+
+    # Rule validation (server-side)
+    if not re.match(r"^[a-z0-9_]{4,20}$", username):
+        return jsonify({
+            "available": False,
+            "message": "Invalid format (4–20 chars, letters/numbers/_ only)"
+        })
+
+    exists = User.query.filter(
+        func.lower(User.username) == username
+    ).first()
+
+    if exists:
+        return jsonify({
+            "available": False,
+            "message": "Username already taken"
+        })
+
+    return jsonify({
+        "available": True,
+        "message": "Username available"
+    })
+
 @app.route('/api/notification-count')
 @login_required
 def notification_count():
@@ -412,10 +423,11 @@ def signup():
     if request.method == 'POST':
         email = request.form['email']
         name = request.form['name']
+        username = request.form['username'].strip().lower()  # 👈 ADD THIS
         contact = request.form['contact']
         address = request.form['address']
         password = request.form['password']
-        confirm_password = request.form['confirm_password']  # 👈 ADD THIS
+        confirm_password = request.form['confirm_password']
 
         # ✅ 1. Confirm password check (ADD HERE)
         if password != confirm_password:
@@ -433,6 +445,11 @@ def signup():
                 "error"
             )
             return redirect(url_for("signup"))
+        
+# Check username uniqueness
+        if User.query.filter(db.func.lower(User.username) == username).first():
+            flash("Username already taken.", "error")
+            return redirect(url_for('signup'))
 
         # ✅ 3. Check if email already exists
         if User.query.filter_by(email=email).first():
@@ -443,6 +460,7 @@ def signup():
         user = User(
             email=email,
             name=name,
+            username=username,
             contact=contact,
             address=address,
             role='owner'
@@ -452,7 +470,6 @@ def signup():
         db.session.add(user)
         db.session.commit()
 
-        flash("Account created successfully! You may now log in.", "signup_success")
         return redirect(url_for("login"))
 
     return render_template('signup.html')
@@ -460,60 +477,71 @@ def signup():
 @app.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
+        username = request.form['username'].strip().lower()
         email = request.form['email']
-        user = User.query.filter_by(email=email).first()
+
+        user = User.query.filter_by(
+            username=username,
+            email=email
+        ).first()
+
         if not user:
-            flash("No account found with that email.", "danger")
+            flash("Username and email do not match.", "danger")
             return redirect(url_for('forgot_password'))
 
-        # Generate reset token
-        token = serializer.dumps(user.email, salt='reset-password')
-        reset_link = url_for('reset_password', token=token, _external=True)
+        # Create reset token
+        token = serializer.dumps(user.id, salt='reset-password')
 
-        # Send email safely
-        if app.config['MAIL_SUPPRESS_SEND']:
-            print(f"[DEV] Reset link for {user.email}: {reset_link}")
-            flash("Password reset email (dev mode) sent! Check console.", "info")
-        else:
-            try:
-                msg = Message(
-                    subject="Password Reset Request",
-                    sender=app.config['MAIL_USERNAME'],
-                    recipients=[user.email],
-                    body=f"Click the link to reset your password: {reset_link}"
-                )
-                mail.send(msg)
-                flash("Password reset email sent! Check your inbox.", "success")
-            except Exception as e:
-                print(f"[ERROR] Mail send failed: {e}")
-                flash("Failed to send email. Contact admin.", "danger")
-
-        return redirect(url_for('login'))
+        return redirect(url_for('reset_password', token=token))
 
     return render_template('forgot_password.html')
 
 @app.route('/reset_password/<token>', methods=['GET', 'POST'])
 def reset_password(token):
     try:
-        email = serializer.loads(token, salt='reset-password', max_age=3600)  # 1 hour expiry
-    except:
-        flash("The reset link is invalid or expired.", "danger")
+        user_id = serializer.loads(
+            token,
+            salt='reset-password',
+            max_age=600  # 10 minutes
+        )
+    except Exception:
+        flash("Reset session expired or invalid. Try again.", "danger")
+        return redirect(url_for('forgot_password'))
+
+    user = User.query.get(user_id)
+    if not user:
+        flash("User not found.", "danger")
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        password = request.form['password']
-        confirm_password = request.form['confirm_password']
-        if password != confirm_password:
+        password = request.form.get('password', '')
+        confirm = request.form.get('confirm_password', '')
+
+        # ✅ 1. Confirm password check
+        if password != confirm:
             flash("Passwords do not match.", "danger")
             return redirect(request.url)
 
-        user = User.query.filter_by(email=email).first()
+        # ✅ 2. Password strength check (same as Signup)
+        if len(password) < 8 \
+           or not re.search(r"[A-Z]", password) \
+           or not re.search(r"[a-z]", password) \
+           or not re.search(r"[0-9]", password) \
+           or not re.search(r"[^A-Za-z0-9]", password):
+            flash(
+                "Password must be at least 8 characters and include uppercase, lowercase, number, and special character.",
+                "danger"
+            )
+            return redirect(request.url)
+
+        # ✅ 3. Save new password
         user.set_password(password)
         db.session.commit()
 
-        flash("Password updated successfully! You can now log in.", "success")
+        flash("Password reset successful! You can now log in.", "success")
         return redirect(url_for('login'))
 
+    # GET request → show form
     return render_template('reset_password.html')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -939,7 +967,6 @@ def admin_delete_owner(owner_id):
     owner = User.query.get(owner_id)
 
     if not owner:
-        flash("Owner not found.", "danger")
         return redirect(url_for('admin_dashboard'))
 
     # Optional: delete owner's dogs as well
@@ -950,7 +977,6 @@ def admin_delete_owner(owner_id):
     db.session.delete(owner)
     db.session.commit()
 
-    flash("Owner deleted successfully.", "success")
     return redirect(url_for('admin_dashboard'))
 
 # Export CSV
@@ -969,13 +995,6 @@ def export_csv():
     output.seek(0)
     return send_file(output, mimetype='text/csv', as_attachment=True, download_name='dogs.csv')
 
-    
-
-# Whoami for debug
-@app.route('/whoami')
-@login_required
-def whoami():
-    return f"Logged in as {current_user.email} with role {current_user.role}"
 # ------------------ Run App ------------------
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT',5000)), debug=True)
