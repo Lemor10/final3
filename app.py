@@ -14,6 +14,7 @@ from flask import g
 import re
 from flask_mail import Mail, Message
 import secrets
+from dotenv import load_dotenv
 
 if os.environ.get("RENDER"):
     BASE_URL = os.environ.get("BASE_URL")
@@ -35,6 +36,8 @@ on_render = os.environ.get('RENDER') is not None
 if on_render: app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') 
 else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:kTr9P7RtYrfQkSt3C5IunMp6nw23x7f5@dpg-d5b4l6re5dus73feks6g-a.oregon-postgres.render.com/drs' 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+load_dotenv()
 
 app.config.update(
     MAIL_SERVER=os.environ.get("MAIL_SERVER"),
@@ -76,6 +79,11 @@ class User(UserMixin, db.Model):
     )
 
     email = db.Column(db.String(150), unique=True, nullable=False)
+    email_verification_token = db.Column(db.String(100), nullable=True)  # ✅ add this
+    is_verified = db.Column(db.Boolean, default=False)
+    token_expires_at = db.Column(db.DateTime, nullable=True)
+    reset_token = db.Column(db.String(100), nullable=True)
+    reset_token_expires_at = db.Column(db.DateTime, nullable=True)
     name = db.Column(db.String(150))
     contact = db.Column(db.String(20))
     address = db.Column(db.String(255))
@@ -334,13 +342,13 @@ def delete_notification(notif_id):
 with app.app_context():
     admin_email = os.environ.get('ADMIN_EMAIL', 'admin@gmail.com')
     admin_pass = os.environ.get('ADMIN_PASSWORD', 'admin123')
-    admin = User.query.filter_by(email=admin_email).first()
-    if not admin:
-        admin = User(email=admin_email, name='Administrator', role='admin')
-        admin.set_password(admin_pass)
-        db.session.add(admin)
-        db.session.commit()
-        print(f"✅ Created admin: {admin_email}")
+#    admin = User.query.filter_by(email=admin_email).first()
+#    if not admin:
+#       admin = User(email=admin_email, name='Administrator', role='admin')
+#        admin.set_password(admin_pass)
+#        db.session.add(admin)
+#        db.session.commit()
+#        print(f"✅ Created admin: {admin_email}")
 
 # ------------------ Routes ------------------
 
