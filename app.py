@@ -943,24 +943,6 @@ def admin_delete_owner(owner_id):
     flash("Owner deleted successfully.", "success")
     return redirect(url_for('admin_dashboard'))
 
-# Export CSV
-@app.route('/admin/export_csv')
-@login_required
-def export_csv():
-    if current_user.role != 'admin':
-        abort(403)
-    dogs = Dog.query.all()
-    si = io.StringIO()
-    writer = csv.writer(si)
-    writer.writerow(['id','uuid','name','breed','age','owner_name','owner_email'])
-    for d in dogs:
-        writer.writerow([d.id, d.uuid, d.name, d.breed, d.age, d.owner_name, d.owner.email if d.owner else ''])
-    output = io.BytesIO(si.getvalue().encode())
-    output.seek(0)
-    return send_file(output, mimetype='text/csv', as_attachment=True, download_name='dogs.csv')
-
-    
-
 # Whoami for debug
 @app.route('/whoami')
 @login_required
