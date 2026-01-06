@@ -12,6 +12,8 @@ import qrcode, io, csv, uuid
 from io import BytesIO
 from flask import g
 import re
+from flask_mail import Mail, Message
+import secrets
 
 if os.environ.get("RENDER"):
     BASE_URL = os.environ.get("BASE_URL")
@@ -33,6 +35,16 @@ on_render = os.environ.get('RENDER') is not None
 if on_render: app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') 
 else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:kTr9P7RtYrfQkSt3C5IunMp6nw23x7f5@dpg-d5b4l6re5dus73feks6g-a.oregon-postgres.render.com/drs' 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+app.config.update(
+    MAIL_SERVER=os.environ.get("MAIL_SERVER"),
+    MAIL_PORT=int(os.environ.get("MAIL_PORT", 587)),
+    MAIL_USE_TLS=os.environ.get("MAIL_USE_TLS") == "True",
+    MAIL_USERNAME=os.environ.get("MAIL_USERNAME"),
+    MAIL_PASSWORD=os.environ.get("MAIL_PASSWORD")
+)
+
+mail = Mail(app)
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -427,22 +439,47 @@ def signup():
             return redirect(url_for('signup'))
 
         # ✅ 4. Create user only if all validations pass
+        token = secrets.token_urlsafe(32)
         user = User(
             email=email,
             name=name,
             contact=contact,
             address=address,
-            role='owner'
+            role='owner',
+            email_verification_token=token,
+            token_expires_at=datetime.utcnow() + timedelta(hours=24)
         )
         user.set_password(password)
 
         db.session.add(user)
         db.session.commit()
 
-        flash("Account created successfully! You may now log in.", "signup_success")
+              # Send verification email
+        verify_link = url_for("verify_email", token=token, _external=True)
+        msg = Message("Verify Your DogRegistration Email",
+                      sender=os.environ.get("MAIL_USERNAME"),
+                      recipients=[email])
+        msg.body = f"Hi {name},\n\nPlease verify your email by clicking this link:\n{verify_link}\n\nThis link expires in 24 hours."
+        mail.send(msg)
+
+        flash("Check your email to verify your account!", "info")
         return redirect(url_for("login"))
 
     return render_template('signup.html')
+
+@app.route("/verify-email/<token>")
+def verify_email(token):
+    user = User.query.filter_by(email_verification_token=token).first_or_404()
+    if user.token_expires_at < datetime.utcnow():
+        flash("Verification link expired.", "danger")
+        return redirect(url_for("signup"))
+
+    user.email_verified = True
+    user.email_verification_token = None
+    user.token_expires_at = None
+    db.session.commit()
+    flash("Email verified! You can now login.", "success")
+    return redirect(url_for("login"))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -459,6 +496,10 @@ def login():
         if not user.check_password(password):
             flash("Incorrect password. Please try again.", "danger")
             return redirect(url_for('login'))
+        
+        if not user.email_verified:
+            flash("Please verify your email first!", "warning")
+            return redirect(url_for("login"))
 
         login_user(user)
 

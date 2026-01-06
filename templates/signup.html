@@ -84,7 +84,7 @@
       border: none;
       border-radius: 1rem;
       box-shadow: 0 6px 18px rgba(0,0,0,0.15);
-      max-width: 500px;
+      max-width: 530px;
       width: 100%;
       padding: 20px;
       flex: 1;
@@ -201,29 +201,29 @@
         <form method="POST">
           <div class="mb-2">
             <label class="form-label">Full Name</label>
-            <input type="text" class="form-control form-control-sm" name="name" required>
+            <input type="text" class="form-control" name="name" required>
           </div>
 
           <div class="mb-2">
             <label class="form-label">Email address</label>
-            <input type="email" class="form-control form-control-sm" name="email" required>
+            <input type="email" class="form-control" name="email" required>
           </div>
 
           <div class="mb-2">
             <label class="form-label">Contact Number</label>
-            <input type="tel" class="form-control form-control-sm" name="contact"
+            <input type="tel" class="form-control" name="contact"
                    inputmode="numeric" pattern="[0-9]{10,11}" required>
           </div>
 
           <div class="mb-2">
             <label class="form-label">Owner Address</label>
-            <input type="text" class="form-control form-control-sm" name="address" required>
+            <input type="text" class="form-control" name="address" required>
           </div>
 
           <div class="mb-2">
             <label class="form-label">Password</label>
 
-            <div class="input-group input-group-sm">
+            <div class="input-group">
               <input type="password"
                     class="form-control"
                     id="password"
@@ -240,24 +240,30 @@
               <small id="passwordStrengthText" class="text-muted"></small>
             </div>
 
-          <small class="text-muted">
+          <small class="text-muted" style="font-size:13px;">
             Must be at least 8 characters, include uppercase, number, and special character
           </small>
           </div>
 
-
           <div class="mb-2">
             <label class="form-label">Confirm Password</label>
-            <div class="input-group input-group-sm">
+            <div class="input-group">
               <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
             </div>
             <div class="invalid-feedback">
               Passwords do not match.
             </div>
           </div>
+          <div class="form-check text-end mt-3 mb-2">
+            <input class="form-check-input" type="checkbox" id="showPassword">
+            <label class="form-check-label small text-muted" for="showPassword">
+              Show password
+            </label>
+          </div>
+
 
           <button type="submit"
-                  class="btn btn-primary w-100 mt-2"
+                  class="btn btn-primary w-100 mt-3 mb-2"
                   id="signupBtn"
                   disabled>
             <i class="bi bi-paw-fill text-primary me-1"></i>
@@ -265,19 +271,11 @@
           </button>
         </form>
 
-        <div class="text-center text-muted mt-3" style="font-size:13px;">or continue with</div>
+      <div class="d-flex align-items-center">
+        <hr class="flex-grow-1">
+      </div>
 
-        <a href="#" class="btn-google mt-2">
-          <img src="https://www.svgrepo.com/show/475656/google-color.svg" width="18">
-          Continue with Google
-        </a>
-
-        <a href="#" class="btn-facebook mt-2">
-          <img src="https://www.svgrepo.com/show/448224/facebook.svg" width="18">
-          Continue with Facebook
-        </a>
-
-        <p class="text-center text-muted mt-3 mb-0" style="font-size:13px;">
+        <p class="text-center text-muted mt-1 mb-0" style="font-size:15px;">
           Already have an account?
           <a href="{{ url_for('login') }}" class="fw-semibold text-decoration-none">Sign In</a>
         </p>
@@ -476,6 +474,17 @@ passwordInput.addEventListener("input", () => {
   signupBtn.disabled = !(hasLength && hasUpper && hasNumber && hasSpecial);
 });
 </script>
-
+<script>
+  document.getElementById("showPassword")?.addEventListener("change", function () {
+    const pwd = document.querySelector("input[name='password']");
+    pwd.type = this.checked ? "text" : "password";
+  });
+</script>
+<script>
+  document.getElementById("showPassword")?.addEventListener("change", function () {
+    const pwd = document.querySelector("input[name='confirm_password']");
+    pwd.type = this.checked ? "text" : "password";
+  });
+</script>
 </body>
 </html>
