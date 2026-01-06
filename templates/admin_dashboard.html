@@ -32,6 +32,12 @@
   border-radius: 10px;
 }
 
+.dog-img:hover {
+  cursor: pointer;
+  transform: scale(1.03);
+  transition: 0.2s;
+}
+
 .qr-clickable:hover {
   transform: scale(1.05);
   transition: 0.2s;
@@ -89,12 +95,13 @@
                 <td>{{ u.name }}</td>
                 <td>{{ u.role }}</td>
                 <td>
-                  <form method="POST"
-                        action="{{ url_for('admin_delete_owner', owner_id=u.id) }}"
-                        class="d-inline"
-                        onsubmit="return confirm('Are you sure you want to delete this owner? This action cannot be undone.');">
-                    <button class="btn btn-danger btn-sm">Delete</button>
-                  </form>
+                <button type="button" 
+                        class="btn btn-danger btn-sm" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#deleteOwnerModal" 
+                        onclick="setDeleteOwnerForm('{{ url_for('admin_delete_owner', owner_id=u.id) }}')">
+                  Delete
+                </button>
                 </td>
               </tr>
               {% else %}
@@ -150,11 +157,13 @@
 
               <p class="text-success small fw-semibold mb-2">Vaccinated</p>
 
+              {% if d.qr_code %}
               <!-- QR Code -->
-              <img src="{{ url_for('qrcodes', filename=d.qr_code) }}"
+              <img src="{{ url_for('qrcodes', filename=d.qr_code) }}" alt="{{ d.name}} QR"
                   class="border rounded p-1 mb-2 qr-clickable"
                   style="height: 90px; width: 90px; cursor: pointer;"
                   onclick="openQrFullscreen(this.src)">
+              {% endif %}
 
               <div class="mt-2">
                 <button class="btn btn-primary btn-sm"
@@ -163,12 +172,13 @@
                   Edit
                 </button>
 
-                <form method="POST"
-                      action="{{ url_for('admin_delete_dog', dog_id=d.id) }}"
-                      class="d-inline"
-                      onsubmit="return confirm('Delete this dog?');">
-                  <button class="btn btn-danger btn-sm">Delete</button>
-                </form>
+                <button type="button" 
+                        class="btn btn-danger btn-sm" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#deleteDogModal" 
+                        onclick="setDeleteDogForm('{{ url_for('admin_delete_dog', dog_id=d.id) }}')">
+                  Delete
+                </button>
               </div>
             </div>
 
@@ -189,10 +199,12 @@
           <div class="row g-3 align-items-center">
             
             <!-- Dog Image -->
-            <div class="col-4 col-md-4">
+            <div class="col-lg-4 col-12 dog-img-wrapper">
               <img src="{{ url_for('static', filename='dog_images/' ~ d.image) }}"
-                   class="img-fluid rounded border"
-                   style="height: 160px; width: 100%; object-fit: cover;">
+                  class="dog-img"
+                  alt="{{ d.name }}"
+                  style="cursor: pointer;"
+                  onclick="openQrFullscreen(this.src)">
             </div>
 
             <!-- Dog Info -->
@@ -201,20 +213,20 @@
               <p class="text-muted small mb-1">Breed: {{ d.breed }}</p>
               <p class="text-muted small mb-1">Owner: {{ d.owner_name or "Stray" }}</p>
               <p class="text-muted small mb-1">Last Vaccinated: 
-  {{ d.last_vaccinated if d.last_vaccinated else "N/A" }}
-</p>
-
-<p class="text-muted small mb-2">Next Vaccination: 
-  {{ d.next_vaccination if d.next_vaccination else "N/A" }}
-</p>
+                {{ d.last_vaccinated if d.last_vaccinated else "N/A" }}
+              </p>
+              <p class="text-muted small mb-2">Next Vaccination: 
+                {{ d.next_vaccination if d.next_vaccination else "N/A" }}
+              </p>
 
               <p class="text-danger small fw-semibold mb-2">Not Vaccinated</p>
-
+              {% if d.qr_code %}
               <!-- QR Code -->
-              <img src="{{ url_for('qrcodes', filename=d.qr_code) }}"
-                  class="border rounded p-1 mb-2 qr-clickable"
-                  style="height: 90px; width: 90px; cursor: pointer;"
-                  onclick="openQrFullscreen(this.src)">
+                <img src="{{ url_for('qrcodes', filename=d.qr_code) }}" alt="{{ d.name}} QR"
+                    class="rounded p-1 mb-2 qr-clickable"
+                    style="height: 90px; width: 90px; cursor: pointer;"
+                    onclick="openQrFullscreen(this.src)">
+              {% endif %}
 
               <div class="mt-2">
                 <button class="btn btn-primary btn-sm"
@@ -223,12 +235,13 @@
                   Edit
                 </button>
 
-                <form method="POST"
-                      action="{{ url_for('admin_delete_dog', dog_id=d.id) }}"
-                      class="d-inline"
-                      onsubmit="return confirm('Delete this dog?');">
-                  <button class="btn btn-danger btn-sm">Delete</button>
-                </form>
+                <button type="button" 
+                        class="btn btn-danger btn-sm" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#deleteDogModal" 
+                        onclick="setDeleteDogForm('{{ url_for('admin_delete_dog', dog_id=d.id) }}')">
+                  Delete
+                </button>
               </div>
             </div>
 
@@ -385,6 +398,44 @@
     </div>
   </div>
 </div>
+<!-- Delete Owner Confirmation Modal -->
+<div class="modal fade" id="deleteOwnerModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST" id="deleteOwnerForm">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title">Remove Account</h5>
+        </div>
+        <div class="modal-body">
+          Are you sure you want to Remove this Account? This action cannot be undone.
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Remove</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<!-- Delete Dog Confirmation Modal -->
+<div class="modal fade" id="deleteDogModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST" id="deleteDogForm">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title">Delete Dog</h5>
+        </div>
+        <div class="modal-body">
+          Are you sure you want to delete this dog? This action cannot be undone.
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Delete Dog</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -398,6 +449,16 @@ function openQrFullscreen(src) {
     document.getElementById("qrFullscreenModal")
   );
   modal.show();
+}
+</script>
+<script>
+function setDeleteDogForm(actionUrl) {
+  document.getElementById("deleteDogForm").action = actionUrl;
+}
+</script>
+<script>
+function setDeleteOwnerForm(actionUrl) {
+  document.getElementById("deleteOwnerForm").action = actionUrl;
 }
 </script>
 {% endblock %}

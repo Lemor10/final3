@@ -7,7 +7,7 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, curren
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.middleware.proxy_fix import ProxyFix
-from datetime import date, datetime
+from datetime import date, datetime,timedelta
 import qrcode, io, csv, uuid
 from io import BytesIO
 from flask import g
@@ -131,39 +131,45 @@ def generate_vaccination_notifications(user_id):
 
         days_left = (dog.next_vaccination - today).days
 
-        # Prevent duplicates
+        # Look for existing notification for this dog
         existing = Notification.query.filter_by(
             user_id=user_id,
             dog_id=dog.id,
-            due_date=dog.next_vaccination,
+            dismissed=False
         ).first()
 
-        if existing:
-            continue
-
         if 0 <= days_left <= 7:
-            notif = Notification(
-                user_id=user_id,
-                dog_id=dog.id,
-                title="Vaccination Due Soon",
-                message=f"{dog.name} needs vaccination in {days_left} days!",
-                type="reminder",
-                due_date=dog.next_vaccination
-            )
-
+            message = f"{dog.name} needs vaccination in {days_left} days!"
+            title = "Vaccination Due Soon"
+            notif_type = "reminder"
         elif days_left < 0:
-            notif = Notification(
-                user_id=user_id,
-                dog_id=dog.id,
-                title="Vaccination Overdue",
-                message=f"{dog.name}'s vaccination is overdue!",
-                type="overdue",
-                due_date=dog.next_vaccination
-            )
+            message = f"{dog.name}'s vaccination is overdue!"
+            title = "Vaccination Overdue"
+            notif_type = "overdue"
         else:
+            # Vaccination is far in the future; delete existing reminder if exists
+            if existing:
+                existing.dismissed = True
+                db.session.commit()
             continue
 
-        db.session.add(notif)
+        if existing:
+            # Update message instead of creating new
+            existing.title = title
+            existing.message = message
+            existing.type = notif_type
+            existing.due_date = dog.next_vaccination
+        else:
+            # Create new notification
+            notif = Notification(
+                user_id=user_id,
+                dog_id=dog.id,
+                title=title,
+                message=message,
+                type=notif_type,
+                due_date=dog.next_vaccination
+            )
+            db.session.add(notif)
 
     db.session.commit()
 
@@ -173,54 +179,65 @@ def generate_admin_notifications(admin_user_id):
     - New stray dogs registered
     - Vaccination reminder (7 days before)
     - Vaccination overdue for stray dogs
+    - Notifications are updated daily and old ones auto-dismissed
     """
     today = date.today()
     stray_dogs = Dog.query.filter(Dog.owner_id == None).all()  # Stray dogs
 
     for dog in stray_dogs:
-        # Check if notification already exists for this dog and due_date
-        exists = Notification.query.filter_by(
+        # Check for existing notification for this dog
+        existing = Notification.query.filter_by(
             user_id=admin_user_id,
             dog_id=dog.id,
-            due_date=dog.next_vaccination if dog.next_vaccination else today
+            dismissed=False
         ).first()
-        if exists:
+
+        if not dog.next_vaccination:
+            # New stray dog notification
+            if not existing:
+                notif = Notification(
+                    user_id=admin_user_id,
+                    dog_id=dog.id,
+                    title="Stray Dog Alert",
+                    message=f"Stray dog '{dog.name}' is registered.",
+                    type="reminder",
+                    due_date=today
+                )
+                db.session.add(notif)
+            continue  # Skip further vaccination checks
+
+        days_left = (dog.next_vaccination - today).days
+
+        # Determine type and message
+        if 0 <= days_left <= 7:
+            title = "Stray Dog Vaccination Due Soon"
+            message = f"'{dog.name}' needs vaccination in {days_left} days!"
+            notif_type = "reminder"
+        elif days_left < 0:
+            title = "Stray Dog Vaccination Overdue"
+            message = f"'{dog.name}' vaccination is overdue!"
+            notif_type = "overdue"
+        else:
+            # Vaccination far in future, dismiss existing if any
+            if existing:
+                existing.dismissed = True
+                db.session.commit()
             continue
 
-        # 1️⃣ New stray dog notification
-        if not dog.next_vaccination:
+        if existing:
+            # Update the existing notification
+            existing.title = title
+            existing.message = message
+            existing.type = notif_type
+            existing.due_date = dog.next_vaccination
+        else:
+            # Create a new notification
             notif = Notification(
                 user_id=admin_user_id,
                 dog_id=dog.id,
-                title="Stray Dog Alert",
-                message=f"Stray dog '{dog.name}' is registered.",
-                type="reminder",
-                due_date=today
-            )
-            db.session.add(notif)
-            continue  # No vaccination info, skip further checks
-
-        # 2️⃣ Vaccination reminder (7 days before due)
-        days_left = (dog.next_vaccination - today).days
-        if 0 <= days_left <= 7:
-            notif = Notification(
-                user_id=admin_user_id,
-                dog_id=dog.id,
-                title="Stray Dog Vaccination Due Soon",
-                message=f"'{dog.name}' needs vaccination in {days_left} days!",
-                type="reminder",
-                due_date=dog.next_vaccination
-            )
-            db.session.add(notif)
-
-        # 3️⃣ Vaccination overdue
-        elif days_left < 0:
-            notif = Notification(
-                user_id=admin_user_id,
-                dog_id=dog.id,
-                title="Stray Dog Vaccination Overdue",
-                message=f"'{dog.name}' vaccination is overdue!",
-                type="overdue",
+                title=title,
+                message=message,
+                type=notif_type,
                 due_date=dog.next_vaccination
             )
             db.session.add(notif)
@@ -249,18 +266,27 @@ def admin_notifications():
     if current_user.role != 'admin':
         abort(403)
 
-    # Generate notifications for admin before fetching
-    admin = User.query.filter_by(role='admin').first()
-    if admin:
-        generate_admin_notifications(admin.id)
+    # Generate notifications dynamically before fetching
+    generate_admin_notifications(current_user.id)
 
-    # Fetch notifications
+    # Fetch only active (not dismissed) notifications
     notifications = Notification.query.filter_by(
         user_id=current_user.id,
         dismissed=False
     ).order_by(Notification.created_at.desc()).all()
 
-    return render_template('admin_notifications.html', notifications=notifications)
+    # Count unread for badge
+    unread_count = Notification.query.filter_by(
+        user_id=current_user.id,
+        is_read=False,
+        dismissed=False
+    ).count()
+
+    return render_template(
+        'admin_notifications.html',
+        notifications=notifications,
+        unread_count=unread_count
+    )
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -286,6 +312,7 @@ def delete_notification(notif_id):
     if notif.user_id != current_user.id:
         abort(403)
 
+    db.session.delete(notif)  # 🔹 actually remove
     notif.dismissed = True     # ✅ change first
     db.session.commit()       # ✅ then commit
 
@@ -304,6 +331,28 @@ with app.app_context():
         print(f"✅ Created admin: {admin_email}")
 
 # ------------------ Routes ------------------
+
+@app.before_request
+def auto_delete_old_notifications():
+    if not current_user.is_authenticated:
+        return
+
+    now = datetime.utcnow()
+
+    # 🔴 Delete READ notifications after 7 days
+    Notification.query.filter(
+        Notification.is_read == True,
+        Notification.created_at < now - timedelta(minutes=7)
+    ).delete(synchronize_session=False)
+
+    # 🔴 Delete UNREAD notifications after 14 days
+    Notification.query.filter(
+        Notification.is_read == False,
+        Notification.created_at < now - timedelta(minutes=14)
+    ).delete(synchronize_session=False)
+
+    db.session.commit()
+
 @app.before_request
 def load_notifications():
     if current_user.is_authenticated:
