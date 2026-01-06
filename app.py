@@ -495,7 +495,7 @@ def verify_email(token):
         flash("Verification link expired.", "danger")
         return redirect(url_for("signup"))
 
-    user.email_verified = True
+    user.is_verified = True
     user.email_verification_token = None
     user.token_expires_at = None
     db.session.commit()
@@ -518,7 +518,7 @@ def login():
             flash("Incorrect password. Please try again.", "danger")
             return redirect(url_for('login'))
         
-        if not user.email_verified:
+        if not user.is_verified:
             flash("Please verify your email first!", "warning")
             return redirect(url_for("login"))
 
