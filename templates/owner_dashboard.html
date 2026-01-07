@@ -4,11 +4,196 @@
 
 {% block styles %}
 <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #f8f9fa;
-        }
+body {
+    font-family: "Poppins", sans-serif;
+    background: #f8f9fa;  /* light gray background */
+    color: #212529;
+    min-height: 100vh;
+}
+
+.dashboard-container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 0 15px;
+}
+
+/* Stats cards */
+.stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+.stat-card {
+    flex: 1 1 200px;
+    text-align: center;
+    background: #ffffff;
+    border-radius: 1rem;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+}
+.stat-card h4 {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+.stat-card p {
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin: 0;
+}
+
+/* Collapsible system info */
+.collapsible {
+    background: #007bff;
+    color: white;
+    cursor: pointer;
+    padding: 0.75rem 1rem;
+    border: none;
+    border-radius: 0.5rem;
+    width: 100%;
+    text-align: left;
+    outline: none;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+.collapsible:after {
+    content: '\002B';
+    float: right;
+    font-weight: bold;
+}
+.collapsible.active:after {
+    content: "\2212";
+}
+.content {
+    padding: 0 1rem;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease-out;
+    background-color: #f1f3f5;
+    border-radius: 0 0 0.5rem 0.5rem;
+    margin-bottom: 1rem;
+}
+.content ul {
+    padding-left: 1.2rem;
+}
+
+/* System steps */
+.system-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 10px 0;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.collapsible.active + .content .system-steps {
+    opacity: 1;
+}
+.step-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #ffffff;
+    padding: 12px;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.step-card p {
+    margin: 0;
+    font-size: 0.95rem;
+}
+.step-icon {
+    font-size: 1.8rem;
+    flex-shrink: 0;
+    color: #007bff;
+}
+
+/* Dogs table */
+.dogs-table {
+    background: #ffffff;
+    border-radius: 0.75rem;
+    padding: 15px;
+    overflow-x: auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.dogs-table table {
+    width: 100%;
+    color: #212529;
+    background: transparent;
+}
+.dogs-table th, .dogs-table td {
+    border-color: #dee2e6;
+}
+.dogs-table tbody tr:hover {
+    background: #f1f3f5;
+}
+@media (max-width: 768px) {
+    .stats {
+        flex-direction: column;
+    }
+}
 </style>
 {% endblock %}
+
 {% block content %}
+<div class="dashboard-container">
+    <!-- ================= Stats ================= -->
+    <div class="stats">
+        <div class="stat-card">
+            <h4>Total Dogs</h4>
+            <p>{{ dogs|length }}</p>
+        </div>
+        <div class="stat-card">
+            <h4>Vaccinated</h4>
+            <p>{{ dogs|selectattr('vaccinated','equalto','Vaccinated')|list|length }}</p>
+        </div>
+        <div class="stat-card">
+            <h4>Not Vaccinated</h4>
+            <p>{{ dogs|selectattr('vaccinated','equalto','Not Vaccinated')|list|length }}</p>
+        </div>
+    </div>
+
+<button type="button" class="collapsible">How the System Works</button>
+<div class="content">
+    <div class="system-steps">
+        <div class="step-card">
+            <div class="step-icon"><i class="bi bi-qr-code-scan"></i></div>
+            <p><strong>Register Dogs:</strong> Each dog gets a unique QR code that contains the dog and owner's info .</p>
+        </div>
+        <div class="step-card">
+            <div class="step-icon"><i class="bi bi-heart-pulse"></i></div>
+            <p><strong>Track Vaccinations:</strong> Notifications automatically remind owners of vaccination schedules.</p>
+        </div>
+        <div class="step-card">
+            <div class="step-icon"><i class="bi bi-person-badge"></i></div>
+            <p><strong>Owner Profiles:</strong> Owners can view and update their profiles and their dogs’ info anytime.</p>
+        </div>
+        <div class="step-card">
+            <div class="step-icon"><i class="bi bi-shield-check"></i></div>
+            <p><strong>Admin Monitoring:</strong> Admins monitor dogs and ensure vaccination compliance.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Collapsible logic
+    const coll = document.querySelectorAll(".collapsible");
+    coll.forEach(btn => {
+        btn.addEventListener("click", function() {
+            this.classList.toggle("active");
+            const content = this.nextElementSibling;
+            if (content.style.maxHeight){
+                content.style.maxHeight = null;
+            } else {
+                content.style.maxHeight = content.scrollHeight + "px";
+            } 
+        });
+    });
+</script>
 {% endblock %}
+

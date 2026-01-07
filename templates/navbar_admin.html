@@ -11,6 +11,18 @@
   color: white !important;
   transform: translateY(-2px);
 }
+.navbar{
+  position: sticky;
+  top: 0;
+  z-index: 1050; /* above content */
+}
+  .logout-link i {
+    font-size: 1.2rem;
+  }
+
+  .logout-link .nav-title {
+    font-size: 0.65rem;
+  }
 
 /* ===============================
    MOBILE BOTTOM NAV (FB / IG)
@@ -81,22 +93,23 @@
 
   /* Small title below icons */
   .nav-title {
-    font-size: 0.75rem;
+    font-size: 0.60rem;
     font-weight: 500;
     opacity: 0.9;
   }
 
   /* Icon sizing */
   .navbar-nav .nav-link i {
-    font-size: 1.4rem;
+    font-size: 1.2rem;
   }
 
   /* Logout link styling */
   .logout-link i {
-    font-size: 1.4rem;
+    font-size: 1.0rem;
   }
+
   .logout-link .nav-title {
-    font-size: 0.75rem;
+    font-size: 0.60rem;
   }
 
   /* Hide desktop-only logout button */
@@ -170,7 +183,7 @@
         </li>
 
         <li class="nav-item" title="Logout">
-          <a class="nav-link logout-link" href="#" data-bs-toggle="modal" data-bs-target="#adminLogoutModal">
+          <a class="nav-link logout-link" href="{{ url_for('index') }}" data-bs-toggle="modal" data-bs-target="#adminLogoutModal">
             <i class="bi bi-box-arrow-right"></i>
             <span class="nav-title">Logout</span>
           </a>

@@ -579,17 +579,13 @@ def logout():
 @login_required
 def owner_dashboard():
     dogs = Dog.query.filter_by(owner_id=current_user.id).all() if current_user.role=='owner' else Dog.query.all()
-
-    alerts = []
-    for dog in dogs:
-        if dog.next_vaccination:
-            days_left = (dog.next_vaccination - date.today()).days
-            if days_left <= 7:  # 7 days before due
-                alerts.append(f"{dog.name} needs vaccination in {days_left} days!")
+    
+    # Count stray dogs in system (owner sees general system info)
+    stray_count = Dog.query.filter_by(owner_id=None).count()
 
     if current_user.role not in ['owner', 'admin']:
         abort(403)
-    return render_template('owner_dashboard.html', dogs=dogs)
+    return render_template('owner_dashboard.html', dogs=dogs, stray_count=stray_count)
 
 @app.route('/owner/profile', methods=['GET', 'POST'])
 @login_required
