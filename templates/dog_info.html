@@ -127,7 +127,15 @@ body {
     </div>
 
     <div class="info-row">
-      <span><i class="bi bi-hourglass-split me-1"></i> Gender</span>
+      <span>
+        {% if dog.gender == 'Male' %}
+          <i class="bi bi-gender-male me-1 text-primary"></i> Gender
+        {% elif dog.gender == 'Female' %}
+          <i class="bi bi-gender-female me-1 text-danger"></i> Gender
+        {% else %}
+          <i class="bi bi-question-circle me-1"></i> Gender
+        {% endif %}
+      </span>
       <strong>{{ dog.gender if dog.gender else 'N/A' }}</strong>
     </div>
 
