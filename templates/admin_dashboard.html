@@ -67,13 +67,13 @@
 {% endblock %}
 
 {% block content %}
-  <!-- Main content -->
+  
   <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h3 class="fw-semibold text-primary">Admin Dashboard</h3>
     </div>
 
-    <!-- Users Table -->
+    
     <div class="card mb-4">
       <div class="card-body">
         <h5 class="card-title text-secondary mb-3"><i class="bi bi-person-badge"></i>Owners</h5>
@@ -118,22 +118,22 @@
         + Register Stray Dog
       </button>
     </div>   
-<!-- Dogs Section -->
+
 <div class="card mb-4">
   <div class="card-body">
     <h5 class="card-title text-secondary mb-4">Registered Dogs</h5>
 
     <div class="row g-4">
 
-      <!-- VACCINATED -->
+      
       <div class="col-md-6">
-        <h6 class="text-success fw-bold mb-3">✔ Vaccinated Dogs</h6>
+        <h6 class="text-success fw-bold mb-3"><i class="bi bi-shield-check"></i> Vaccinated Dogs</h6>
 
         {% for d in dogs if d.vaccinated == 'Vaccinated' %}
         <div class="dog-card p-3 bg-white shadow-sm rounded mb-3">
           <div class="row g-3 align-items-center">
             
-            <!-- Dog Image -->
+            
             <div class="col-lg-4 col-12 dog-img-wrapper">
               <img src="{{ url_for('static', filename='dog_images/' ~ d.image) }}"
                   class="dog-img"
@@ -142,7 +142,7 @@
                   onclick="openQrFullscreen(this.src)">
             </div>
 
-            <!-- Dog Info -->
+            
             <div class="col-8 col-md-8">
               <h5 class="fw-bold mb-1">{{ d.name }}</h5>
               <p class="text-muted small mb-1">Breed: {{ d.breed }}</p>
@@ -158,7 +158,7 @@
               <p class="text-success small fw-semibold mb-2"><i class="bi bi-shield-check"></i>Vaccinated</p>
 
               {% if d.qr_code %}
-              <!-- QR Code -->
+              
               <img src="{{ url_for('qrcodes', filename=d.qr_code) }}" alt="{{ d.name}} QR"
                   class="border rounded p-1 mb-2 qr-clickable"
                   style="height: 90px; width: 90px; cursor: pointer;"
@@ -190,15 +190,15 @@
       </div>
 
 
-      <!-- NOT VACCINATED -->
+      
       <div class="col-md-6">
-        <h6 class="text-danger fw-bold mb-3"><i class="bi bi-exclamation-triangle"></i>Not Vaccinated Dogs</h6>
+        <h6 class="text-danger fw-bold mb-3"><i class="bi bi-exclamation-triangle"></i> Not Vaccinated Dogs</h6>
 
         {% for d in dogs if d.vaccinated == 'Not Vaccinated' %}
         <div class="dog-card p-3 bg-white shadow-sm rounded mb-3">
           <div class="row g-3 align-items-center">
             
-            <!-- Dog Image -->
+            
             <div class="col-lg-4 col-12 dog-img-wrapper">
               <img src="{{ url_for('static', filename='dog_images/' ~ d.image) }}"
                   class="dog-img"
@@ -207,7 +207,7 @@
                   onclick="openQrFullscreen(this.src)">
             </div>
 
-            <!-- Dog Info -->
+            
             <div class="col-8 col-md-8">
               <h5 class="fw-bold mb-1">{{ d.name }}</h5>
               <p class="text-muted small mb-1">Breed: {{ d.breed }}</p>
@@ -221,7 +221,7 @@
 
               <p class="text-danger small fw-semibold mb-2">Not Vaccinated</p>
               {% if d.qr_code %}
-              <!-- QR Code -->
+              
                 <img src="{{ url_for('qrcodes', filename=d.qr_code) }}" alt="{{ d.name}} QR"
                     class="rounded p-1 mb-2 qr-clickable"
                     style="height: 90px; width: 90px; cursor: pointer;"
@@ -306,7 +306,7 @@
 </div>
 {% endfor %}
 
-  <!-- Register Stray Dog Modal -->
+  
   <div class="modal fade" id="registerStrayDogModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
@@ -378,7 +378,7 @@
     </div>
   </div>
 
-  <!-- QR Fullscreen Modal -->
+  
 <div class="modal fade" id="qrFullscreenModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-fullscreen">
     <div class="modal-content qr-modal-bg">
@@ -398,7 +398,7 @@
     </div>
   </div>
 </div>
-<!-- Delete Owner Confirmation Modal -->
+
 <div class="modal fade" id="deleteOwnerModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -417,7 +417,7 @@
     </div>
   </div>
 </div>
-<!-- Delete Dog Confirmation Modal -->
+
 <div class="modal fade" id="deleteDogModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -436,10 +436,10 @@
     </div>
   </div>
 </div>
-<!-- Bootstrap JS -->
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- QR Fullscreen Script -->
+
 <script>
 function openQrFullscreen(src) {
   const img = document.getElementById("qrFullscreenImg");

@@ -43,7 +43,7 @@
       transform: scale(1.02);
     }
 
-    /* Social Buttons */
+    
     .btn-google {
       background: white;
       border: 1px solid #ddd;
@@ -92,13 +92,6 @@
     box-shadow: 0 0 0 0.15rem rgba(220,53,69,.25);
     }
 
-    @media (max-width: 530px) {
-      .card {
-        width: 340px;
-      }
-    }
-
-
   </style>
 </head>
 
@@ -124,11 +117,11 @@
       {% endwith %}
       <form method="POST">
         <div class="mb-3">
-          <label class="form-label">Email</label>
-          <input type="email"
+          <label class="form-label">Email or Username</label>
+          <input type="text"
                 class="form-control {% if messages %}is-invalid{% endif %}"
-                name="email"
-                placeholder="your@example.com"
+                name="login"
+                placeholder="Email or username"
                 required>        
         </div>
 
@@ -155,7 +148,7 @@
           Forgot password?
         </a>
       </div>
-      <!-- Divider -->
+      
       <div class="d-flex align-items-center">
         <hr class="flex-grow-1">
       </div>
@@ -166,7 +159,7 @@
     </div>
   </div>
 
-  <!-- Flash Message Modal -->
+  
 <div class="modal fade" id="signupSuccessModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">

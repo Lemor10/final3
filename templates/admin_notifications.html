@@ -82,13 +82,9 @@ document.getElementById('mark-all-read')?.addEventListener('click', async () => 
         const li = document.querySelector(`li[data-id='${id}']`);
         li.querySelector('.badge')?.remove();
     }
-
-    // Update red dot
     const dot = document.getElementById('notif-dot');
     if(dot) dot.classList.add('d-none');
 });
-
-// Mark individual notifications as read when clicked
 document.querySelectorAll('.notification-item').forEach(item => {
     item.addEventListener('click', async () => {
         const notifId = item.dataset.id;
@@ -101,7 +97,6 @@ document.querySelectorAll('.notification-item').forEach(item => {
 
         if(res.ok){
             item.querySelector('.badge')?.remove();
-            // Update red dot
             const dot = document.getElementById('notif-dot');
             if(dot) dot.classList.add('d-none');
         }

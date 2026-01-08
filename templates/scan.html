@@ -121,7 +121,6 @@ async function startScanner() {
             return;
         }
 
-        // Prefer rear camera
         let cameraId = cameras[0].id;
         for (let cam of cameras) {
             if (/back|rear|environment/gi.test(cam.label)) {
@@ -139,7 +138,6 @@ async function startScanner() {
                 document.getElementById('scanner-status').innerText = "QR detected!";
                 html5QrCode.stop();
                 
-                // Redirect logic
                 if (qrCodeMessage.startsWith("http")) {
                     window.location.href = qrCodeMessage;
                 } else {

@@ -18,7 +18,7 @@
 {% block content %}
 <div class="container">
 
-    <!-- SUMMARY CARDS -->
+    
     <div class="row d-flex justify-content-center text-center mb-4">
         <div class="col-md-4 mb-3">
             <div class="card p-3">
@@ -35,7 +35,7 @@
         </div>
     </div>
 
-    <!-- DATE RANGE FILTER -->
+    
     <div class="date-filter d-flex align-items-center justify-content-center gap-3">
         <label for="startMonth">From:</label>
         <input type="month" id="startMonth" class="form-control" value="{{ start_month }}">
@@ -45,7 +45,7 @@
         <button class="btn btn-secondary" id="resetBtn">Reset</button>
     </div>
 
-    <!-- BAR CHART -->
+    
         <div class="chart-container mx-auto" style="max-width: 700px;">
             <h5 class="text-center summary-header">Dogs per Breed</h5>
             <canvas id="breedChart"></canvas>
@@ -53,7 +53,7 @@
         </div>
     </div>
 
-    <!-- PIE CHART -->
+    
     <div class="chart-container mx-auto" style="max-width: 700px;">
         <h5 class="text-center summary-header">Vaccination Status</h5>
         <canvas id="vaccineChart"></canvas>
@@ -61,7 +61,7 @@
     </div>
     </div>
 
-    <!-- LINE CHART -->    <div class="chart-container mx-auto" style="max-width: 700px;">
+        <div class="chart-container mx-auto" style="max-width: 700px;">
         <h5 class="text-center summary-header">Monthly Dog Registrations</h5>
         <canvas id="monthlyChart"></canvas>
         <p class="no-data d-none">No data available for this date range.</p>
@@ -72,14 +72,9 @@
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
 let breedChart, vaccineChart, monthlyChart;
-
-// Render charts function (same as before)
 function renderCharts(data) {
-    // Update summary cards
     document.querySelector('div.card h2:nth-child(2)').textContent = data.total_owners;
     document.querySelectorAll('div.card h2:nth-child(2)')[1].textContent = data.total_dogs;
-
-    // BAR CHART
     if (data.breeds.length > 0) {
         document.querySelector('#breedChart').style.display = 'block';
         document.querySelector('#breedChart').nextElementSibling?.classList.add('d-none');
@@ -105,8 +100,6 @@ function renderCharts(data) {
         document.querySelector('#breedChart').style.display = 'none';
         document.querySelector('#breedChart').nextElementSibling?.classList.remove('d-none');
     }
-
-    // PIE CHART
     if (data.vaccinated_count + data.unvaccinated_count > 0) {
         document.querySelector('#vaccineChart').style.display = 'block';
         document.querySelector('#vaccineChart').nextElementSibling?.classList.add('d-none');
@@ -126,8 +119,6 @@ function renderCharts(data) {
         document.querySelector('#vaccineChart').style.display = 'none';
         document.querySelector('#vaccineChart').nextElementSibling?.classList.remove('d-none');
     }
-
-    // LINE CHART
     if (data.month_counts.length > 0) {
         document.querySelector('#monthlyChart').style.display = 'block';
         document.querySelector('#monthlyChart').nextElementSibling?.classList.add('d-none');
@@ -153,15 +144,11 @@ function renderCharts(data) {
         document.querySelector('#monthlyChart').nextElementSibling?.classList.remove('d-none');
     }
 }
-
-// Load charts immediately on page load
 window.addEventListener('DOMContentLoaded', () => {
     axios.get(`/admin/data-analysis?ajax=1`)
         .then(res => renderCharts(res.data))
         .catch(err => console.error(err));
 });
-
-// FILTER BUTTON
 document.getElementById('filterBtn').addEventListener('click', () => {
     const start = document.getElementById('startMonth').value;
     const end = document.getElementById('endMonth').value;
@@ -171,8 +158,6 @@ document.getElementById('filterBtn').addEventListener('click', () => {
         .then(res => renderCharts(res.data))
         .catch(err => console.error(err));
 });
-
-// RESET BUTTON
 document.getElementById('resetBtn').addEventListener('click', () => {
     document.getElementById('startMonth').value = "";
     document.getElementById('endMonth').value = "";

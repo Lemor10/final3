@@ -1,4 +1,3 @@
-# app.py - Flask 3.x compatible
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory, send_file, abort, jsonify ,session
 from flask_sqlalchemy import SQLAlchemy
@@ -30,7 +29,7 @@ os.makedirs(app.config['DOG_UPLOAD_FOLDER'], exist_ok=True)
 app.config['UPLOAD_FOLDER_PROFILE'] = os.path.join('static', 'profile_images')
 os.makedirs(app.config['UPLOAD_FOLDER_PROFILE'], exist_ok=True)
 
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Dog_Registration_Secret_Key') # Detect if running on Render 
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Dog_Registration_Secret_Key')
 on_render = os.environ.get('RENDER') is not None 
 if on_render: app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') 
 else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:kTr9P7RtYrfQkSt3C5IunMp6nw23x7f5@dpg-d5b4l6re5dus73feks6g-a.oregon-postgres.render.com/drs' 
@@ -45,11 +44,9 @@ login_manager = LoginManager()
 login_manager.login_view = 'login'
 login_manager.init_app(app)
 
-# Persistent QR folder
 QR_FOLDER = os.path.join('static', 'qr_dogs')
 os.makedirs(QR_FOLDER, exist_ok=True)
 
-# ------------------ Models ------------------
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
@@ -60,14 +57,14 @@ class User(UserMixin, db.Model):
     passive_deletes=True
     )
     
-    username = db.Column(db.String(50), unique=True, nullable=False)  # 👈 ADD THIS
-    email = db.Column(db.String(150), unique=True, nullable=False)
+    username = db.Column(db.String(50), unique=True, nullable=False)  
+    email = db.Column(db.String(150), unique=True, nullable=True)
     name = db.Column(db.String(150))
     contact = db.Column(db.String(20))
     address = db.Column(db.String(255))
     profile_photo = db.Column(db.String(200))
     password_hash = db.Column(db.String(200), nullable=True)
-    role = db.Column(db.String(20), default='owner')  # 'owner' or 'admin'
+    role = db.Column(db.String(20), default='owner')  
     dogs = db.relationship('Dog', backref='owner', lazy=True)
 
     def set_password(self, password):
@@ -82,11 +79,12 @@ class Dog(db.Model):
     name = db.Column(db.String(120), nullable=False)
     breed = db.Column(db.String(120))
     age = db.Column(db.Integer)
+    gender = db.Column(db.String(10))   # ✅ ADD THIS
     owner_name = db.Column(db.String(150))
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     qr_code = db.Column(db.String(200))
     vaccinated = db.Column(db.String(50), nullable=False, default="Not Vaccinated")
-    image = db.Column(db.String(200))  # store image filename or URL
+    image = db.Column(db.String(200))  
     last_vaccination = db.Column(db.Date)
     next_vaccination = db.Column(db.Date)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -129,7 +127,6 @@ def generate_vaccination_notifications(user_id):
 
         days_left = (dog.next_vaccination - today).days
 
-        # Look for existing notification for this dog
         existing = Notification.query.filter_by(
             user_id=user_id,
             dog_id=dog.id,
@@ -145,20 +142,17 @@ def generate_vaccination_notifications(user_id):
             title = "Vaccination Overdue"
             notif_type = "overdue"
         else:
-            # Vaccination is far in the future; delete existing reminder if exists
             if existing:
                 existing.dismissed = True
                 db.session.commit()
             continue
 
         if existing:
-            # Update message instead of creating new
             existing.title = title
             existing.message = message
             existing.type = notif_type
             existing.due_date = dog.next_vaccination
         else:
-            # Create new notification
             notif = Notification(
                 user_id=user_id,
                 dog_id=dog.id,
@@ -180,10 +174,9 @@ def generate_admin_notifications(admin_user_id):
     - Notifications are updated daily and old ones auto-dismissed
     """
     today = date.today()
-    stray_dogs = Dog.query.filter(Dog.owner_id == None).all()  # Stray dogs
+    stray_dogs = Dog.query.filter(Dog.owner_id == None).all() 
 
     for dog in stray_dogs:
-        # Check for existing notification for this dog
         existing = Notification.query.filter_by(
             user_id=admin_user_id,
             dog_id=dog.id,
@@ -191,7 +184,6 @@ def generate_admin_notifications(admin_user_id):
         ).first()
 
         if not dog.next_vaccination:
-            # New stray dog notification
             if not existing:
                 notif = Notification(
                     user_id=admin_user_id,
@@ -202,11 +194,10 @@ def generate_admin_notifications(admin_user_id):
                     due_date=today
                 )
                 db.session.add(notif)
-            continue  # Skip further vaccination checks
+            continue  
 
         days_left = (dog.next_vaccination - today).days
 
-        # Determine type and message
         if 0 <= days_left <= 7:
             title = "Stray Dog Vaccination Due Soon"
             message = f"'{dog.name}' needs vaccination in {days_left} days!"
@@ -216,20 +207,17 @@ def generate_admin_notifications(admin_user_id):
             message = f"'{dog.name}' vaccination is overdue!"
             notif_type = "overdue"
         else:
-            # Vaccination far in future, dismiss existing if any
             if existing:
                 existing.dismissed = True
                 db.session.commit()
             continue
 
         if existing:
-            # Update the existing notification
             existing.title = title
             existing.message = message
             existing.type = notif_type
             existing.due_date = dog.next_vaccination
         else:
-            # Create a new notification
             notif = Notification(
                 user_id=admin_user_id,
                 dog_id=dog.id,
@@ -246,7 +234,6 @@ def generate_admin_notifications(admin_user_id):
 def check_username():
     username = request.args.get("username", "").strip().lower()
 
-    # Rule validation (server-side)
     if not re.match(r"^[a-z0-9_]{4,20}$", username):
         return jsonify({
             "available": False,
@@ -290,16 +277,13 @@ def admin_notifications():
     if current_user.role != 'admin':
         abort(403)
 
-    # Generate notifications dynamically before fetching
     generate_admin_notifications(current_user.id)
 
-    # Fetch only active (not dismissed) notifications
     notifications = Notification.query.filter_by(
         user_id=current_user.id,
         dismissed=False
     ).order_by(Notification.created_at.desc()).all()
 
-    # Count unread for badge
     unread_count = Notification.query.filter_by(
         user_id=current_user.id,
         is_read=False,
@@ -336,13 +320,12 @@ def delete_notification(notif_id):
     if notif.user_id != current_user.id:
         abort(403)
 
-    db.session.delete(notif)  # 🔹 actually remove
-    notif.dismissed = True     # ✅ change first
-    db.session.commit()       # ✅ then commit
+    db.session.delete(notif) 
+    notif.dismissed = True    
+    db.session.commit()       
 
     return {"success": True}
 
-# ------------------ Ensure Admin Exists ------------------
 with app.app_context():
     admin_email = os.environ.get('ADMIN_EMAIL', 'admin@gmail.com')
     admin_pass = os.environ.get('ADMIN_PASSWORD', 'admin123')
@@ -354,8 +337,6 @@ with app.app_context():
         db.session.commit()
         print(f"✅ Created admin: {admin_email}")
 
-# ------------------ Routes ------------------
-
 @app.before_request
 def auto_delete_old_notifications():
     if not current_user.is_authenticated:
@@ -363,13 +344,11 @@ def auto_delete_old_notifications():
 
     now = datetime.utcnow()
 
-    # 🔴 Delete READ notifications after 7 days
     Notification.query.filter(
         Notification.is_read == True,
         Notification.created_at < now - timedelta(minutes=7)
     ).delete(synchronize_session=False)
 
-    # 🔴 Delete UNREAD notifications after 14 days
     Notification.query.filter(
         Notification.is_read == False,
         Notification.created_at < now - timedelta(minutes=14)
@@ -383,7 +362,6 @@ def load_notifications():
         if current_user.role == 'owner':
             generate_vaccination_notifications(current_user.id)
         elif current_user.role == 'admin':
-            # Make sure the admin exists first
             admin = User.query.filter_by(role='admin').first()
             if admin:
                 generate_admin_notifications(admin.id)
@@ -394,17 +372,16 @@ def load_notifications():
     else:
         g.notifications = []
 
-# Welcome page
+# ------------------ Routes ------------------
+
 @app.route('/')
 def index():
-    return render_template('index.html')  # Clean welcome page without public dog view
+    return render_template('index.html') 
 
-# Scan QR page
 @app.route('/scan')
 def scan_qr():
     return render_template('scan.html')
 
-# Dog info
 @app.route('/dog/<string:dog_uuid>')
 def dog_info(dog_uuid):
     dog = Dog.query.filter_by(uuid=dog_uuid).first()
@@ -421,20 +398,18 @@ def format_breed(breed):
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
-        email = request.form['email']
+        email = request.form.get('email')
         name = request.form['name']
-        username = request.form['username'].strip().lower()  # 👈 ADD THIS
+        username = request.form['username'].strip().lower()
         contact = request.form['contact']
         address = request.form['address']
         password = request.form['password']
         confirm_password = request.form['confirm_password']
 
-        # ✅ 1. Confirm password check (ADD HERE)
         if password != confirm_password:
             flash('Passwords do not match.', 'error')
             return redirect(url_for('signup'))
 
-        # ✅ 2. Optional: Password length validation
         if len(password) < 8 \
         or not re.search(r"[A-Z]", password) \
         or not re.search(r"[a-z]", password) \
@@ -446,17 +421,16 @@ def signup():
             )
             return redirect(url_for("signup"))
         
-# Check username uniqueness
         if User.query.filter(db.func.lower(User.username) == username).first():
             flash("Username already taken.", "error")
             return redirect(url_for('signup'))
+        
+        email = email if email.strip() != "" else None
 
-        # ✅ 3. Check if email already exists
-        if User.query.filter_by(email=email).first():
+        if email and User.query.filter_by(email=email).first():
             flash('Email already registered.', 'error')
             return redirect(url_for('signup'))
 
-        # ✅ 4. Create user only if all validations pass
         user = User(
             email=email,
             name=name,
@@ -489,7 +463,6 @@ def forgot_password():
             flash("Username and email do not match.", "danger")
             return redirect(url_for('forgot_password'))
 
-        # Create reset token
         token = serializer.dumps(user.id, salt='reset-password')
 
         return redirect(url_for('reset_password', token=token))
@@ -502,7 +475,7 @@ def reset_password(token):
         user_id = serializer.loads(
             token,
             salt='reset-password',
-            max_age=600  # 10 minutes
+            max_age=600  
         )
     except Exception:
         flash("Reset session expired or invalid. Try again.", "danger")
@@ -517,12 +490,10 @@ def reset_password(token):
         password = request.form.get('password', '')
         confirm = request.form.get('confirm_password', '')
 
-        # ✅ 1. Confirm password check
         if password != confirm:
             flash("Passwords do not match.", "danger")
             return redirect(request.url)
 
-        # ✅ 2. Password strength check (same as Signup)
         if len(password) < 8 \
            or not re.search(r"[A-Z]", password) \
            or not re.search(r"[a-z]", password) \
@@ -534,26 +505,27 @@ def reset_password(token):
             )
             return redirect(request.url)
 
-        # ✅ 3. Save new password
         user.set_password(password)
         db.session.commit()
 
         flash("Password reset successful! You can now log in.", "success")
         return redirect(url_for('login'))
 
-    # GET request → show form
     return render_template('reset_password.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form.get('email')
+        login_input = request.form.get('login').strip().lower() 
         password = request.form.get('password')
 
-        user = User.query.filter_by(email=email).first()
+        user = User.query.filter(
+            (func.lower(User.email) == login_input) |
+            (func.lower(User.username) == login_input)
+        ).first()
 
         if not user:
-            flash("This email is not registered.", "danger")
+            flash("This email or username is not registered.", "danger")
             return redirect(url_for('login'))
 
         if not user.check_password(password):
@@ -580,7 +552,6 @@ def logout():
 def owner_dashboard():
     dogs = Dog.query.filter_by(owner_id=current_user.id).all() if current_user.role=='owner' else Dog.query.all()
     
-    # Count stray dogs in system (owner sees general system info)
     stray_count = Dog.query.filter_by(owner_id=None).count()
 
     if current_user.role not in ['owner', 'admin']:
@@ -594,16 +565,13 @@ def owner_profile():
     dogs = Dog.query.filter_by(owner_id=user.id).all()
 
     if request.method == 'POST':
-        # Check if this POST is for profile info or photo
         if 'name' in request.form:
-            # Update profile info
             user.name = request.form.get('name')
             user.contact = request.form.get('contact')
             user.address = request.form.get('address')
             db.session.commit()
             flash("Profile updated successfully!", "success")
         elif 'profile_photo' in request.files:
-            # Update profile photo
             photo = request.files['profile_photo']
             if photo.filename != '':
                 filename = secure_filename(photo.filename)
@@ -623,21 +591,18 @@ def owner_add_dog():
     name = request.form['name']
     breed = format_breed(request.form['breed'])
     age = int(request.form['age'])
+    gender = request.form.get('gender')
     vaccinated = request.form['status']
     image = request.files.get("dog_image")
 
-    # Read vaccination dates
     last_vaccination = request.form.get("last_vaccination")
     next_vaccination = request.form.get("next_vaccination")
 
-    # Convert to date objects
     last_vac_date = datetime.strptime(last_vaccination, "%Y-%m-%d").date() if last_vaccination else None
     next_vac_date = datetime.strptime(next_vaccination, "%Y-%m-%d").date() if next_vaccination else None
 
-    # Generate a unique UUID
     dog_uuid = str(uuid.uuid4())
 
-    # Save dog image if uploaded
     if image and image.filename != '':
         filename = secure_filename(image.filename)
         DOG_IMAGE_FOLDER = os.path.join('static', 'dog_images')
@@ -646,19 +611,18 @@ def owner_add_dog():
     else:
         filename = None
 
-    # Generate QR code pointing to dog's info page
     qr_data = url_for("dog_info", dog_uuid=dog_uuid, _external=True)
     img = qrcode.make(qr_data)
     qr_filename = f"{dog_uuid}.png"
     os.makedirs(QR_FOLDER, exist_ok=True)
     img.save(os.path.join(QR_FOLDER, qr_filename))
 
-    # Create the dog entry
     new_dog = Dog(
         uuid=dog_uuid,
         name=name,
         breed=breed,
         age=age,
+        gender=gender,
         vaccinated=vaccinated,
         owner_id=current_user.id,
         owner_name=current_user.name,
@@ -684,7 +648,6 @@ def owner_delete_dog(dog_id):
     
     dog = Dog.query.get_or_404(dog_id)
     
-    # Make sure the logged-in owner owns this dog
     if dog.owner_id != current_user.id:
         flash('You can only delete your own dogs.', 'danger')
         return redirect(url_for('owner_dashboard'))
@@ -697,29 +660,21 @@ def owner_delete_dog(dog_id):
 @app.route('/owner/edit_dog/<int:dog_id>', methods=['POST'])
 @login_required
 def owner_edit_dog(dog_id):
-    # Only owners can edit
     if current_user.role != 'owner':
         flash("Unauthorized access", "danger")
         return redirect(url_for('signin'))
 
     dog = Dog.query.get_or_404(dog_id)
 
-    # Make sure the logged-in owner owns this dog
     if dog.owner_id != current_user.id:
         flash("You cannot edit this dog.", "danger")
         return redirect(url_for('owner_profile'))
 
     dog.name = request.form['name']
     dog.breed = request.form['breed']
+    dog.gender = request.form['gender']
     dog.age = request.form['age']
-    dog.vaccinated = request.form['status']
 
-    last_vac = request.form.get('last_vaccination')
-    next_vac = request.form.get('next_vaccination')
-    dog.last_vaccination = datetime.strptime(last_vac, "%Y-%m-%d").date() if last_vac else None
-    dog.next_vaccination = datetime.strptime(next_vac, "%Y-%m-%d").date() if next_vac else None
-
-        # Optional image upload
     if 'dog_image' in request.files:
         file = request.files['dog_image']
         if file.filename != '':
@@ -732,10 +687,8 @@ def owner_edit_dog(dog_id):
     flash("Dog information updated successfully!", "success")
     return redirect(url_for('owner_profile'))
 
-# QR code serving
 @app.route('/generate_qr/<dog_uuid>')
 def generate_qr(dog_uuid):
-    # Generate QR code for a dog
     qr = qrcode.QRCode(
         version=1,
         box_size=10,
@@ -743,7 +696,6 @@ def generate_qr(dog_uuid):
     )
 
     qr.add_data(url_for("dog_info", dog_uuid=dog_uuid, _external=True))
-  # Link encoded in QR
     qr.make(fit=True)
 
     img = qr.make_image(fill='black', back_color='white')
@@ -763,7 +715,6 @@ def download_qr(dog_uuid):
     if not dog.qr_code:
         abort(404, description="QR code not found")
 
-    # Absolute path to file
     file_path = os.path.join(app.root_path, 'static', 'qr_dogs', dog.qr_code)
 
     if not os.path.exists(file_path):
@@ -779,7 +730,7 @@ def admin_dashboard():
         flash("You don't have permission to access this page.", "danger")
         return redirect(url_for('login'))
 
-    users = User.query.filter_by(role='owner').all()  # Only show owners
+    users = User.query.filter_by(role='owner').all() 
     dogs = Dog.query.all()
     return render_template('admin_dashboard.html', users=users, dogs=dogs)
 
@@ -794,10 +745,8 @@ def admin_data_analysis():
 
     query = Dog.query
     if start_month and end_month:
-        # Convert input to datetime
         start_date = datetime.strptime(start_month + "-01", "%Y-%m-%d")
         end_date = datetime.strptime(end_month + "-01", "%Y-%m-%d")
-        # Get the last day of end month
         end_day = 28 if end_date.month == 2 else 30
         end_date = datetime(end_date.year, end_date.month, end_day, 23, 59, 59)
         query = query.filter(Dog.created_at >= start_date,
@@ -805,20 +754,16 @@ def admin_data_analysis():
 
     dogs = query.all()
 
-    # Summary
     total_owners = len(set(d.owner_id for d in dogs))
     total_dogs = len(dogs)
 
-    # Bar chart (dogs per breed)
     breeds_list = [d.breed.capitalize() if d.breed else "Unknown" for d in dogs]
     breeds = list(set(breeds_list))
     breed_numbers = [breeds_list.count(b) for b in breeds]
 
-    # Pie chart
     vaccinated_count = sum(1 for d in dogs if d.vaccinated == "Vaccinated")
     unvaccinated_count = sum(1 for d in dogs if d.vaccinated == "Not Vaccinated")
 
-    # Line chart (monthly registrations)
     month_counts_dict = {}
     for d in dogs:
         m = d.created_at.strftime("%b %Y")
@@ -826,7 +771,6 @@ def admin_data_analysis():
     months = sorted(month_counts_dict.keys(), key=lambda x: datetime.strptime(x, "%b %Y"))
     month_counts = [month_counts_dict[m] for m in months]
 
-    # If AJAX request, return JSON
     if request.args.get("ajax"):
         return jsonify({
             "total_owners": total_owners,
@@ -866,11 +810,9 @@ def admin_register_dog():
     status = request.form['status']
     vaccinated = "Vaccinated" if status == "Vaccinated" else "Not Vaccinated"
 
-    # Read vaccination dates
     last_vaccination = request.form.get("last_vaccination")
     next_vaccination = request.form.get("next_vaccination")
 
-    # Convert to date objects
     last_vac_date = datetime.strptime(last_vaccination, "%Y-%m-%d").date() if last_vaccination else None
     next_vac_date = datetime.strptime(next_vaccination, "%Y-%m-%d").date() if next_vaccination else None
 
@@ -882,20 +824,15 @@ def admin_register_dog():
         save_path = os.path.join("static/dog_images", image_filename)
         image_file.save(save_path)
 
-    # Generate unique UUID
     dog_uuid = str(uuid.uuid4())
 
-    # Generate QR code URL
     qr_data = url_for("dog_info", dog_uuid=dog_uuid, _external=True)
 
-    # Generate QR image
     img = qrcode.make(qr_data)
 
-    # Save QR to /tmp/qrcodes
     qr_filename = f"{dog_uuid}.png"
     img.save(os.path.join(QR_FOLDER, qr_filename))
 
-    # Save dog entry
     new_dog = Dog(
         uuid=dog_uuid,
         name=name,
@@ -944,7 +881,6 @@ def admin_delete_dog(dog_id):
 
     dog = Dog.query.get_or_404(dog_id)
 
-    # Delete QR if exists
     if dog.qr_code:
         try:
             os.remove(os.path.join(QR_FOLDER, dog.qr_code))
@@ -965,7 +901,6 @@ def admin_delete_owner(owner_id):
     if not owner:
         return redirect(url_for('admin_dashboard'))
 
-    # Optional: delete owner's dogs as well
     dogs = Dog.query.filter_by(owner_id=owner_id).all()
     for dog in dogs:
         db.session.delete(dog)
@@ -975,7 +910,6 @@ def admin_delete_owner(owner_id):
 
     return redirect(url_for('admin_dashboard'))
 
-# Export CSV
 @app.route('/admin/export_csv')
 @login_required
 def export_csv():
@@ -991,6 +925,5 @@ def export_csv():
     output.seek(0)
     return send_file(output, mimetype='text/csv', as_attachment=True, download_name='dogs.csv')
 
-# ------------------ Run App ------------------
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT',5000)), debug=True)

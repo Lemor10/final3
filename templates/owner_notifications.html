@@ -78,7 +78,6 @@ h3 {
 <div class="alert alert-info rounded shadow-sm">No notifications at this time.</div>
 {% endif %}
 <script>
-    // Mark all as read
 document.getElementById('mark-all-read').addEventListener('click', async () => {
     const unreadIds = Array.from(document.querySelectorAll('li[data-id]')).map(li => li.dataset.id);
 
@@ -106,12 +105,10 @@ document.getElementById('mark-all-read').addEventListener('click', async () => {
       document.querySelectorAll(".notification-item").forEach(item => {
         const id = item.dataset.id;
 
-        // Hide if already read
         if (readNotifications.includes(id)) {
           item.remove();
         }
 
-        // Handle mark as read
         item.querySelector(".mark-read-btn")?.addEventListener("click", () => {
           readNotifications.push(id);
           localStorage.setItem(

@@ -14,26 +14,24 @@
 .navbar {
   position: sticky;
   top: 0;
-  z-index: 1050; /* above content */
+  z-index: 1050; 
 }
 
-/* Optional shadow on scroll */
+
 .navbar.scrolled {
   box-shadow: 0 2px 10px rgba(0,0,0,0.15);
 }
 
-/* ===============================
-   MOBILE BOTTOM NAV (FB / IG)
-   =============================== */
+
 @media (max-width: 576px) {
 
-  /* Hide brand + toggler */
+  
   .navbar-brand,
   .navbar-toggler {
     display: none;
   }
 
-  /* Move navbar to bottom */
+  
   .navbar {
     position: fixed;
     bottom: 0;
@@ -43,7 +41,7 @@
     padding: 0.3rem 0;
   }
 
-  /* Horizontal icons */
+  
   .navbar-collapse {
     display: flex !important;
     justify-content: center;
@@ -61,7 +59,7 @@
     text-align: center;
   }
 
-  /* Stack icon + title */
+  
   .navbar-nav .nav-link {
     display: flex;
     flex-direction: column;
@@ -77,14 +75,14 @@
     transition: transform 0.3s ease, color 0.3s ease;
   }
 
-  /* Active icon + title scale */
+  
   .navbar-nav .nav-link.active i,
   .navbar-nav .nav-link.active .nav-title {
     transform: scale(1.15) translateY(-1px);
     color: #fff;
   }
 
-  /* Active dot indicator */
+  
   .navbar-nav .nav-link.active::after {
     content: '';
     position: absolute;
@@ -97,12 +95,12 @@
     transition: transform 0.3s ease;
   }
 
-  /* Hide text labels if needed */
+  
   .nav-text {
     display: none;
   }
 
-  /* Small title above icons */
+  
   .nav-title {
     font-size: 0.65rem;
     font-weight: 500;
@@ -110,12 +108,12 @@
     opacity: 0.9;
   }
 
-  /* Icon sizing */
+  
   .navbar-nav .nav-link i {
     font-size: 1.2rem;
   }
 
-  /* Hide logout button on mobile */
+  
   .navbar .btn {
     display: none;
   }
@@ -131,18 +129,18 @@
     font-size: 0.65rem;
   }
 
-  /* Hide desktop-only logout button */
+  
   .navbar .btn {
     display: none;
   }
   
-  /* Adjust notification dot */
+  
   #notif-dot {
     top: 8px;
     right: 4px;
   }
 
-  /* Prevent content being hidden behind navbar */
+  
   body {
     padding-bottom: 65px;
   }
@@ -155,7 +153,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color:#4DA6FF;">
   <div class="container-fluid">
 
-    <!-- Dynamic Brand Icon & Title -->
+    
     <a class="navbar-brand fw-bold">
       {% if request.endpoint == 'owner_dashboard' %}
         <i class="bi bi-house-door-fill me-1"></i> Dashboard
@@ -225,24 +223,24 @@
   </div>
 </nav>
 
-<!-- Logout Confirmation Modal -->
+
 <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-sm">
     <div class="modal-content border-0 shadow-sm rounded-3">
 
-      <!-- Modal Header -->
+      
       <div class="modal-header bg-danger pb-3">
         <h5 class="modal-title fw-bold text-white" id="logoutModalLabel">
           <i class="bi bi-box-arrow-right me-1"></i> Logout
         </h5>
       </div>
 
-      <!-- Modal Body -->
+      
       <div class="modal-body text-center py-4">
         <p class="mb-0">Are you sure you want to log out?</p>
       </div>
 
-      <!-- Modal Footer -->
+      
       <div class="modal-footer justify-content-center border-0 pb-3">
         <button type="button" class="btn btn-outline-secondary btn-sm px-4" data-bs-dismiss="modal">
           Cancel
