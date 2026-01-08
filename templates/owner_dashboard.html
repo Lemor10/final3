@@ -149,9 +149,17 @@ body {
           <div class="card-body">
             <h6 class="fw-bold text-primary mb-1">{{ dog.name }}</h6>
             <span class="badge bg-success mb-2">Vaccinated</span>
-            <p class="mb-1 small"><strong>Breed:</strong> {{ dog.breed }}</p>
-            <p class="mb-1 small"><strong>Gender:</strong> {{ dog.gender if dog.gender else 'N/A' }}</p>
-            <p class="mb-1 small"><strong>Age:</strong> {{ dog.age }} yrs</p>
+            <p class="text-muted mb-1 small"><strong>Breed:</strong> {{ dog.breed }}</p>
+            <p class="text-muted mb-1 small"><strong>Gender:</strong>                     
+              {% if dog.gender == 'Male' %}
+              <i class="bi bi-gender-male text-primary"></i>
+              {% elif dog.gender == 'Female' %}
+              <i class="bi bi-gender-female text-danger"></i>
+              {% else %}
+              N/A
+              {% endif %}
+            </p>
+            <p class="text-muted mb-1 small"><strong>Age:</strong> {{ dog.age }} yrs</p>
             <p class="mb-0 text-muted small">
               Next Vaccination:
               {{ dog.next_vaccination if dog.next_vaccination else "N/A" }}

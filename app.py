@@ -807,6 +807,7 @@ def admin_register_dog():
     name = request.form['name']
     breed = format_breed(request.form['breed'])
     age = request.form['age']
+    gender = request.form.get("gender")
     status = request.form['status']
     vaccinated = "Vaccinated" if status == "Vaccinated" else "Not Vaccinated"
 
@@ -838,6 +839,7 @@ def admin_register_dog():
         name=name,
         breed=breed,
         age=age,
+        gender=gender,
         owner_name="Stray (Admin Registered)",
         owner_id=None,
         vaccinated=vaccinated,
