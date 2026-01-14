@@ -50,6 +50,7 @@ QR_FOLDER = os.path.join('static', 'qr_dogs')
 os.makedirs(QR_FOLDER, exist_ok=True)
 
 class User(UserMixin, db.Model):
+    __tablename__ = "user"  # Add this line
     id = db.Column(db.Integer, primary_key=True)
 
     notifications = db.relationship(
@@ -363,8 +364,7 @@ with app.app_context():
 #        print(f"✅ Created admin: {admin_email}")
 
 with app.app_context():
-    User.query.filter(User.created_at == None)\
-        .update({User.created_at: func.now()})
+    User.query.filter(User.created_at == None).update({User.created_at: datetime.utcnow()})
     db.session.commit()
 
 @app.before_request
