@@ -34,7 +34,7 @@ os.makedirs(app.config['UPLOAD_FOLDER_PROFILE'], exist_ok=True)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Dog_Registration_Secret_Key')
 on_render = os.environ.get('RENDER') is not None 
 if on_render: app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') 
-else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:kTr9P7RtYrfQkSt3C5IunMp6nw23x7f5@dpg-d5b4l6re5dus73feks6g-a.oregon-postgres.render.com/drs'
+else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:kTr9P7RtYrfQkSt3C5IunMp6nw23x7f5@dpg-d5b4l6re5dus73feks6g-a.singapore-postgres.render.com/drs' 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
@@ -50,7 +50,6 @@ QR_FOLDER = os.path.join('static', 'qr_dogs')
 os.makedirs(QR_FOLDER, exist_ok=True)
 
 class User(UserMixin, db.Model):
-    __tablename__ = "user"  # Add this line
     id = db.Column(db.Integer, primary_key=True)
 
     notifications = db.relationship(
@@ -71,7 +70,9 @@ class User(UserMixin, db.Model):
     profile_photo = db.Column(db.String(200))
     password_hash = db.Column(db.String(200), nullable=True)
     role = db.Column(db.String(20), default='owner')  
-    created_at = db.Column(db.DateTime, server_default=func.now())
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    dogs = db.relationship('Dog', backref='owner', lazy=True)
+
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
@@ -364,7 +365,8 @@ with app.app_context():
 #        print(f"✅ Created admin: {admin_email}")
 
 with app.app_context():
-    User.query.filter(User.created_at == None).update({User.created_at: datetime.utcnow()})
+    User.query.filter(User.created_at == None)\
+        .update({User.created_at: datetime.utcnow()})
     db.session.commit()
 
 @app.before_request
