@@ -364,7 +364,7 @@ with app.app_context():
 
 with app.app_context():
     User.query.filter(User.created_at == None)\
-        .update({User.created_at: datetime.utcnow()})
+        .update({User.created_at: func.now()})
     db.session.commit()
 
 @app.before_request
