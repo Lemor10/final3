@@ -70,9 +70,7 @@ class User(UserMixin, db.Model):
     profile_photo = db.Column(db.String(200))
     password_hash = db.Column(db.String(200), nullable=True)
     role = db.Column(db.String(20), default='owner')  
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    dogs = db.relationship('Dog', backref='owner', lazy=True)
-
+    created_at = db.Column(db.DateTime, server_default=datetime.utcnow)
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
