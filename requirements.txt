@@ -11,3 +11,4 @@ alembic
 Authlib==1.3.0
 Flask-Mail==0.9.1
 python-dotenv
+python-dateutil
