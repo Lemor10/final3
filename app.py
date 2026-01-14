@@ -11,8 +11,10 @@ import qrcode, io, csv, uuid
 from io import BytesIO
 from flask import g
 import re
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from itsdangerous import URLSafeTimedSerializer
+from flask import render_template_string
+from dateutil.relativedelta import relativedelta
 
 if os.environ.get("RENDER"):
     BASE_URL = os.environ.get("BASE_URL")
@@ -32,7 +34,7 @@ os.makedirs(app.config['UPLOAD_FOLDER_PROFILE'], exist_ok=True)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Dog_Registration_Secret_Key')
 on_render = os.environ.get('RENDER') is not None 
 if on_render: app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') 
-else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:kTr9P7RtYrfQkSt3C5IunMp6nw23x7f5@dpg-d5b4l6re5dus73feks6g-a.oregon-postgres.render.com/drs' 
+else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:somepassword@localhost:5432/drs_local' 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
@@ -61,10 +63,14 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(150), unique=True, nullable=True)
     name = db.Column(db.String(150))
     contact = db.Column(db.String(20))
+    barangay = db.Column(db.String(100))
+    municipality = db.Column(db.String(100))
+    province = db.Column(db.String(100))
     address = db.Column(db.String(255))
     profile_photo = db.Column(db.String(200))
     password_hash = db.Column(db.String(200), nullable=True)
     role = db.Column(db.String(20), default='owner')  
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     dogs = db.relationship('Dog', backref='owner', lazy=True)
 
     def set_password(self, password):
@@ -79,6 +85,7 @@ class Dog(db.Model):
     name = db.Column(db.String(120), nullable=False)
     breed = db.Column(db.String(120))
     age = db.Column(db.Integer)
+    birthdate = db.Column(db.Date)  # New
     gender = db.Column(db.String(10))   # ✅ ADD THIS
     owner_name = db.Column(db.String(150))
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
@@ -87,7 +94,22 @@ class Dog(db.Model):
     image = db.Column(db.String(200))  
     last_vaccination = db.Column(db.Date)
     next_vaccination = db.Column(db.Date)
+    vaccination_expiry = db.Column(db.Date)  # ✅ NEW
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    @property
+    def age(self):
+        if not self.birthdate:
+            return "N/A"
+        today = date.today()
+        rd = relativedelta(today, self.birthdate)
+        parts = []
+        if rd.years > 0:
+            parts.append(f"{rd.years} year{'s' if rd.years > 1 else ''}")
+        if rd.months > 0:
+            parts.append(f"{rd.months} month{'s' if rd.months > 1 else ''}")
+
+        return " ".join(parts) if parts else "0 months"
 
 class Notification(db.Model):
     __tablename__ = "notifications"
@@ -229,6 +251,11 @@ def generate_admin_notifications(admin_user_id):
             db.session.add(notif)
 
     db.session.commit()
+    
+def calculate_vaccination_expiry(last_vaccination):
+    if not last_vaccination:
+        return None
+    return last_vaccination + timedelta(days=365)
 
 @app.route("/check-username")
 def check_username():
@@ -329,13 +356,18 @@ def delete_notification(notif_id):
 with app.app_context():
     admin_email = os.environ.get('ADMIN_EMAIL', 'admin@gmail.com')
     admin_pass = os.environ.get('ADMIN_PASSWORD', 'admin123')
-    admin = User.query.filter_by(email=admin_email).first()
-    if not admin:
-        admin = User(email=admin_email, name='Administrator', role='admin')
-        admin.set_password(admin_pass)
-        db.session.add(admin)
-        db.session.commit()
-        print(f"✅ Created admin: {admin_email}")
+#    admin = User.query.filter_by(email=admin_email).first()
+##   if not admin:
+#        admin = User(email=admin_email, name='Administrator', role='admin')
+#        admin.set_password(admin_pass)
+#       db.session.add(admin)
+#        db.session.commit()
+#        print(f"✅ Created admin: {admin_email}")
+
+with app.app_context():
+    User.query.filter(User.created_at == None)\
+        .update({User.created_at: datetime.utcnow()})
+    db.session.commit()
 
 @app.before_request
 def auto_delete_old_notifications():
@@ -398,17 +430,29 @@ def format_breed(breed):
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
-        email = request.form.get('email')
-        name = request.form['name']
-        username = request.form['username'].strip().lower()
-        contact = request.form['contact']
-        address = request.form['address']
+
+        province = request.form.get("province")
+        municipality = request.form.get("municipality")
+        barangay = request.form.get("barangay")
+
+        full_address = f"{barangay}, {municipality}, {province}"
+
+        form_data = {
+            'email': request.form.get('email'),
+            'name': request.form['name'],
+            'username': request.form['username'].strip().lower(),
+            'contact': request.form['contact'],
+            'province': province,
+            'municipality': municipality,
+            'barangay': barangay
+        }
+
         password = request.form['password']
         confirm_password = request.form['confirm_password']
 
         if password != confirm_password:
             flash('Passwords do not match.', 'error')
-            return redirect(url_for('signup'))
+            return redirect(url_for('signup', form_data=form_data))
 
         if len(password) < 8 \
         or not re.search(r"[A-Z]", password) \
@@ -421,22 +465,21 @@ def signup():
             )
             return redirect(url_for("signup"))
         
-        if User.query.filter(db.func.lower(User.username) == username).first():
+        if User.query.filter(db.func.lower(User.username) == form_data['username'].lower()).first():
             flash("Username already taken.", "error")
             return redirect(url_for('signup'))
         
-        email = email if email.strip() != "" else None
-
-        if email and User.query.filter_by(email=email).first():
+        if form_data['email'] and User.query.filter_by(email=form_data['email']).first():
             flash('Email already registered.', 'error')
-            return redirect(url_for('signup'))
+            form_data['email'] = ''       # 👈 CLEAR ONLY EMAIL
+            return render_template('signup.html', form_data=form_data)
 
         user = User(
-            email=email,
-            name=name,
-            username=username,
-            contact=contact,
-            address=address,
+            email=form_data['email'],
+            name=form_data['name'],
+            username=form_data['username'],
+            contact=form_data['contact'],
+            address=full_address,
             role='owner'
         )
         user.set_password(password)
@@ -583,14 +626,15 @@ def owner_profile():
         return redirect(url_for('owner_profile'))
 
     return render_template('owner_profile.html', dogs=dogs)
-
+from dateutil.relativedelta import relativedelta
 
 @app.route('/owner_add_dog', methods=['POST'])
 @login_required
 def owner_add_dog():
     name = request.form['name']
     breed = format_breed(request.form['breed'])
-    age = int(request.form['age'])
+    birthdate_str = request.form.get("birthdate")
+    birthdate = datetime.strptime(birthdate_str, "%Y-%m-%d").date() if birthdate_str else None
     gender = request.form.get('gender')
     vaccinated = request.form['status']
     image = request.files.get("dog_image")
@@ -600,6 +644,17 @@ def owner_add_dog():
 
     last_vac_date = datetime.strptime(last_vaccination, "%Y-%m-%d").date() if last_vaccination else None
     next_vac_date = datetime.strptime(next_vaccination, "%Y-%m-%d").date() if next_vaccination else None
+
+    if last_vac_date:
+        # Vaccination expiry: 3 years after last vaccination
+        vaccination_expiry = last_vac_date + relativedelta(years=3)
+
+        # Next vaccination: if not entered, default to 1 year after last
+        if not next_vac_date:
+            next_vac_date = last_vac_date + relativedelta(years=1)
+    else:
+        next_vac_date = None
+        vaccination_expiry = None
 
     dog_uuid = str(uuid.uuid4())
 
@@ -621,7 +676,7 @@ def owner_add_dog():
         uuid=dog_uuid,
         name=name,
         breed=breed,
-        age=age,
+        birthdate=birthdate,
         gender=gender,
         vaccinated=vaccinated,
         owner_id=current_user.id,
@@ -630,6 +685,7 @@ def owner_add_dog():
         image=filename,
         last_vaccination=last_vac_date,
         next_vaccination=next_vac_date,
+        vaccination_expiry=vaccination_expiry,
         created_at=datetime.utcnow()
     )
 
@@ -654,7 +710,6 @@ def owner_delete_dog(dog_id):
     
     db.session.delete(dog)
     db.session.commit()
-    flash('Dog deleted successfully!', 'success')
     return redirect(url_for('owner_profile'))
 
 @app.route('/owner/edit_dog/<int:dog_id>', methods=['POST'])
@@ -673,7 +728,8 @@ def owner_edit_dog(dog_id):
     dog.name = request.form['name']
     dog.breed = request.form['breed']
     dog.gender = request.form['gender']
-    dog.age = request.form['age']
+    birthdate_str = request.form.get("birthdate")
+    dog.birthdate = datetime.strptime(birthdate_str, "%Y-%m-%d").date() if birthdate_str else None
 
     if 'dog_image' in request.files:
         file = request.files['dog_image']
@@ -730,8 +786,19 @@ def admin_dashboard():
         flash("You don't have permission to access this page.", "danger")
         return redirect(url_for('login'))
 
-    users = User.query.filter_by(role='owner').all() 
-    dogs = Dog.query.all()
+    users = (
+        User.query
+        .filter_by(role='owner')
+        .order_by(func.lower(User.name))   # ✅ ALPHABETICAL
+        .all()
+    )
+
+    dogs = (
+        Dog.query
+        .order_by(func.lower(Dog.name))    # ✅ ALPHABETICAL
+        .all()
+    )
+
     return render_template('admin_dashboard.html', users=users, dogs=dogs)
 
 @app.route('/admin/data-analysis')
@@ -797,6 +864,49 @@ def admin_data_analysis():
         end_month=end_month
     )
 
+@app.route('/admin/search-dogs')
+@login_required
+def admin_search_dogs():
+    if current_user.role != 'admin':
+        abort(403)
+
+    query = request.args.get("q", "").strip().lower()
+    search_field = request.args.get("search_field", "name")
+    filter_status = request.args.get("filter", "all")
+
+    dogs = Dog.query
+                # Vaccination filter
+    if filter_status in ["vaccinated", "not_vaccinated"]:
+        status = "Vaccinated" if filter_status == "vaccinated" else "Not Vaccinated"
+        dogs = dogs.filter(Dog.vaccinated == status)
+
+    # Search by name, breed, owner
+    if query:
+            if search_field == "name":
+                dogs = dogs.filter(Dog.name.ilike(f"%{query}%"))
+
+            elif search_field == "breed":
+                dogs = dogs.filter(Dog.breed.ilike(f"%{query}%"))
+
+            elif search_field == "owner_name":
+                dogs = dogs.filter(Dog.owner_name.ilike(f"%{query}%"))
+
+            elif search_field == "gender":
+                dogs = dogs.filter(func.lower(Dog.gender) == query.lower())
+
+            elif search_field == "age":
+                # 🚫 If not a number → show nothing
+                if query.isdigit():
+                    dogs = dogs.filter(Dog.age == int(query))
+                else:
+                    dogs = dogs.filter(False)
+
+        # ✅ FORCE ORIGINAL ORDER (IMPORTANT)
+    dogs = dogs.order_by(Dog.created_at.desc()).all()
+
+    # Render partial template for dog cards only
+    return render_template("admin_dog_cards_partial.html", dogs=dogs)
+
 @app.route('/admin/register_dog', methods=['POST'])
 @login_required
 def admin_register_dog():
@@ -806,7 +916,8 @@ def admin_register_dog():
 
     name = request.form['name']
     breed = format_breed(request.form['breed'])
-    age = request.form['age']
+    birthdate_str = request.form.get("birthdate")
+    birthdate = datetime.strptime(birthdate_str, "%Y-%m-%d").date() if birthdate_str else None
     gender = request.form.get("gender")
     status = request.form['status']
     vaccinated = "Vaccinated" if status == "Vaccinated" else "Not Vaccinated"
@@ -817,20 +928,27 @@ def admin_register_dog():
     last_vac_date = datetime.strptime(last_vaccination, "%Y-%m-%d").date() if last_vaccination else None
     next_vac_date = datetime.strptime(next_vaccination, "%Y-%m-%d").date() if next_vaccination else None
 
+    if last_vac_date:
+        # Expiry: 3 years after last vaccination
+        vaccination_expiry = last_vac_date + relativedelta(years=3)
+
+        # Next vaccination: 1 year after last if not provided
+        if not next_vac_date:
+            next_vac_date = last_vac_date + relativedelta(years=1)
+    else:
+        next_vac_date = None
+        vaccination_expiry = None
+
     image_file = request.files.get("dog_image")
     image_filename = None
-
     if image_file and image_file.filename != "":
         image_filename = secure_filename(image_file.filename)
         save_path = os.path.join("static/dog_images", image_filename)
         image_file.save(save_path)
 
     dog_uuid = str(uuid.uuid4())
-
     qr_data = url_for("dog_info", dog_uuid=dog_uuid, _external=True)
-
     img = qrcode.make(qr_data)
-
     qr_filename = f"{dog_uuid}.png"
     img.save(os.path.join(QR_FOLDER, qr_filename))
 
@@ -838,7 +956,7 @@ def admin_register_dog():
         uuid=dog_uuid,
         name=name,
         breed=breed,
-        age=age,
+        birthdate=birthdate,
         gender=gender,
         owner_name="Stray (Admin Registered)",
         owner_id=None,
@@ -847,13 +965,13 @@ def admin_register_dog():
         image=image_filename,
         last_vaccination=last_vac_date,
         next_vaccination=next_vac_date,
+        vaccination_expiry=vaccination_expiry,  # ✅ NEW
         created_at=datetime.utcnow()
     )
 
     db.session.add(new_dog)
     db.session.commit()
 
-    flash("Stray dog registered successfully! QR code created.", "success")
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/edit_dog/<int:dog_id>', methods=['POST'])
@@ -892,7 +1010,6 @@ def admin_delete_dog(dog_id):
     db.session.delete(dog)
     db.session.commit()
 
-    flash("Dog deleted successfully!", "success")
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/delete_owner/<int:owner_id>', methods=['POST'])

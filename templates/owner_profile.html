@@ -150,7 +150,7 @@
               <div class="col-md-8 col-12">
                 <div class="card-body">
                   <h5 class="card-title fw-bold text-primary mb-1">{{ dog.name }}</h5>
-                  <span class="badge {% if dog.vaccinated=='Vaccinated' %}bg-success{% else %}bg-danger{% endif %} mb-2"><i class="bi bi-shield-check"></i> {{ dog.vaccinated }}</span>
+                  <span class="badge {% if dog.vaccinated=='Vaccinated' %}text-success{% else %}text-danger{% endif %} mb-2" style="font-size: 14px;"><i class="bi bi-shield-check"></i> {{ dog.vaccinated }}</span>
                   <p class="text-muted small mb-1">Breed: {{ dog.breed }}</p>
                   <p class="text-muted small mb-1">Gender:
                     {% if dog.gender == 'Male' %}
@@ -161,13 +161,14 @@
                       N/A
                     {% endif %}
                   </p>
-                  <p class="text-muted small mb-1">Age: {{ dog.age }} yrs</p>
+                  <p class="text-muted small mb-1">Age: {{ dog.age }}</p>
                     <p class="text-muted small mb-1">Last Vaccinated: 
                       {{ dog.last_vaccination if dog.last_vaccination else "N/A" }}
                     </p>
                     <p class="text-muted small mb-2">Next Vaccination: 
                       {{ dog.next_vaccination if dog.next_vaccination else "N/A" }}
                     </p>
+                    <p class="text-muted small mb-2">Vaccination Expiry: {{ dog.vaccination_expiry if dog.vaccination_expiry else "N/A" }}</p>
                   {% if dog.qr_code %}
                   <a href="{{ url_for('download_qr', dog_uuid=dog.uuid) }}" class="btn btn-sm btn-primary w-50 mb-2">Download QR</a>
                   {% endif %}
@@ -236,27 +237,21 @@
 
         <div class="modal-body">
 
-          <div class="mb-3 text-center">
-            <label class="form-label fw-bold">Upload Dog Image</label>
+          <div class="text-start">
+            <label class="form-label">Upload Dog Image</label>
             <input type="file" name="dog_image" class="form-control" accept="image/*">
+          <small style="font-size: 12.5px;">
+            Dog image must be whole body
+          </small>
           </div>
+
 
           <div class="mb-3">
             <input type="text" name="name" class="form-control" placeholder="Name" required>
           </div>
-
           <div class="mb-3">
             <input type="text" name="breed" list="breed-list" class="form-control" placeholder="Breed" required>
           </div>
-
-          <div class="mb-3">
-            <select name="gender" class="form-select" required>
-              <option value="" disabled selected>Select Gender</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-            </select>
-          </div>
-
           <datalist id="breed-list">
             <option value="Aspin">
             <option value="Beagle">
@@ -277,7 +272,17 @@
           </datalist>
 
           <div class="mb-3">
-            <input type="number" name="age" class="form-control" placeholder="Age" required>
+            <label>Birthdate</label>
+            <input type="date" name="birthdate" class="form-control" required>
+          </div>
+
+
+          <div class="mb-3">
+            <select name="gender" class="form-select" required>
+              <option value="" disabled selected>Select Gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
           </div>
 
           <select name="status" class="form-select mb-2" id="addVaccinationStatus" required>
@@ -349,9 +354,11 @@
             </select>
           </div>
 
-          <div class="mb-3">
-            <input type="number" name="age" class="form-control" value="{{ dog.age }}" required>
-          </div>
+        <div class="mb-3">
+          <label>Birthdate</label>
+          <input type="date" name="birthdate" class="form-control" value="{{ dog.birthdate|default('', true) }}">
+        </div>
+
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

@@ -4,65 +4,118 @@
 
 {% block styles %}
   <style>
-    body { background-color: #f8f9fa; font-family: "Poppins", sans-serif; }
-    .card { border-radius: 1rem; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    table { background-color: #fff; border-radius: 0.5rem; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,0.1); }
-    th { background-color: #0d6efd; color: white; }
-    td img { border-radius: 6px; border: 1px solid #dee2e6; }
+    /* Body & Typography */
+    body { 
+      background-color: #f4f6f8; 
+      font-family: "Poppins", sans-serif; 
+      color: #495057;
+    }
+
+    /* Cards */
+    .card { 
+      border-radius: 1rem; 
+      border: none; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    }
+
+    /* Tables */
+    table { 
+      background-color: #ffffff; 
+      border-radius: 0.5rem; 
+      overflow: hidden; 
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
+    }
+    th { 
+      background-color: #0a58ca; 
+      color: #ffffff; 
+      font-weight: 600;
+    }
+    td img { 
+      border-radius: 8px; 
+      border: 1px solid #dee2e6; 
+    }
+
+    /* Dog Cards */
     .dog-card {
-    border-radius: 12px;
-    border: 1px solid #e5e5e5;
-    transition: 0.2s;
-}
-
-.dog-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-}
-
-.dog-img-wrapper {
-  height: 100%;
-}
-
-.dog-img {
-  padding: 10px;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 10px;
-}
-
-.dog-img:hover {
-  cursor: pointer;
-  transform: scale(1.03);
-  transition: 0.2s;
-}
-
-.qr-clickable:hover {
-  transform: scale(1.05);
-  transition: 0.2s;
-}
-
-.qr-modal-bg {
-  background-color: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(6px);
-}
-
-@media (max-width: 1440px) {
-    .dog-img {
-        width: 100%;
-        height: 100%;
+      border-radius: 12px;
+      border: 1px solid #e0e0e0;
+      background: #ffffff;
+      transition: 0.3s ease;
     }
-}
-@media (max-width: 768px) {
-    .dog-img {
-        width: 100%;
-        height: 100%;
-        border-radius: 15px 15px 0 0;
+    .dog-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
     }
+
+    /* Dog Images */
+    .dog-img-wrapper { height: 100%; }
+    .dog-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 12px;
+      padding: 8px;
+      transition: transform 0.2s ease;
+    }
+    .dog-img:hover {
+      cursor: pointer;
+      transform: scale(1.05);
+    }
+
+    /* QR Codes */
+    .qr-clickable {
+      transition: transform 0.2s ease;
+      cursor: pointer;
+    }
+    .qr-clickable:hover {
+      transform: scale(1.1);
+    }
+    .qr-modal-bg {
+      background-color: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+
+    /* Buttons */
+    .btn-primary { background-color: #0a58ca; border: none; }
+    .btn-primary:hover { background-color: #084298; }
+    .btn-success { background-color: #198754; border: none; }
+    .btn-success:hover { background-color: #146c43; }
+    .btn-danger { background-color: #dc3545; border: none; }
+    .btn-danger:hover { background-color: #a71d2a; }
+
+    /* Headings */
+    h3, h5, h6 { font-weight: 600; }
+
+    input:disabled {
+  background-color: #e9ecef;
+  cursor: not-allowed;
 }
 
+.dropdown-toggle::after {
+  display: none; /* Remove default caret */
+}
+
+.table td .dropdown {
+    position: relative; /* ensures the dropdown menu is positioned correctly */
+}
+
+.table-responsive {
+    position: static;
+}
+
+    /* Responsive */
+    @media (max-width: 1440px) {
+      .dog-img { width: 100%; height: 100%; }
+    }
+    @media (max-width: 768px) {
+      .dog-img { border-radius: 15px 15px 0 0; height: auto; }
+    }
   </style>
 {% endblock %}
 
@@ -76,7 +129,7 @@
     
     <div class="card mb-4">
       <div class="card-body">
-        <h5 class="card-title text-secondary mb-3"><i class="bi bi-person-badge"></i>Owners</h5>
+        <h5 class="card-title text-secondary mb-3"><i class="bi bi-people-fill"></i> Owners</h5>
         <div class="table-responsive">
           <table class="table table-hover align-middle">
             <thead>
@@ -93,15 +146,30 @@
                 <td>{{ u.id }}</td>
                 <td>{{ u.email }}</td>
                 <td>{{ u.name }}</td>
-                <td>{{ u.role }}</td>
+                <td>{{ u.role | capitalize }}</td>
                 <td>
-                <button type="button" 
-                        class="btn btn-danger btn-sm" 
-                        data-bs-toggle="modal" 
-                        data-bs-target="#deleteOwnerModal" 
-                        onclick="setDeleteOwnerForm('{{ url_for('admin_delete_owner', owner_id=u.id) }}')">
-                  Delete
-                </button>
+                  <div class="dropdown">
+                    <button class="btn btn-sm dropdown-toggle" type="button" id="ownerActionsDropdown{{ u.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                      <i class="bi bi-three-dots-vertical"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="ownerActionsDropdown{{ u.id }}">
+                      <li>
+                        <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#viewOwnerModal{{ u.id }}">
+                          <i class="bi bi-eye me-2"></i> View
+                        </a>
+                      </li>
+                      <li>
+                        <a 
+                          class="dropdown-item text-danger" 
+                          href="#" 
+                          data-bs-toggle="modal" 
+                          data-bs-target="#deleteOwnerModal"
+                          onclick="setDeleteOwnerForm('{{ url_for('admin_delete_owner', owner_id=u.id) }}')">
+                          <i class="bi bi-trash me-2"></i>Delete
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
                 </td>
               </tr>
               {% else %}
@@ -113,17 +181,153 @@
       </div>
     </div>
 
+{% for u in users %}
+<div class="modal fade" id="viewOwnerModal{{ u.id }}" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <!-- HEADER -->
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">
+          <i class="bi bi-person-circle"></i> Owner Details
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <!-- BODY -->
+      <div class="modal-body">
+
+        <!-- DATE REGISTERED -->
+        <p class="text-muted small mb-4">
+          <strong>Date Registered:</strong>
+          {{ u.created_at.strftime('%B %d, %Y') if u.created_at else 'N/A' }}
+        </p>
+
+        <!-- OWNER INFO CARDS -->
+        <div class="row g-3">
+          <div class="col-md-6">
+                <p class="mb-1"><strong>Name:</strong> {{ u.name }}</p>
+                <p class="mb-1"><strong>Email:</strong> {{ u.email }}</p>
+                <p class="mb-0"><strong>Contact:</strong> {{ u.contact or 'N/A' }}</p>
+          </div>
+          <div class="col-md-6">
+                <p class="mb-1"><strong>Address:</strong> {{ u.address or 'N/A' }}</p>
+                <p class="mb-0"><strong>Role:</strong> {{ u.role | capitalize }}</p>
+          </div>
+        </div>
+
+        <hr>
+
+        <!-- DOG LIST -->
+        <h6 class="fw-bold mb-3">
+          <i class="bi bi-paw-fill"></i> Registered Dogs
+        </h6>
+
+        {% if u.dogs %}
+        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+          <table class="table table-bordered table-hover align-middle">
+            <thead class="table-light sticky-top">
+              <tr>
+                <th>Name</th>
+                <th>Breed</th>
+                <th>Age</th>
+                <th>Gender</th>
+                <th>Status</th>
+                <th>Last Vaccination</th>
+                <th>Next Vaccination</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for d in u.dogs %}
+              <tr>
+                <td>{{ d.name }}</td>
+                <td>{{ d.breed }}</td>
+                <td>{{ d.age }}</td>
+                <td>{{ d.gender }}</td>
+                <td>
+                  {% if d.vaccinated == 'Vaccinated' %}
+                    <span class="badge text-success">Vaccinated</span>
+                  {% else %}
+                    <span class="badge text-danger">Not Vaccinated</span>
+                  {% endif %}
+                </td>
+                <td>{{ d.last_vaccination or 'N/A' }}</td>
+                <td>{{ d.next_vaccination or 'N/A' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+          <p class="text-muted">No dogs registered.</p>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+
     <div class="d-flex justify-content-between align-items-center mb-4">
       <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#registerStrayDogModal">
-        + Register Stray Dog
+      <i class="bi bi-plus-lg"></i> Register Stray Dog
       </button>
     </div>   
 
+<form id="search-dogs-form" method="get" action="{{ url_for('admin_search_dogs') }}">
+    <div class="row g-2 mb-3">
+
+          <div class="col-auto">
+        <input id="dogSearchInput" name="q" type="text" class="form-control" placeholder="Search by name, breed, owner..." list="breedSuggestions">
+<datalist id="breedSuggestions">
+  <option value="Aspin">
+  <option value="Beagle">
+  <option value="Bulldog">
+  <option value="Chihuahua">
+  <option value="Dalmatian">
+  <option value="Doberman">
+  <option value="German Shepherd">
+  <option value="Golden Retriever">
+  <option value="Husky">
+  <option value="Labrador">
+  <option value="Pomeranian">
+  <option value="Pug">
+  <option value="Rottweiler">
+  <option value="Shih Tzu">
+  <option value="Yorkshire Terrier">
+  <option value="Mix Breed">
+</datalist>
+
+    </div>
+        <!-- Search Field Dropdown -->
+        <div class="col-auto">
+            <select name="search_field" class="form-select">
+                <option value="name" selected>Name</option>
+                <option value="breed">Breed</option>
+                <option value="owner_name">Owner Name</option>
+                <option value="age">Age</option>
+                <option value="gender">Gender</option>
+            </select>
+        </div>
+
+    <!-- Vaccination Filter -->
+    <div class="col-auto">
+        <select id="dogFilterSelect" class="form-select">
+            <option value="all">All</option>
+            <option value="vaccinated">Vaccinated</option>
+            <option value="not_vaccinated">Not Vaccinated</option>
+        </select>
+    </div>
+</div>
+    </div>
+</form>
+
 <div class="card mb-4">
   <div class="card-body">
-    <h5 class="card-title text-secondary mb-4">Registered Dogs</h5>
+    <h5 class="card-title text-secondary mb-4"><i class="bi bi-card-list"></i> Registered Dogs</h5>
 
-    <div class="row g-4">
+    <div id="dogCardsContainer" class="row g-4">
 
       
       <div class="col-md-6">
@@ -135,16 +339,17 @@
             
             
             <div class="col-lg-4 col-12 dog-img-wrapper">
-              <img src="{{ url_for('static', filename='dog_images/' ~ d.image if d.image else 'default_dog.png') }}"
+                 <img src="{{ url_for('static', filename='dog_images/' ~ (d.image if d.image else 'default_dog.png')) }}"
                   class="dog-img"
                   alt="{{ d.name }}"
                   style="cursor: pointer;"
                   onclick="openQrFullscreen(this.src)">
             </div>
 
-            
+
             <div class="col-8 col-md-8">
               <h5 class="fw-bold mb-1">{{ d.name }}</h5>
+              <p class="text-success small fw-semibold mb-2"><i class="bi bi-shield-check"></i> Vaccinated</p>
               <p class="text-muted small mb-1">Breed: {{ d.breed }}</p>
               <p class="text-muted small mb-1">Owner: {{ d.owner_name or "Stray" }}</p>
               <p class="text-muted small mb-1">Age: {{ d.age if d.age else 'N/A' }}</p>
@@ -165,11 +370,8 @@
               <p class="text-muted small mb-2">Next Vaccination: 
                 {{ d.next_vaccination if d.next_vaccination else "N/A" }}
               </p>
-
-              <p class="text-success small fw-semibold mb-2"><i class="bi bi-shield-check"></i> Vaccinated</p>
-
+              <p class="text-muted small mb-2">Vaccination Expiry: {{ d.vaccination_expiry if d.vaccination_expiry else "N/A" }}</p>
               {% if d.qr_code %}
-              
               <img src="{{ url_for('qrcodes', filename=d.qr_code) }}" alt="{{ d.name}} QR"
                   class="border rounded p-1 mb-2 qr-clickable"
                   style="height: 90px; width: 90px; cursor: pointer;"
@@ -182,14 +384,13 @@
                         data-bs-target="#editDogModal{{ d.id }}">
                   Edit
                 </button>
-
-                <button type="button" 
-                        class="btn btn-danger btn-sm" 
-                        data-bs-toggle="modal" 
-                        data-bs-target="#deleteDogModal" 
-                        onclick="setDeleteDogForm('{{ url_for('admin_delete_dog', dog_id=d.id) }}')">
-                  Delete
-                </button>
+              <button type="button" 
+                      class="btn btn-danger btn-sm" 
+                      data-bs-toggle="modal" 
+                      data-bs-target="#deleteDogModal" 
+                      onclick="setDeleteDogForm('{{ url_for('admin_delete_dog', dog_id=d.id) }}')">
+                Delete
+              </button>
               </div>
             </div>
 
@@ -211,7 +412,7 @@
             
             
             <div class="col-lg-4 col-12 dog-img-wrapper">
-              <img src="{{ url_for('static', filename='dog_images/' ~ d.image) }}"
+                 <img src="{{ url_for('static', filename='dog_images/' ~ (d.image if d.image else 'default_dog.png')) }}"
                   class="dog-img"
                   alt="{{ d.name }}"
                   style="cursor: pointer;"
@@ -221,6 +422,7 @@
             
             <div class="col-8 col-md-8">
               <h5 class="fw-bold mb-1">{{ d.name }}</h5>
+              <p class="text-danger small fw-semibold mb-2"><i class="bi bi-exclamation-triangle"></i> Not Vaccinated</p>
               <p class="text-muted small mb-1">Breed: {{ d.breed }}</p>
               <p class="text-muted small mb-1">Owner: {{ d.owner_name or "Stray" }}</p>
               <p class="text-muted small mb-1">Age: {{ d.age if d.age else 'N/A' }}</p>
@@ -240,10 +442,9 @@
               <p class="text-muted small mb-2">Next Vaccination: 
                 {{ d.next_vaccination if d.next_vaccination else "N/A" }}
               </p>
+              <p class="text-muted small mb-2">Vaccination Expiry: {{ d.vaccination_expiry if d.vaccination_expiry else "N/A" }}</p>
 
-              <p class="text-danger small fw-semibold mb-2"><i class="bi bi-exclamation-triangle"></i> Not Vaccinated</p>
               {% if d.qr_code %}
-              
                 <img src="{{ url_for('qrcodes', filename=d.qr_code) }}" alt="{{ d.name}} QR"
                     class="rounded p-1 mb-2 qr-clickable"
                     style="height: 90px; width: 90px; cursor: pointer;"
@@ -257,13 +458,14 @@
                   Edit
                 </button>
 
-                <button type="button" 
-                        class="btn btn-danger btn-sm" 
-                        data-bs-toggle="modal" 
-                        data-bs-target="#deleteDogModal" 
-                        onclick="setDeleteDogForm('{{ url_for('admin_delete_dog', dog_id=d.id) }}')">
-                  Delete
-                </button>
+              <button type="button" 
+                      class="btn btn-danger btn-sm" 
+                      data-bs-toggle="modal" 
+                      data-bs-target="#deleteDogModal" 
+                      onclick="setDeleteDogForm('{{ url_for('admin_delete_dog', dog_id=d.id) }}')">
+                Delete
+              </button>
+
               </div>
             </div>
 
@@ -277,7 +479,66 @@
     </div>
   </div>
 </div>
+<div class="modal fade" id="qrFullscreenModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-fullscreen">
+    <div class="modal-content qr-modal-bg">
 
+      <div class="modal-header border-0">
+        <button type="button" class="btn-close btn-close-white ms-auto"
+                data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body d-flex justify-content-center align-items-center">
+        <img id="qrFullscreenImg"
+             src=""
+             class="img-fluid"
+             style="max-height: 90vh; max-width: 90vw;">
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="deleteOwnerModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST" id="deleteOwnerForm" action="#">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title">Remove Account</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          Are you sure you want to remove this account? This action cannot be undone.
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Remove account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Dog Confirmation Modal -->
+<div class="modal fade" id="deleteDogModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST" id="deleteDogForm">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title">Delete Dog</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          Are you sure you want to delete this dog? This action cannot be undone.
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Delete Dog</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 
 {% for d in dogs %}
 <div class="modal fade" id="editDogModal{{ d.id }}" tabindex="-1">
@@ -306,8 +567,22 @@
           </div>
 
           <div class="mb-3">
+            <select name="gender" class="form-select" required>
+              <option value="" disabled {{ 'selected' if not d.gender }}>
+                Select Gender
+              </option>
+              <option value="Male" {{ 'selected' if d.gender == 'Male' }}>
+                Male
+              </option>
+              <option value="Female" {{ 'selected' if d.gender == 'Female' }}>
+                Female
+              </option>
+            </select>
+          </div>
+
+          <div class="mb-3">
             <label>Status</label>
-            <select name="status" class="form-select">
+            <select name="status" class="form-select" data-dog-id="{{ d.id }}">
               <option {% if d.vaccinated == 'Vaccinated' %}selected{% endif %}>
                 Vaccinated
               </option>
@@ -315,6 +590,24 @@
                 Not Vaccinated
               </option>
             </select>
+          </div>
+
+          <div class="mb-3">
+            <label>Last Vaccination</label>
+            <input type="date"
+                  name="last_vaccination"
+                  class="form-control edit-last"
+                  data-dog-id="{{ d.id }}"
+                  value="{{ d.last_vaccination }}">
+          </div>
+
+          <div class="mb-3">
+            <label>Next Vaccination</label>
+            <input type="date"
+                  name="next_vaccination"
+                  class="form-control edit-next"
+                  data-dog-id="{{ d.id }}"
+                  value="{{ d.next_vaccination }}">
           </div>
         </div>
 
@@ -367,30 +660,37 @@
                 <option value="Yorkshire Terrier">
              </datalist>
             </div>
-            <div class="mb-3">
-              <label>Age</label>
-              <input type="number" name="age" class="form-control" required>
-            </div>
+          <div class="mb-3">
+            <label>Birthdate</label>
+            <input type="date" name="birthdate" class="form-control" required>
+          </div>
 
             <div class="mb-3">
-              <label>Last Vaccination Date</label>
-              <input type="date" name="last_vaccination" class="form-control">
-            </div>
-
-            <div class="mb-3">
-              <label>Next Vaccination Due</label>
-              <input type="date" name="next_vaccination" class="form-control">
+              <select name="gender" class="form-select" required>
+                <option value="" disabled selected>Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
             </div>
 
             <div class="mb-3">
               <label>Status</label>
-              <select name="status" class="form-select" required>
+              <select name="status" id="registerStatus" class="form-select" required>
                 <option value="" disabled selected>Select Vaccination Status</option>
                 <option value="Vaccinated">Vaccinated</option>
                 <option value="Not Vaccinated">Not Vaccinated</option>
               </select>
             </div>
-          </div>
+
+            <div class="mb-3">
+              <label>Last Vaccination Date</label>
+              <input type="date" name="last_vaccination" id="registerLastVaccination" class="form-control">
+            </div>
+
+            <div class="mb-3">
+              <label>Next Vaccination Due</label>
+              <input type="date" name="next_vaccination" id="registerNextVaccination" class="form-control">
+            </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
             <button type="submit" class="btn btn-success">Register Dog</button>
@@ -399,69 +699,19 @@
       </div>
     </div>
   </div>
+  <script>
+function setDeleteOwnerForm(actionUrl) {
+  const form = document.getElementById("deleteOwnerForm");
+  form.action = actionUrl;
+}
+</script>
 
-  
-<div class="modal fade" id="qrFullscreenModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-fullscreen">
-    <div class="modal-content qr-modal-bg">
-
-      <div class="modal-header border-0">
-        <button type="button" class="btn-close btn-close-white ms-auto"
-                data-bs-dismiss="modal"></button>
-      </div>
-
-      <div class="modal-body d-flex justify-content-center align-items-center">
-        <img id="qrFullscreenImg"
-             src=""
-             class="img-fluid"
-             style="max-height: 90vh; max-width: 90vw;">
-      </div>
-
-    </div>
-  </div>
-</div>
-
-<div class="modal fade" id="deleteOwnerModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <form method="POST" id="deleteOwnerForm">
-        <div class="modal-header bg-danger text-white">
-          <h5 class="modal-title">Remove Account</h5>
-        </div>
-        <div class="modal-body">
-          Are you sure you want to Remove this Account? This action cannot be undone.
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-danger">Remove</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-<div class="modal fade" id="deleteDogModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <form method="POST" id="deleteDogForm">
-        <div class="modal-header bg-danger text-white">
-          <h5 class="modal-title">Delete Dog</h5>
-        </div>
-        <div class="modal-body">
-          Are you sure you want to delete this dog? This action cannot be undone.
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-danger">Delete Dog</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-
+<script>
+function setDeleteDogForm(actionUrl) {
+  const form = document.getElementById("deleteDogForm");
+  form.action = actionUrl;
+}
+</script>
 <script>
 function openQrFullscreen(src) {
   const img = document.getElementById("qrFullscreenImg");
@@ -474,13 +724,112 @@ function openQrFullscreen(src) {
 }
 </script>
 <script>
-function setDeleteDogForm(actionUrl) {
-  document.getElementById("deleteDogForm").action = actionUrl;
+const searchInput = document.getElementById('dogSearchInput');
+const filterSelect = document.getElementById('dogFilterSelect');
+const dogCardsContainer = document.getElementById('dogCardsContainer');
+const searchFieldSelect = document.querySelector('select[name="search_field"]');
+const searchField = document.querySelector('select[name="search_field"]');
+
+let searchTimeout = null;
+
+function updateDogCards() {
+    const query = searchInput.value.trim();
+    const filter = filterSelect.value;
+
+    // ✅ FULL RESET CONDITION
+    if (filter === 'all' && query === '') {
+        window.location.href = "{{ url_for('admin_dashboard') }}";
+        return;
+    }
+
+    // Debounce
+    if (searchTimeout) clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+const searchField = document.querySelector('select[name="search_field"]').value;
+
+const params = new URLSearchParams({
+    q: query,
+    filter: filter,
+    search_field: searchField
+});
+
+        fetch(`/admin/search-dogs?${params.toString()}`)
+            .then(res => res.text())
+            .then(html => {
+                dogCardsContainer.innerHTML = html;
+            })
+            .catch(err => console.error('Error fetching dogs:', err));
+    }, 300);
 }
+
+searchInput.addEventListener('input', updateDogCards);
+filterSelect.addEventListener('change', updateDogCards);
+
+searchFieldSelect.addEventListener('change', () => {
+    searchInput.value = '';
+
+    if (searchFieldSelect.value === 'age') {
+        searchInput.type = 'number';
+    } else {
+        searchInput.type = 'text';
+    }
+});
+
+function toggleBreedSuggestions() {
+  if (searchField.value === 'breed') {
+    searchInput.setAttribute('list', 'breedSuggestions');
+    searchInput.placeholder = 'Type or select a breed...';
+  } else {
+    searchInput.removeAttribute('list');
+    searchInput.placeholder = 'Search...';
+  }
+}
+
+searchField.addEventListener('change', toggleBreedSuggestions);
+toggleBreedSuggestions(); // run on page load
 </script>
 <script>
-function setDeleteOwnerForm(actionUrl) {
-  document.getElementById("deleteOwnerForm").action = actionUrl;
+const registerStatus = document.getElementById('registerStatus');
+const registerLast = document.getElementById('registerLastVaccination');
+const registerNext = document.getElementById('registerNextVaccination');
+
+function toggleRegisterDates() {
+  if (registerStatus.value === 'Vaccinated') {
+    registerLast.disabled = false;
+    registerNext.disabled = false;
+  } else {
+    registerLast.value = '';
+    registerNext.value = '';
+    registerLast.disabled = true;
+    registerNext.disabled = true;
+  }
 }
+
+registerStatus.addEventListener('change', toggleRegisterDates);
+
+// Initial state
+toggleRegisterDates();
+</script>
+<script>
+document.querySelectorAll('.edit-status').forEach(select => {
+  function toggleEditDates() {
+    const id = select.dataset.dogId;
+    const last = document.querySelector(`.edit-last[data-dog-id="${id}"]`);
+    const next = document.querySelector(`.edit-next[data-dog-id="${id}"]`);
+
+    if (select.value === 'Vaccinated') {
+      last.disabled = false;
+      next.disabled = false;
+    } else {
+      last.value = '';
+      next.value = '';
+      last.disabled = true;
+      next.disabled = true;
+    }
+  }
+
+  select.addEventListener('change', toggleEditDates);
+  toggleEditDates(); // Run once on modal load
+});
 </script>
 {% endblock %}

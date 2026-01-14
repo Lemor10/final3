@@ -157,11 +157,16 @@
           </a>
         </div>
       {% else %}
-        <a href="{{ url_for('owner_dashboard') }}" class="btn btn-light text-primary mt-2">
-          Go to Dashboard
-        </a>
+        {% if current_user.role == 'admin' %}
+          <a href="{{ url_for('admin_dashboard') }}" class="btn btn-light text-primary mt-2">
+            Go to Admin Dashboard
+          </a>
+        {% else %}
+          <a href="{{ url_for('owner_dashboard') }}" class="btn btn-light text-primary mt-2">
+            Go to Owner Dashboard
+          </a>
+        {% endif %}
       {% endif %}
-
       
       <div class="features mt-5">
         <div class="row g-3">
