@@ -122,7 +122,6 @@
       <label>Owner Address</label>
       <input type="text" name="address" class="form-control profile-input" value="{{ current_user.address if current_user.address else 'N/A' }}" readonly>
     </div>
-
     <button type="button" id="editBtn" class="btn btn-outline-primary w-100 mt-3">Edit Profile</button>
     <div id="saveCancelBtns" class="mt-3 d-none">
       <button type="submit" class="btn btn-success w-100 mb-2">Save Changes</button>
@@ -149,10 +148,11 @@
               </div>
               <div class="col-md-8 col-12">
                 <div class="card-body">
-                  <h5 class="card-title fw-bold text-primary mb-1">{{ dog.name }}</h5>
-                  <span class="badge {% if dog.vaccinated=='Vaccinated' %}text-success{% else %}text-danger{% endif %} mb-2" style="font-size: 14px;"><i class="bi bi-shield-check"></i> {{ dog.vaccinated }}</span>
-                  <p class="text-muted small mb-1">Breed: {{ dog.breed }}</p>
-                  <p class="text-muted small mb-1">Gender:
+                  <h5 class="card-title fw-bold text-primary mb-1 {% if dog.vaccinated=='Vaccinated' %}text-success bi bi-shield-check{% else %}text-danger bi bi-x-circle{% endif %}"> 
+                    {{ dog.name }}
+                  </h5>
+                  <p class="text-muted small mb-1"><strong>Breed:</strong> {{ dog.breed }}</p>
+                  <p class="text-muted small mb-1"><strong>Gender:</strong>
                     {% if dog.gender == 'Male' %}
                     <i class="bi bi-gender-male text-primary"></i>
                     {% elif dog.gender == 'Female' %}
@@ -161,14 +161,14 @@
                       N/A
                     {% endif %}
                   </p>
-                  <p class="text-muted small mb-1">Age: {{ dog.age }}</p>
-                    <p class="text-muted small mb-1">Last Vaccinated: 
+                  <p class="text-muted small mb-1"><strong>Age:</strong> {{ dog.age }}</p>
+                    <p class="text-muted small mb-1"><strong>Last Vaccinated:</strong>
                       {{ dog.last_vaccination if dog.last_vaccination else "N/A" }}
                     </p>
-                    <p class="text-muted small mb-2">Next Vaccination: 
+                    <p class="text-muted small mb-2"><strong>Next Vaccination:</strong> 
                       {{ dog.next_vaccination if dog.next_vaccination else "N/A" }}
                     </p>
-                    <p class="text-muted small mb-2">Vaccination Expiry: {{ dog.vaccination_expiry if dog.vaccination_expiry else "N/A" }}</p>
+                    <p class="text-muted small mb-2"><strong>Vaccination Expiry:</strong> {{ dog.vaccination_expiry if dog.vaccination_expiry else "N/A" }}</p>
                   {% if dog.qr_code %}
                   <a href="{{ url_for('download_qr', dog_uuid=dog.uuid) }}" class="btn btn-sm btn-primary w-50 mb-2">Download QR</a>
                   {% endif %}
@@ -275,7 +275,6 @@
             <label>Birthdate</label>
             <input type="date" name="birthdate" class="form-control" required>
           </div>
-
 
           <div class="mb-3">
             <select name="gender" class="form-select" required>

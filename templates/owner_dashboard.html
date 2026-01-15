@@ -147,8 +147,7 @@ body {
         </div>
         <div class="col-8">
           <div class="card-body">
-            <h6 class="fw-bold text-primary mb-1">{{ dog.name }}</h6>
-            <span class="badge bg-success mb-2">Vaccinated</span>
+            <h6 class="fw-bold text-primary mb-1 mt-1"><i class="text-success bi bi-shield-check"></i> {{ dog.name }}</h6>
             <p class="text-muted mb-1 small"><strong>Breed:</strong> {{ dog.breed }}</p>
             <p class="text-muted mb-1 small"><strong>Gender:</strong>                     
               {% if dog.gender == 'Male' %}
@@ -159,10 +158,14 @@ body {
               N/A
               {% endif %}
             </p>
-            <p class="text-muted mb-1 small"><strong>Age:</strong> {{ dog.age }} yrs</p>
+            <p class="text-muted mb-1 small"><strong>Age:</strong> {{ dog.age }}</p>
             <p class="mb-0 text-muted small">
               Next Vaccination:
               {{ dog.next_vaccination if dog.next_vaccination else "N/A" }}
+            </p>
+            <p class="mb-0 text-muted small">
+              Vaccine Expiration:
+              {{ dog.vaccination_expiry if dog.vaccination_expiry else "N/A" }}
             </p>
           </div>
         </div>
@@ -189,14 +192,17 @@ body {
         </div>
         <div class="col-8">
           <div class="card-body">
-            <h6 class="fw-bold text-primary mb-1">{{ dog.name }}</h6>
-            <span class="badge bg-danger mb-2">Not Vaccinated</span>
+            <h6 class="fw-bold text-primary mb-1"><i class="text-danger bi bi-x-circle"></i> {{ dog.name }}</h6>
             <p class="mb-1 small"><strong>Breed:</strong> {{ dog.breed }}</p>
             <p class="mb-1 small"><strong>Gender:</strong> {{ dog.gender if dog.gender else 'N/A' }}</p>
             <p class="mb-1 small"><strong>Age:</strong> {{ dog.age }} yrs</p>
             <p class="mb-0 text-muted small">
               Last Vaccinated:
               {{ dog.last_vaccination if dog.last_vaccination else "N/A" }}
+            </p>
+            <p class="mb-0 text-muted small">
+              Vaccine Expiration:
+              {{ dog.vaccination_expiry if dog.vaccination_expiry else "N/A" }}
             </p>
           </div>
         </div>

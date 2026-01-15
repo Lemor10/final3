@@ -123,9 +123,7 @@
   
   <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h3 class="fw-semibold text-primary">Admin Dashboard</h3>
     </div>
-
     
     <div class="card mb-4">
       <div class="card-body">
@@ -348,13 +346,12 @@
 
 
             <div class="col-8 col-md-8">
-              <h5 class="fw-bold mb-1">{{ d.name }}</h5>
-              <p class="text-success small fw-semibold mb-2"><i class="bi bi-shield-check"></i> Vaccinated</p>
-              <p class="text-muted small mb-1">Breed: {{ d.breed }}</p>
-              <p class="text-muted small mb-1">Owner: {{ d.owner_name or "Stray" }}</p>
-              <p class="text-muted small mb-1">Age: {{ d.age if d.age else 'N/A' }}</p>
+              <h5 class="fw-bold text-success mb-1"><i class="text-success bi bi-shield-check"></i> {{ d.name }}</h5>
+              <p class="text-muted small mb-1"><strong>Breed:</strong> {{ d.breed }}</p>
+              <p class="text-muted small mb-1"><strong>Owner:</strong> {{ d.owner_name or "Stray" }}</p>
+              <p class="text-muted small mb-1"><strong>Age:</strong> {{ d.age if d.age else 'N/A' }}</p>
               <p class="text-muted small mb-1">
-                Gender:
+                <strong>Gender:</strong>
                 {% if d.gender == 'Male' %}
                   <i class="bi bi-gender-male text-primary"></i>
                 {% elif d.gender == 'Female' %}
@@ -363,14 +360,14 @@
                   N/A
                 {% endif %}
               </p>
-              <p class="text-muted small mb-1">Last Vaccinated: 
+              <p class="text-muted small mb-1"><strong>Last Vaccinated:</strong> 
                 {{ d.last_vaccination if d.last_vaccination else "N/A" }}
               </p>
 
-              <p class="text-muted small mb-2">Next Vaccination: 
+              <p class="text-muted small mb-2"><strong>Next Vaccination:</strong> 
                 {{ d.next_vaccination if d.next_vaccination else "N/A" }}
               </p>
-              <p class="text-muted small mb-2">Vaccination Expiry: {{ d.vaccination_expiry if d.vaccination_expiry else "N/A" }}</p>
+              <p class="text-muted small mb-2"><strong>Vaccination Expiry:</strong> {{ d.vaccination_expiry if d.vaccination_expiry else "N/A" }}</p>
               {% if d.qr_code %}
               <img src="{{ url_for('qrcodes', filename=d.qr_code) }}" alt="{{ d.name}} QR"
                   class="border rounded p-1 mb-2 qr-clickable"
@@ -404,7 +401,7 @@
 
       
       <div class="col-md-6">
-        <h6 class="text-danger fw-bold mb-3"><i class="bi bi-exclamation-triangle"></i> Not Vaccinated Dogs</h6>
+        <h6 class="text-danger fw-bold mb-3"><i class="bi bi-x-circle"></i> Not Vaccinated Dogs</h6>
 
         {% for d in dogs if d.vaccinated == 'Not Vaccinated' %}
         <div class="dog-card p-3 bg-white shadow-sm rounded mb-3">
@@ -421,13 +418,12 @@
 
             
             <div class="col-8 col-md-8">
-              <h5 class="fw-bold mb-1">{{ d.name }}</h5>
-              <p class="text-danger small fw-semibold mb-2"><i class="bi bi-exclamation-triangle"></i> Not Vaccinated</p>
-              <p class="text-muted small mb-1">Breed: {{ d.breed }}</p>
-              <p class="text-muted small mb-1">Owner: {{ d.owner_name or "Stray" }}</p>
-              <p class="text-muted small mb-1">Age: {{ d.age if d.age else 'N/A' }}</p>
+              <h5 class="fw-bold text-danger mb-1"><i class="text-danger bi bi-x-circle"></i> {{ d.name }}</h5>
+              <p class="text-muted small mb-1"><strong>Breed:</strong> {{ d.breed }}</p>
+              <p class="text-muted small mb-1"><strong>Owner:</strong> {{ d.owner_name or "Stray" }}</p>
+              <p class="text-muted small mb-1"><strong>Age:</strong> {{ d.age if d.age else 'N/A' }}</p>
               <p class="text-muted small mb-1">
-                Gender:
+                <strong>Gender:</strong>
                 {% if d.gender == 'Male' %}
                   <i class="bi bi-gender-male text-primary"></i>
                 {% elif d.gender == 'Female' %}
@@ -436,13 +432,13 @@
                   N/A
                 {% endif %}
               </p>
-              <p class="text-muted small mb-1">Last Vaccinated: 
+              <p class="text-muted small mb-1"><strong>Last Vaccinated:</strong> 
                 {{ d.last_vaccinated if d.last_vaccinated else "N/A" }}
               </p>
-              <p class="text-muted small mb-2">Next Vaccination: 
+              <p class="text-muted small mb-2"><strong>Next Vaccination:</strong> 
                 {{ d.next_vaccination if d.next_vaccination else "N/A" }}
               </p>
-              <p class="text-muted small mb-2">Vaccination Expiry: {{ d.vaccination_expiry if d.vaccination_expiry else "N/A" }}</p>
+              <p class="text-muted small mb-2"><strong>Vaccination Expiry:</strong> {{ d.vaccination_expiry if d.vaccination_expiry else "N/A" }}</p>
 
               {% if d.qr_code %}
                 <img src="{{ url_for('qrcodes', filename=d.qr_code) }}" alt="{{ d.name}} QR"
