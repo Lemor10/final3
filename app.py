@@ -1,5 +1,7 @@
 import os
+import token
 from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory, send_file, abort, jsonify ,session
+from flask_mail import Mail, Message
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
@@ -34,8 +36,17 @@ os.makedirs(app.config['UPLOAD_FOLDER_PROFILE'], exist_ok=True)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Dog_Registration_Secret_Key')
 on_render = os.environ.get('RENDER') is not None 
 if on_render: app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') 
-else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:somepassword@localhost:5432/drs_local' 
+else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:kTr9P7RtYrfQkSt3C5IunMp6nw23x7f5@dpg-d5b4l6re5dus73feks6g-a.singapore-postgres.render.com/drs' 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'dogrnw2026@gmail.com'
+app.config['MAIL_PASSWORD'] = 'jgrpmgucdltkvdir'
+app.config['MAIL_DEFAULT_SENDER'] = 'Dog Registration <dogrnw2026@gmail.com>'
+
+mail = Mail(app)
 
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
@@ -61,6 +72,9 @@ class User(UserMixin, db.Model):
     
     username = db.Column(db.String(50), unique=True, nullable=False)  
     email = db.Column(db.String(150), unique=True, nullable=True)
+    email_verified = db.Column(db.Boolean, default=False)
+    verification_token = db.Column(db.String(200))
+    last_notification_run = db.Column(db.Date)
     name = db.Column(db.String(150))
     contact = db.Column(db.String(20))
     barangay = db.Column(db.String(100))
@@ -71,7 +85,20 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(200), nullable=True)
     role = db.Column(db.String(20), default='owner')  
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    dogs = db.relationship('Dog', backref='owner', lazy=True)
+    dogs = db.relationship(
+        'Dog',
+        foreign_keys='Dog.owner_id',
+        backref='owner',
+        lazy=True
+    )
+
+    deleted_dogs = db.relationship(
+        'Dog',
+        foreign_keys='Dog.deleted_by_owner_id',
+        lazy=True
+    )
+    is_archived = db.Column(db.Boolean, default=False)
+    archived_at = db.Column(db.DateTime)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -82,9 +109,15 @@ class User(UserMixin, db.Model):
 class Dog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     uuid = db.Column(db.String(36), unique=True, nullable=False)
+    is_archived = db.Column(db.Boolean, default=False)
+    deleted_reason = db.Column(db.String(100))
+    deleted_cause = db.Column(db.String(150))
+    deleted_at = db.Column(db.DateTime)
+    deleted_by_owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    archived_at = db.Column(db.DateTime)  # <-- ADD THIS
     name = db.Column(db.String(120), nullable=False)
     breed = db.Column(db.String(120))
-    age = db.Column(db.Integer)
+    #age = db.Column(db.Integer)
     birthdate = db.Column(db.Date)  # New
     gender = db.Column(db.String(10))   # ✅ ADD THIS
     owner_name = db.Column(db.String(150))
@@ -95,6 +128,10 @@ class Dog(db.Model):
     last_vaccination = db.Column(db.Date)
     next_vaccination = db.Column(db.Date)
     vaccination_expiry = db.Column(db.Date)  # ✅ NEW
+    vaccination_barangay = db.Column(db.String(100))
+    vaccination_municipality = db.Column(db.String(100))
+    vaccination_province = db.Column(db.String(100))
+    vaccination_location = db.Column(db.String(100), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     @property
@@ -114,6 +151,16 @@ class Dog(db.Model):
 class Notification(db.Model):
     __tablename__ = "notifications"
 
+    __table_args__ = (
+        db.UniqueConstraint(
+            'user_id',
+            'dog_id',
+            'type',
+            'milestone',
+            name='unique_notification_per_dog_per_milestone'
+        ),
+    )
+
     id = db.Column(db.Integer, primary_key=True)
 
     user_id = db.Column(
@@ -131,125 +178,165 @@ class Notification(db.Model):
     title = db.Column(db.String(150), nullable=False)
     message = db.Column(db.Text, nullable=False)
     type = db.Column(db.String(50), nullable=False)
+    milestone = db.Column(db.String(20))  # NEW: "7_days", "3_days", "1_day", "overdue"
     due_date = db.Column(db.Date)
     is_read = db.Column(db.Boolean, default=False)
     dismissed = db.Column(db.Boolean, default=False)
+    email_sent = db.Column(db.Boolean, default=False)  # ✅ ADD THIS
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
         return f"<Notification {self.id} - User {self.user_id} - Read {self.is_read}>"
 
-def generate_vaccination_notifications(user_id):
-    today = date.today()
-    dogs = Dog.query.filter_by(owner_id=user_id).all()
-
-    for dog in dogs:
+def generate_vaccination_notifications(user_id, dog):
+        today = date.today()
         if not dog.next_vaccination:
-            continue
+            return
 
         days_left = (dog.next_vaccination - today).days
+
+        # Define milestones
+        milestones = {
+            7: "7_days",
+            3: "3_days",
+            1: "1_day",
+            0: "overdue"
+        }
+
+        if days_left not in milestones:
+            return
+        
+        milestone = milestones[days_left]
+
+        # Prepare message
+        if milestone == "overdue":
+            title = "Vaccination Overdue"
+            message = ( f"Dear {dog.owner_name},\n\n"
+            f"Our records indicate that {dog.name}'s vaccination is overdue. "
+            f"We strongly recommend that you schedule a visit with your veterinarian "
+            f"as soon as possible to ensure {dog.name}'s continued health and wellbeing.\n\n"
+            f"Thank you for your attention."
+            )
+            notif_type = "overdue"
+        else:
+            title = "Vaccination Due Soon"
+            message = ( f"Dear {dog.owner_name},\n\n"
+            f"This is a friendly reminder that {dog.name} is due for vaccination in {days_left} day{'s' if days_left > 1 else ''}. "
+            f"Please schedule an appointment with your veterinarian to keep {dog.name} up-to-date with vaccinations.\n\n"
+            f"Thank you for ensuring your pet’s health."
+            )
+            notif_type = "reminder"
 
         existing = Notification.query.filter_by(
             user_id=user_id,
             dog_id=dog.id,
-            dismissed=False
+            type=notif_type,    # ⚡ MUST include type
+            milestone=milestone
         ).first()
 
-        if 0 <= days_left <= 7:
-            message = f"{dog.name} needs vaccination in {days_left} days!"
-            title = "Vaccination Due Soon"
-            notif_type = "reminder"
-        elif days_left < 0:
-            message = f"{dog.name}'s vaccination is overdue!"
-            title = "Vaccination Overdue"
-            notif_type = "overdue"
-        else:
-            if existing:
-                existing.dismissed = True
-                db.session.commit()
-            continue
-
         if existing:
-            existing.title = title
-            existing.message = message
-            existing.type = notif_type
-            existing.due_date = dog.next_vaccination
-        else:
-            notif = Notification(
-                user_id=user_id,
-                dog_id=dog.id,
-                title=title,
-                message=message,
-                type=notif_type,
-                due_date=dog.next_vaccination
-            )
-            db.session.add(notif)
+            return
+        
+        notif = Notification(
+            user_id=user_id,
+            dog_id=dog.id,
+            title=title,
+            message=message,
+            type=notif_type,
+            milestone=milestone,
+            due_date=dog.next_vaccination,
+            email_sent=False
+        )
+        db.session.add(notif)
+        db.session.flush()
 
-    db.session.commit()
+        # Send email
+        user = User.query.get(user_id)
+        if user.email and not notif.email_sent:
+            send_notification_email(to=user.email, subject=title, body=message)
+            notif.email_sent = True
+
+        db.session.commit()
 
 def generate_admin_notifications(admin_user_id):
-    """
-    Generate notifications for admin:
-    - New stray dogs registered
-    - Vaccination reminder (7 days before)
-    - Vaccination overdue for stray dogs
-    - Notifications are updated daily and old ones auto-dismissed
-    """
-    today = date.today()
-    stray_dogs = Dog.query.filter(Dog.owner_id == None).all() 
+        today = date.today()
+        dogs = Dog.query.filter_by(owner_id=None).all()
 
-    for dog in stray_dogs:
-        existing = Notification.query.filter_by(
-            user_id=admin_user_id,
-            dog_id=dog.id,
-            dismissed=False
-        ).first()
+        for dog in dogs:
+            if not dog.next_vaccination:
+                continue
 
-        if not dog.next_vaccination:
-            if not existing:
-                notif = Notification(
+            # Owner-style milestones
+            days_left = (dog.next_vaccination - today).days
+            milestones = {7: "7_days", 3: "3_days", 1: "1_day", 0: "overdue"}
+
+            if days_left not in milestones:
+                continue
+
+            milestone = milestones[days_left]
+
+            existing = Notification.query.filter_by(
+                user_id=admin_user_id,
+                dog_id=dog.id,
+                milestone=milestone
+            ).first()
+
+            if existing:
+                continue
+
+            if milestone == "overdue":
+                title = "Stray Dog Vaccination Overdue"
+                message = f"'{dog.name}' vaccination is overdue!"
+                notif_type = "overdue"
+            else:
+                title = "Stray Dog Vaccination Due Soon"
+                message = f"'{dog.name}' needs vaccination in {days_left} days!"
+                notif_type = "reminder"
+
+            existing = Notification.query.filter_by(
                     user_id=admin_user_id,
                     dog_id=dog.id,
-                    title="Stray Dog Alert",
-                    message=f"Stray dog '{dog.name}' is registered.",
-                    type="reminder",
-                    due_date=today
-                )
-                db.session.add(notif)
-            continue  
-
-        days_left = (dog.next_vaccination - today).days
-
-        if 0 <= days_left <= 7:
-            title = "Stray Dog Vaccination Due Soon"
-            message = f"'{dog.name}' needs vaccination in {days_left} days!"
-            notif_type = "reminder"
-        elif days_left < 0:
-            title = "Stray Dog Vaccination Overdue"
-            message = f"'{dog.name}' vaccination is overdue!"
-            notif_type = "overdue"
-        else:
+                    type="stray_registered"
+                ).first()
             if existing:
-                existing.dismissed = True
-                db.session.commit()
-            continue
+                continue
 
-        if existing:
-            existing.title = title
-            existing.message = message
-            existing.type = notif_type
-            existing.due_date = dog.next_vaccination
-        else:
             notif = Notification(
                 user_id=admin_user_id,
                 dog_id=dog.id,
                 title=title,
                 message=message,
                 type=notif_type,
-                due_date=dog.next_vaccination
+                milestone=milestone,
+                due_date=dog.next_vaccination,
+                email_sent=False
             )
             db.session.add(notif)
 
+        db.session.commit()
+
+def send_notification_email(to, subject, body):
+    msg = Message(
+        subject=subject,
+        recipients=[to],
+        body=body,
+        sender=app.config['MAIL_DEFAULT_SENDER']
+    )
+    mail.send(msg)
+
+def run_daily_notifications(user):
+    today = date.today()
+
+    if user.last_notification_run == today:
+        return  # ❌ already ran today
+
+    if user.role == "owner":
+        generate_vaccination_notifications(user.id)
+
+    elif user.role == "admin":
+        generate_admin_notifications(user.id)
+
+    user.last_notification_run = today
     db.session.commit()
     
 def calculate_vaccination_expiry(last_vaccination):
@@ -295,6 +382,13 @@ def notification_count():
 @app.route('/owner/notifications')
 @login_required
 def owner_notifications():
+    Notification.query.filter_by(
+        user_id=current_user.id,
+        is_read=False,
+        dismissed=False
+    ).update({Notification.is_read: True}, synchronize_session=False)
+    db.session.commit()
+
     return render_template('owner_notifications.html')
 
 # ------------------ Admin Notifications ------------------
@@ -339,19 +433,25 @@ def mark_notification_read(notif_id):
     db.session.commit()
     return {"success": True}
 
-@app.route('/notifications/delete/<int:notif_id>', methods=['POST'])
+@app.route("/notifications/cleanup", methods=["POST"])
 @login_required
-def delete_notification(notif_id):
-    notif = Notification.query.get_or_404(notif_id)
+def cleanup_notifications():
+    now = datetime.utcnow()
 
-    if notif.user_id != current_user.id:
-        abort(403)
+    # Delete read notifications older than 1 minute
+    Notification.query.filter(
+        Notification.is_read == True,
+        Notification.created_at < now - timedelta(minutes=1)
+    ).delete(synchronize_session=False)
 
-    db.session.delete(notif) 
-    notif.dismissed = True    
-    db.session.commit()       
+    # Delete unread notifications older than 2 minutes
+    Notification.query.filter(
+        Notification.is_read == False,
+        Notification.created_at < now - timedelta(minutes=2)
+    ).update({Notification.dismissed: True}, synchronize_session=False)
 
-    return {"success": True}
+    db.session.commit()
+    return jsonify({"success": True})
 
 with app.app_context():
     admin_email = os.environ.get('ADMIN_EMAIL', 'admin@gmail.com')
@@ -370,40 +470,44 @@ with app.app_context():
     db.session.commit()
 
 @app.before_request
-def auto_delete_old_notifications():
+def handle_notifications():
     if not current_user.is_authenticated:
+        g.notifications = []
         return
 
     now = datetime.utcnow()
 
+    # Clean up old notifications
     Notification.query.filter(
         Notification.is_read == True,
-        Notification.created_at < now - timedelta(minutes=7)
+        Notification.created_at < now - timedelta(minutes=1)
     ).delete(synchronize_session=False)
 
     Notification.query.filter(
         Notification.is_read == False,
-        Notification.created_at < now - timedelta(minutes=14)
-    ).delete(synchronize_session=False)
-
+        Notification.created_at < now - timedelta(minutes=2)
+    ).update({Notification.dismissed: True}, synchronize_session=False)
     db.session.commit()
 
-@app.before_request
-def load_notifications():
-    if current_user.is_authenticated:
-        if current_user.role == 'owner':
-            generate_vaccination_notifications(current_user.id)
-        elif current_user.role == 'admin':
-            admin = User.query.filter_by(role='admin').first()
-            if admin:
-                generate_admin_notifications(admin.id)
-        g.notifications = Notification.query.filter_by(
-            user_id=current_user.id,
-            dismissed=False
-        ).order_by(Notification.created_at.desc()).all()
-    else:
-        g.notifications = []
+    today = date.today()
 
+    # Generate notifications once per day
+    if current_user.last_notification_run != today:
+        if current_user.role == "owner":
+            dogs = Dog.query.filter_by(owner_id=current_user.id, is_archived=False).all()
+            for dog in dogs:
+                generate_vaccination_notifications(current_user.id, dog)
+        elif current_user.role == 'admin':
+            generate_admin_notifications(current_user.id)
+
+        current_user.last_notification_run = today
+        db.session.commit()
+
+    # Load notifications for UI
+    g.notifications = Notification.query.filter_by(
+        user_id=current_user.id,
+        dismissed=False
+    ).order_by(Notification.created_at.desc()).all()
 # ------------------ Routes ------------------
 
 @app.route('/')
@@ -452,7 +556,12 @@ def signup():
 
         if password != confirm_password:
             flash('Passwords do not match.', 'error')
-            return redirect(url_for('signup', form_data=form_data))
+            # Render the template directly, don't redirect
+            return render_template(
+                'signup.html',
+                form_data=form_data,
+                clear_passwords=True,   # flag to clear password fields
+            )
 
         if len(password) < 8 \
         or not re.search(r"[A-Z]", password) \
@@ -465,14 +574,16 @@ def signup():
             )
             return redirect(url_for("signup"))
         
-        if User.query.filter(db.func.lower(User.username) == form_data['username'].lower()).first():
-            flash("Username already taken.", "error")
-            return redirect(url_for('signup'))
+        if form_data['username'] and User.query.filter_by(username=form_data['username']).first():
+            flash('Username already taken.', 'error')
+            form_data['username'] = ''       # 👈 CLEAR ONLY USERNAME
+            return render_template('signup.html', form_data=form_data)
         
         if form_data['email'] and User.query.filter_by(email=form_data['email']).first():
             flash('Email already registered.', 'error')
             form_data['email'] = ''       # 👈 CLEAR ONLY EMAIL
             return render_template('signup.html', form_data=form_data)
+        
 
         user = User(
             email=form_data['email'],
@@ -487,9 +598,53 @@ def signup():
         db.session.add(user)
         db.session.commit()
 
+        token = serializer.dumps(user.email, salt="email-verify")
+        user.verification_token = token
+        db.session.commit()
+
+        # Use BASE_URL instead of url_for
+        verify_link = f"{BASE_URL}/verify-email/{token}"
+
+        html_template = f"""
+        <p>Hello {user.name},</p>
+        <p>Click below to verify your email:</p>
+        <a href="{verify_link}">Verify Email</a>
+        """
+
+        msg = Message(
+            subject="Verify Your Email",
+            recipients=[user.email],
+            sender=app.config['MAIL_DEFAULT_SENDER'],
+            html=html_template
+        )
+        mail.send(msg)
+
+        flash("Verification email sent. Please check your inbox.", "info")
         return redirect(url_for("login"))
 
     return render_template('signup.html')
+
+@app.route('/verify-email/<token>')
+def verify_email(token):
+    try:
+        email = serializer.loads(token, salt="email-verify", max_age=3600)
+    except Exception:
+        flash("Verification link expired.", "danger")
+        return redirect(url_for("login"))
+
+    user = User.query.filter_by(email=email).first()
+
+    if not user:
+        flash("Invalid verification link.", "danger")
+        return redirect(url_for("login"))
+
+    user.email_verified = True
+    user.verification_token = None
+    db.session.commit()
+
+    flash("Email verified! You can now log in.", "success")
+    return redirect(url_for("login"))
+
 
 @app.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
@@ -574,6 +729,11 @@ def login():
         if not user.check_password(password):
             flash("Incorrect password. Please try again.", "danger")
             return redirect(url_for('login'))
+        
+        # ✅ Only require email verification for owners
+        #if user.role == 'owner' and not user.email_verified:
+        #    flash("Please verify your email before logging in.", "warning")
+        #    return redirect(url_for("login"))
 
         login_user(user)
 
@@ -593,7 +753,7 @@ def logout():
 @app.route('/owner/dashboard')
 @login_required
 def owner_dashboard():
-    dogs = Dog.query.filter_by(owner_id=current_user.id).all() if current_user.role=='owner' else Dog.query.all()
+    dogs = Dog.query.filter_by(owner_id=current_user.id, is_archived=False).all() if current_user.role=='owner' else Dog.query.all()
     
     stray_count = Dog.query.filter_by(owner_id=None).count()
 
@@ -605,7 +765,7 @@ def owner_dashboard():
 @login_required
 def owner_profile():
     user = current_user
-    dogs = Dog.query.filter_by(owner_id=user.id).all()
+    dogs = Dog.query.filter_by(owner_id=user.id, is_archived=False).all()
 
     if request.method == 'POST':
         if 'name' in request.form:
@@ -655,6 +815,11 @@ def owner_add_dog():
     else:
         next_vac_date = None
         vaccination_expiry = None
+    
+    vaccination_barangay = request.form.get("vaccination_barangay")
+    vaccination_municipality = request.form.get("vaccination_municipality")
+    vaccination_province = request.form.get("vaccination_province")
+    vaccination_location = request.form.get("vaccination_location")
 
     dog_uuid = str(uuid.uuid4())
 
@@ -686,11 +851,18 @@ def owner_add_dog():
         last_vaccination=last_vac_date,
         next_vaccination=next_vac_date,
         vaccination_expiry=vaccination_expiry,
-        created_at=datetime.utcnow()
+        vaccination_barangay=vaccination_barangay,
+        vaccination_municipality=vaccination_municipality,
+        vaccination_province=vaccination_province,
+        vaccination_location=vaccination_location,
+        created_at=datetime.utcnow(),
+        is_archived=False  # ✅ Ensure new dogs are NOT archived
     )
 
     db.session.add(new_dog)
     db.session.commit()
+
+    generate_vaccination_notifications(current_user.id, new_dog)
 
     flash("Dog registered successfully! QR code generated.", "dog_success")
     return redirect(url_for('owner_profile'))
@@ -698,18 +870,39 @@ def owner_add_dog():
 @app.route('/owner_delete_dog/<int:dog_id>', methods=['POST'])
 @login_required
 def owner_delete_dog(dog_id):
+
+    # Role check
     if current_user.role != 'owner':
         flash('Unauthorized access', 'danger')
         return redirect(url_for('login'))
-    
+
     dog = Dog.query.get_or_404(dog_id)
-    
+
+    # Ownership check
     if dog.owner_id != current_user.id:
         flash('You can only delete your own dogs.', 'danger')
-        return redirect(url_for('owner_dashboard'))
-    
-    db.session.delete(dog)
+        return redirect(url_for('owner_profile'))
+
+    # Get form data
+    delete_reason = request.form.get('delete_reason')
+    delete_cause = request.form.get('delete_cause')
+
+    # Validation
+    if not delete_reason:
+        flash('Deletion reason is required.', 'danger')
+        return redirect(url_for('owner_profile'))
+
+    # ARCHIVE instead of DELETE
+    dog.is_archived = True
+    dog.deleted_reason = delete_reason
+    dog.deleted_cause = delete_cause if delete_reason == "Death" else None
+    dog.deleted_at = datetime.utcnow()
+    dog.archived_at = datetime.utcnow()  # ✅ unified timestamp
+    dog.deleted_by_owner_id = current_user.id
+
     db.session.commit()
+
+    flash('Dog record has been archived successfully.', 'success')
     return redirect(url_for('owner_profile'))
 
 @app.route('/owner/edit_dog/<int:dog_id>', methods=['POST'])
@@ -782,24 +975,34 @@ def download_qr(dog_uuid):
 @app.route('/admin')
 @login_required
 def admin_dashboard():
+
     if current_user.role != 'admin':
         flash("You don't have permission to access this page.", "danger")
         return redirect(url_for('login'))
 
-    users = (
+    # Get current page from URL (?page=1)
+    page = request.args.get('page', 1, type=int)
+    per_page = 10  # 👈 change this to how many owners per page you want
+
+
+    users_pagination = (
         User.query
         .filter_by(role='owner')
         .order_by(func.lower(User.name))   # ✅ ALPHABETICAL
-        .all()
+        .paginate(page=page, per_page=per_page, error_out=False)
     )
+
+    users = users_pagination.items
 
     dogs = (
         Dog.query
+        .filter(Dog.is_archived == False)
         .order_by(func.lower(Dog.name))    # ✅ ALPHABETICAL
         .all()
     )
 
-    return render_template('admin_dashboard.html', users=users, dogs=dogs)
+    return render_template('admin_dashboard.html', users=users, dogs=dogs, pagination=users_pagination
+)
 
 @app.route('/admin/data-analysis')
 @login_required
@@ -810,7 +1013,7 @@ def admin_data_analysis():
     start_month = request.args.get("start_month")
     end_month = request.args.get("end_month")
 
-    query = Dog.query
+    query = Dog.query.filter(Dog.is_archived == False)
     if start_month and end_month:
         start_date = datetime.strptime(start_month + "-01", "%Y-%m-%d")
         end_date = datetime.strptime(end_month + "-01", "%Y-%m-%d")
@@ -820,6 +1023,30 @@ def admin_data_analysis():
                              Dog.created_at <= end_date)
 
     dogs = query.all()
+
+        # ---------------- DEATH ANALYTICS ----------------
+    death_query = Dog.query.filter(
+        Dog.deleted_by_owner_id.isnot(None),   # deleted by owner
+        Dog.deleted_reason == "Death"          # reason = death
+    )
+
+    if start_month and end_month:
+        death_query = death_query.filter(
+            Dog.archived_at >= start_date,
+            Dog.archived_at <= end_date
+        )
+
+    archived_dogs = death_query.all()
+
+    total_deaths = len(archived_dogs)
+
+    death_causes_list = [
+        d.deleted_cause if d.deleted_cause else "Unknown"
+        for d in archived_dogs
+    ]
+
+    death_causes = list(set(death_causes_list))
+    death_counts = [death_causes_list.count(c) for c in death_causes]
 
     total_owners = len(set(d.owner_id for d in dogs))
     total_dogs = len(dogs)
@@ -847,7 +1074,10 @@ def admin_data_analysis():
             "vaccinated_count": vaccinated_count,
             "unvaccinated_count": unvaccinated_count,
             "months": months,
-            "month_counts": month_counts
+            "month_counts": month_counts,
+            "total_deaths": total_deaths,
+            "death_causes": death_causes,
+            "death_counts": death_counts
         })
 
     return render_template(
@@ -860,6 +1090,9 @@ def admin_data_analysis():
         unvaccinated_count=unvaccinated_count,
         months=months,
         month_counts=month_counts,
+        total_deaths=total_deaths,
+        death_causes=death_causes,
+        death_counts=death_counts,
         start_month=start_month,
         end_month=end_month
     )
@@ -894,11 +1127,11 @@ def admin_search_dogs():
             elif search_field == "gender":
                 dogs = dogs.filter(func.lower(Dog.gender) == query.lower())
 
-            elif search_field == "age":
-                # 🚫 If not a number → show nothing
-                if query.isdigit():
-                    dogs = dogs.filter(Dog.age == int(query))
-                else:
+            elif search_field == "birthdate":
+                try:
+                    birthdate = date.fromisoformat(query)
+                    dogs = dogs.filter(Dog.birthdate == birthdate)
+                except ValueError:
                     dogs = dogs.filter(False)
 
         # ✅ FORCE ORIGINAL ORDER (IMPORTANT)
@@ -938,6 +1171,11 @@ def admin_register_dog():
     else:
         next_vac_date = None
         vaccination_expiry = None
+    
+    vaccination_barangay = request.form.get("vaccination_barangay")
+    vaccination_municipality = request.form.get("vaccination_municipality") 
+    vaccination_province = request.form.get("vaccination_province")
+    vaccination_location = request.form.get("vaccination_location")
 
     image_file = request.files.get("dog_image")
     image_filename = None
@@ -966,6 +1204,10 @@ def admin_register_dog():
         last_vaccination=last_vac_date,
         next_vaccination=next_vac_date,
         vaccination_expiry=vaccination_expiry,  # ✅ NEW
+        vaccination_barangay=vaccination_barangay,
+        vaccination_municipality=vaccination_municipality,
+        vaccination_province=vaccination_province,
+        vaccination_location=vaccination_location,
         created_at=datetime.utcnow()
     )
 
@@ -993,24 +1235,115 @@ def admin_edit_dog(dog_id):
     flash("Dog information updated successfully!", "success")
     return redirect(url_for('admin_dashboard'))
 
-@app.route('/admin_delete_dog/<int:dog_id>', methods=['POST'])
+@app.route('/admin/archive-dog/<int:dog_id>', methods=['POST'])
 @login_required
-def admin_delete_dog(dog_id):
+def admin_archive_dog(dog_id):
     if current_user.role != 'admin':
         abort(403)
 
     dog = Dog.query.get_or_404(dog_id)
 
+    selected_reason = request.form.get("archive_reason_select")
+    other_reason = request.form.get("archive_reason_other")
+
+    if selected_reason == "Other":
+        final_reason = other_reason
+    else:
+        final_reason = selected_reason
+
+    dog.is_archived = True
+    dog.archived_at = datetime.utcnow()
+    dog.archive_reason = final_reason
+
+    db.session.commit()
+
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/archive')
+@login_required
+def admin_archive():
+    if current_user.role != 'admin':
+        abort(403)
+
+    # Archived owners
+    archived_owners = User.query.filter_by(is_archived=True).order_by(User.archived_at.desc()).all()
+
+    # Archived dogs
+    archived_dogs = Dog.query.filter_by(is_archived=True).order_by(Dog.archived_at.desc()).all()
+
+    # Prepare extra info for template
+    for dog in archived_dogs:
+        # Owner info for display
+        if dog.owner_id:
+            dog.owner_name = dog.owner.name if dog.owner else "Unknown"
+        else:
+            dog.owner_name = "Stray"
+
+        # Who archived
+        if dog.deleted_by_owner_id:
+            dog.archived_by = "Owner Deleted"
+        else:
+            dog.archived_by = "Admin Archived"
+
+        # Reason / Cause display
+        dog.deleted_reason = dog.deleted_reason or "N/A"
+        dog.deleted_cause = dog.deleted_cause or ""
+
+    return render_template(
+        'admin_archive.html',
+        archived_owners=archived_owners,
+        archived_dogs=archived_dogs
+    )
+
+@app.route('/admin/permanent_delete_dog/<int:dog_id>', methods=['POST'])
+@login_required
+def admin_permanent_delete_dog(dog_id):
+    if current_user.role != 'admin':
+        abort(403)
+
+    dog = Dog.query.get_or_404(dog_id)
+
+    # 🧹 Delete QR file permanently
     if dog.qr_code:
         try:
             os.remove(os.path.join(QR_FOLDER, dog.qr_code))
-        except:
+        except FileNotFoundError:
             pass
 
     db.session.delete(dog)
     db.session.commit()
 
-    return redirect(url_for('admin_dashboard'))
+    return redirect(url_for('admin_archive'))
+
+@app.route('/admin/restore_owner/<int:owner_id>', methods=['POST'])
+@login_required
+def admin_restore_owner(owner_id):
+    if current_user.role != 'admin':
+        abort(403)
+
+    owner = User.query.get_or_404(owner_id)
+    owner.is_archived = False
+    owner.archived_at = None
+    db.session.commit()
+
+    flash(f"Owner '{owner.name}' has been restored.", "success")
+    return redirect(url_for('admin_archive'))
+
+@app.route('/admin/restore_dog/<int:dog_id>', methods=['POST'])
+@login_required
+def admin_restore_dog(dog_id):
+    if current_user.role != 'admin':
+        abort(403)
+
+    dog = Dog.query.get_or_404(dog_id)
+    dog.is_archived = False
+    dog.archived_at = None
+    dog.deleted_reason = None
+    dog.deleted_cause = None
+    dog.deleted_by_owner_id = None
+    db.session.commit()
+
+    return redirect(url_for('admin_archive'))
 
 @app.route('/admin/delete_owner/<int:owner_id>', methods=['POST'])
 @login_required

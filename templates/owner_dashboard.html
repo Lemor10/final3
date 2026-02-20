@@ -159,6 +159,24 @@ body {
               {% endif %}
             </p>
             <p class="text-muted mb-1 small"><strong>Age:</strong> {{ dog.age }}</p>
+                  <p class="text-muted mb-1 small">
+                    <strong>Vaccination Address:</strong>
+                    {% if dog.vaccination_barangay %}
+                      {{ dog.vaccination_barangay }},
+                      {{ dog.vaccination_municipality }},
+                      {{ dog.vaccination_province }}
+                    {% else %}
+                      N/A
+                    {% endif %}
+                  </p>
+                  <p class="text-muted mb-1 small">
+                    <strong>Vaccination Conducted At:</strong>
+                    {% if dog.vaccination_location %}
+                      {{ dog.vaccination_location }}
+                    {% else %}
+                      N/A
+                    {% endif %}
+                  </p>
             <p class="mb-0 text-muted small">
               Next Vaccination:
               {{ dog.next_vaccination if dog.next_vaccination else "N/A" }}
@@ -195,7 +213,25 @@ body {
             <h6 class="fw-bold text-primary mb-1"><i class="text-danger bi bi-x-circle"></i> {{ dog.name }}</h6>
             <p class="mb-1 small"><strong>Breed:</strong> {{ dog.breed }}</p>
             <p class="mb-1 small"><strong>Gender:</strong> {{ dog.gender if dog.gender else 'N/A' }}</p>
-            <p class="mb-1 small"><strong>Age:</strong> {{ dog.age }} yrs</p>
+            <p class="mb-1 small"><strong>Age:</strong> {{ dog.age }}</p>
+                              <p class="text-muted mb-1 small">
+                    <strong>Vaccination Address:</strong>
+                    {% if dog.vaccination_barangay %}
+                      {{ dog.vaccination_barangay }},
+                      {{ dog.vaccination_municipality }},
+                      {{ dog.vaccination_province }}
+                    {% else %}
+                      N/A
+                    {% endif %}
+                  </p>
+                  <p class="text-muted mb-1 small">
+                    <strong>Vaccination Conducted At:</strong>
+                    {% if dog.vaccination_location %}
+                      {{ dog.vaccination_location }}
+                    {% else %}
+                      N/A
+                    {% endif %}
+                  </p>
             <p class="mb-0 text-muted small">
               Last Vaccinated:
               {{ dog.last_vaccination if dog.last_vaccination else "N/A" }}

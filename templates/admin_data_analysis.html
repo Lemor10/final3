@@ -33,6 +33,13 @@
                 <h2>{{ total_dogs }}</h2>
             </div>
         </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card p-3">
+                <h5>Total Deaths</h5>
+                <h2 id="totalDeaths">{{ total_deaths }}</h2>
+            </div>
+        </div>
     </div>
 
     
@@ -61,17 +68,23 @@
     </div>
     </div>
 
-        <div class="chart-container mx-auto" style="max-width: 700px;">
+    <div class="chart-container mx-auto" style="max-width: 700px;">
         <h5 class="text-center summary-header">Monthly Dog Registrations</h5>
         <canvas id="monthlyChart"></canvas>
         <p class="no-data d-none">No data available for this date range.</p>
     </div>
+
+    <div class="chart-container mx-auto" style="max-width: 700px;">
+    <h5 class="text-center summary-header">Cause of Death</h5>
+    <canvas id="deathChart"></canvas>
+</div>
+
     </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
-let breedChart, vaccineChart, monthlyChart;
+let breedChart, vaccineChart, monthlyChart, deathChart;
 function renderCharts(data) {
     document.querySelector('div.card h2:nth-child(2)').textContent = data.total_owners;
     document.querySelectorAll('div.card h2:nth-child(2)')[1].textContent = data.total_dogs;
@@ -143,6 +156,29 @@ function renderCharts(data) {
         document.querySelector('#monthlyChart').style.display = 'none';
         document.querySelector('#monthlyChart').nextElementSibling?.classList.remove('d-none');
     }
+
+    document.getElementById("totalDeaths").textContent = data.total_deaths;
+
+if (data.death_counts.length > 0) {
+    if (deathChart) deathChart.destroy();
+
+    deathChart = new Chart(document.getElementById('deathChart'), {
+        type: 'bar',
+        data: {
+            labels: data.death_causes,
+            datasets: [{
+                label: 'Deaths',
+                data: data.death_counts,
+                backgroundColor: '#dc3545'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true
+        }
+    });
+}
+
 }
 window.addEventListener('DOMContentLoaded', () => {
     axios.get(`/admin/data-analysis?ajax=1`)

@@ -47,11 +47,15 @@ h3 {
 </div>
 </div>
 
-{% if g.notifications %}
-<div class="list-group">
-  {% for notif in g.notifications %}
-  <li data-id="{{ notif.id }}" class="list-group-item list-group-item-action mb-2 p-3 shadow-sm rounded d-flex justify-content-between align-items-center notification-item"
-      style="transition: transform 0.2s;">
+<div id="notifications-container">
+  {% if g.notifications %}
+  <div class="list-group" id="notifications-list">
+    {% for notif in g.notifications %}
+    <li data-id="{{ notif.id }}"
+        data-read="{{ 'true' if notif.is_read else 'false' }}"
+        data-created-at="{{ notif.created_at.isoformat() }}"
+        class="list-group-item list-group-item-action mb-2 p-3 shadow-sm rounded d-flex justify-content-between align-items-center notification-item"
+        style="transition: transform 0.2s;">
       <div class="d-flex align-items-start gap-3">
           <span class="fs-4">
               {% if notif.type == 'reminder' %}
@@ -71,12 +75,14 @@ h3 {
           <span class="badge bg-primary py-1 px-2">New</span>
           {% endif %}
       </div>
-  </li>
-  {% endfor %}
+    </li>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="alert alert-info rounded shadow-sm" id="no-notifications">No notifications at this time.</div>
+  {% endif %}
 </div>
-{% else %}
-<div class="alert alert-info rounded shadow-sm">No notifications at this time.</div>
-{% endif %}
+
 <script>
 document.getElementById('mark-all-read').addEventListener('click', async () => {
     const unreadIds = Array.from(document.querySelectorAll('li[data-id]')).map(li => li.dataset.id);
@@ -123,4 +129,63 @@ document.getElementById('mark-all-read').addEventListener('click', async () => {
       updateDotDisplay();
     }
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    // Function to remove a notification with fade
+    function removeNotification(li) {
+        li.classList.add("fade-out");
+        setTimeout(() => {
+            li.remove();
+            checkEmptyNotifications();  // ✅ update alert
+        }, 400); // match CSS transition
+    }
+
+    // Periodically fetch old notifications to delete
+    setInterval(async () => {
+        try {
+            const res = await fetch("/notifications/cleanup", {
+                method: "POST",
+                headers: { "X-Requested-With": "XMLHttpRequest" }
+            });
+            const data = await res.json();
+            if(data.success){
+                // Remove notifications from DOM if older than limit
+                const now = new Date();
+                document.querySelectorAll("li.notification-item").forEach(li => {
+                    const createdAt = new Date(li.dataset.createdAt);
+                    const read = li.dataset.read === "true";
+                    const ageMinutes = (now - createdAt)/60000;
+                    if((read && ageMinutes > 1) || (!read && ageMinutes > 2)){
+                        removeNotification(li);
+                        updateNotifDot();
+                    }
+                });
+            }
+        } catch(err){
+            console.error("Cleanup failed:", err);
+        }
+    }, 30000); // every 30 seconds
+
+});
+function checkEmptyNotifications() {
+    const list = document.getElementById("notifications-list");
+    const alert = document.getElementById("no-notifications");
+
+    if(list && list.children.length === 0){
+        if(!alert){
+            const container = document.getElementById("notifications-container");
+            const div = document.createElement("div");
+            div.id = "no-notifications";
+            div.className = "alert alert-info rounded shadow-sm mt-3";
+            div.innerText = "No notifications at this time.";
+            container.appendChild(div);
+        }
+    } else if(alert){
+        alert.remove();
+    }
+}
+
+</script>
+
 {% endblock %}

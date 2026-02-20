@@ -10,9 +10,13 @@
 
   <style>
     body {
+      background: linear-gradient(135deg, #007bff, #9c4506);
       min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-family: "Poppins", sans-serif;
-      background: linear-gradient(135deg, #ffffff, #007bff);
+      color: rgb(0, 0, 0);
     }
 
     .split-container {
@@ -22,29 +26,9 @@
       min-height: 100vh;
     }
 
-    .form-floating-custom {
-      position: relative;
+    .progress {
+      background-color: rgba(255, 255, 255, 0);
     }
-
-.form-floating-custom label {
-  position: absolute;
-  top: 50%;
-  left: 14.5px;
-  transform: translateY(-50%);
-  font-size: 13px;
-  color: #777;
-  pointer-events: none;
-  transition: all 0.2s ease;
-  background: white;
-  padding: 0 6px 0;
-}
-
-.form-floating-custom input:focus + label,
-.form-floating-custom input:not(:placeholder-shown) + label {
-  top: -4px;
-  font-size: 13.5px;
-  color: #006aff;
-}
 
     @media (min-width: 992px) {
       .split-container {
@@ -54,7 +38,7 @@
     }
 
     .info-side {
-      color: #1f2d3d;
+      color: white;
       padding: 40px 20px;
       flex: 1;
       display: flex;
@@ -78,7 +62,7 @@
 
     .info-side p {
       font-size: 1rem;
-      color: #444;
+      color: rgba(255,255,255,0.85);
       max-width: 420px;
       margin-bottom: 1.5rem;
     }
@@ -88,11 +72,12 @@
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      color: white;
     }
 
     .feature i {
       font-size: 1.4rem;
-      color: #6f42c1;
+      color: #f5f0ff;
     }
 
     @media (max-width: 991px) {
@@ -102,33 +87,98 @@
     }
 
     .card {
+      background: rgba(255, 255, 255, 0.429);
+      backdrop-filter: blur(14px);
       border: none;
-      border-radius: 1rem;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+      border-radius: 1.5rem;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.25);
       max-width: 560px;
       width: 100%;
-      padding: 20px;
+      padding: 2rem;
       flex: 1;
       margin: 20px;
+      color: rgb(0, 0, 0);
+      text-align: center;
+      animation: fadeIn 0.6s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .card-header {
       font-size: 1.25rem;
       font-weight: 600;
       text-align: center;
-      padding-bottom: 0.5rem;
       border-bottom: none;
     }
 
-    .form-label {
-      font-size: 13px;
-      font-weight: 500;
-      color: #555;
+    .card-header .text-muted {
+      color: rgb(0, 0, 0);
+      font-weight: normal;
+      font-size: 0.85rem;
     }
 
-  .form-control:focus {
-    outline: 1px #007bff;
-  }
+    .form-floating-custom {
+      position: relative;
+    }
+
+    .form-floating-custom input {
+      width: 100%;
+      padding: 0.5rem 1rem;
+      border-radius: 50px;
+      border: 1px solid rgba(255,255,255,0.3);
+      background: rgba(255,255,255,0.2);
+      color: black;
+    }
+
+    .form-floating-custom input::placeholder {
+      color: rgba(255,255,255,0.7);
+    }
+
+    .form-floating-custom input:focus {
+      outline: none;
+      border-color: rgba(255,255,255,0.3);
+      background: rgba(255,255,255,0.3);
+      color: rgb(0, 0, 0);
+    }
+
+    .form-floating-custom label {
+      position: absolute;
+      top: 50%;
+      left: 14.5px;
+      transform: translateY(-50%);
+      font-size: 13px;
+      color: rgba(0, 0, 0, 0.7);
+      pointer-events: none;
+      transition: all 0.2s ease;
+      background: transparent;
+      padding: 0 6px 0;
+    }
+
+    .form-floating-custom input:focus + label,
+    .form-floating-custom input:not(:placeholder-shown) + label {
+      top: -10px;
+      font-size: 13.5px;
+      color: rgb(62, 62, 62);
+    }
+
+    .form-label,
+    .text-muted,
+    small,
+    .invalid-feedback {
+      color: rgba(255,255,255,0.85);
+    }
+
+    a {
+      color: #004da0;
+      text-decoration: underline;
+    }
+    a:hover {
+      color: #002e60;
+      text-decoration: none;
+    }
 
     .btn-primary {
       background-color: #007bff;
@@ -141,18 +191,8 @@
       transform: scale(1.02);
     }
 
-    .input-group-text {
-      background: #fff;
-      cursor: pointer;
-    }
-
-    .btn:active {
-      transform: scale(0.98);
-    }
-
-    button:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
+    .form-check-label {
+      color: rgba(255, 255, 255, 0);
     }
 
   </style>
@@ -226,7 +266,7 @@
             {{ email_error if email_error else '' }}
           </small>
           <div class="mb-3 form-floating-custom">
-            <input type="tel" class="form-control" name="contact" value="{{ form_data.contact if form_data else '' }}" placeholder="" inputmode="numeric" pattern="[0-9]{10,11}" required>
+            <input type="tel" class="form-control" name="contact" value="{{ form_data.contact if form_data else '' }}" placeholder="" inputmode="numeric" pattern="[0-9]{11}" required>
             <label>Contact Number</label>
           </div>
             <div class="mb-3">
@@ -247,7 +287,7 @@
             <label>Province</label>
           </div>
 <div class="mb-2 form-floating-custom">
-  <input type="password" class="form-control" id="password" name="password" placeholder="" required>
+  <input type="password" class="form-control" id="password" name="password" placeholder=""        value="{% if not clear_passwords and form_data %}{{ form_data.password | default('') }}{% endif %}"  required>
   <label>Password</label>
 </div>
 
@@ -264,9 +304,9 @@
 </div>
 
 <div class="mb-2 form-floating-custom">
-  <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="" required>
+  <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder=""  value="{% if not clear_passwords and form_data %}{{ form_data.confirm_password | default('') }}{% endif %}" required>
   <label>Confirm Password</label>
-  <div class="invalid-feedback">
+  <div class="invalid-feedback text-danger">
     Passwords do not match.
   </div>
 </div>
@@ -290,7 +330,7 @@
           <hr class="flex-grow-1">
         </div>
 
-          <p class="text-center text-muted mt-1 mb-0" style="font-size:15px;">
+          <p class="text-center text-muted mt-1 mb-0" style="font-size:14px;">
             Already have an account?
             <a href="{{ url_for('login') }}" class="fw-semibold text-decoration-none">Sign In</a>
           </p>
