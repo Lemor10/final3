@@ -470,10 +470,10 @@ with app.app_context():
 #        db.session.commit()
 #        print(f"✅ Created admin: {admin_email}")
 
-with app.app_context():
-    User.query.filter(User.created_at == None)\
-        .update({User.created_at: datetime.utcnow()})
-    db.session.commit()
+#with app.app_context():
+#    User.query.filter(User.created_at == None)\
+#        .update({User.created_at: datetime.utcnow()})
+#    db.session.commit()
 
 @app.before_request
 def handle_notifications():
