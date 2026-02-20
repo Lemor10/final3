@@ -456,13 +456,13 @@ def cleanup_notifications():
 with app.app_context():
     admin_email = os.environ.get('ADMIN_EMAIL', 'admin@gmail.com')
     admin_pass = os.environ.get('ADMIN_PASSWORD', 'admin123')
-#    admin = User.query.filter_by(email=admin_email).first()
-##   if not admin:
-#        admin = User(email=admin_email, name='Administrator', role='admin')
-#        admin.set_password(admin_pass)
-#       db.session.add(admin)
-#        db.session.commit()
-#        print(f"✅ Created admin: {admin_email}")
+    admin = User.query.filter_by(email=admin_email).first()
+    if not admin:
+        admin = User(email=admin_email, name='Administrator', role='admin')
+        admin.set_password(admin_pass)
+        db.session.add(admin)
+        db.session.commit()
+        print(f"✅ Created admin: {admin_email}")
 
 with app.app_context():
     User.query.filter(User.created_at == None)\
