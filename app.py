@@ -1535,6 +1535,14 @@ def admin_delete_owner(owner_id):
 
     return redirect(url_for('admin_dashboard'))
 
+@app.route('/ping-db')
+def ping_db():
+    try:
+        db.session.execute('SELECT 1')
+        return 'DB OK'
+    except Exception as e:
+        return str(e)
+
 @app.route('/admin/export_csv')
 @login_required
 def export_csv():
@@ -1550,5 +1558,6 @@ def export_csv():
     output.seek(0)
     return send_file(output, mimetype='text/csv', as_attachment=True, download_name='dogs.csv')
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT',5000)), debug=False)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))  # 5000 fallback for local
+    app.run(host="0.0.0.0", port=port, debug=True)
