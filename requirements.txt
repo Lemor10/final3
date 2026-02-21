@@ -13,3 +13,4 @@ Flask-Mail==0.9.1
 python-dotenv
 python-dateutil
 openpyxl
+python-docx
