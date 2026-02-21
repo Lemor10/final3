@@ -28,8 +28,7 @@ BASE_URL = os.environ.get("BASE_URL", "http://localhost:5000")
 
 app = Flask(__name__)
 
-app.config['DEBUG'] = True
-app.config['TESTING'] = True
+app.config['MAIL_SUPPRESS_SEND'] = os.environ.get('SUPPRESS_MAIL', 'True') == 'True'
 
 app.config['DOG_UPLOAD_FOLDER'] = os.path.join('static', 'dog_images')
 os.makedirs(app.config['DOG_UPLOAD_FOLDER'], exist_ok=True)
@@ -203,144 +202,190 @@ class Notification(db.Model):
         return f"<Notification {self.id} - User {self.user_id} - Read {self.is_read}>"
 
 def generate_vaccination_notifications(user_id, dog):
-        today = date.today()
+    """
+    Generate daily vaccination reminders for a dog owner.
+    Works with free hosting (logs email) or real SMTP.
+    """
+    today = date.today()
+    if not dog.next_vaccination:
+        return
+
+    days_left = (dog.next_vaccination - today).days
+
+    # Define milestones
+    milestones = {7: "7_days", 3: "3_days", 1: "1_day", 0: "overdue"}
+    if days_left not in milestones:
+        return
+
+    milestone = milestones[days_left]
+
+    # Prepare message
+    if milestone == "overdue":
+        title = "Vaccination Overdue"
+        message = (
+            f"Dear {dog.owner_name},<br><br>"
+            f"Our records indicate that <strong>{dog.name}</strong>'s vaccination is overdue. "
+            f"Please schedule a visit with your veterinarian as soon as possible to ensure {dog.name}'s continued health.<br><br>"
+            f"Thank you for your attention."
+        )
+        notif_type = "overdue"
+    else:
+        title = "Vaccination Due Soon"
+        message = (
+            f"Dear {dog.owner_name},<br><br>"
+            f"This is a friendly reminder that <strong>{dog.name}</strong> is due for vaccination in {days_left} day{'s' if days_left > 1 else ''}. "
+            f"Please schedule an appointment with your veterinarian.<br><br>"
+            f"Thank you for ensuring your pet’s health."
+        )
+        notif_type = "reminder"
+
+    # Check if notification already exists
+    existing = Notification.query.filter_by(
+        user_id=user_id,
+        dog_id=dog.id,
+        type=notif_type,
+        milestone=milestone
+    ).first()
+
+    if existing:
+        return
+
+    # Create DB notification
+    notif = Notification(
+        user_id=user_id,
+        dog_id=dog.id,
+        title=title,
+        message=message,
+        type=notif_type,
+        milestone=milestone,
+        due_date=dog.next_vaccination,
+        email_sent=False
+    )
+    db.session.add(notif)
+    db.session.commit()  # ✅ commit now so notif.id exists
+
+    # Send email
+    user = db.session.get(User, user_id)
+    if user and user.email:
+        send_notification_email(user.email, title, message)
+        notif.email_sent = True
+        db.session.commit()
+
+def generate_admin_notifications(admin_user_id):
+    """
+    Generate notifications for admin about stray dogs’ vaccination milestones.
+    Sends email safely and avoids duplicates.
+    """
+    today = date.today()
+    # Get all stray dogs (no owner)
+    dogs = Dog.query.filter_by(owner_id=None, is_archived=False).all()
+
+    for dog in dogs:
         if not dog.next_vaccination:
-            return
+            continue
 
         days_left = (dog.next_vaccination - today).days
-
-        # Define milestones
-        milestones = {
-            7: "7_days",
-            3: "3_days",
-            1: "1_day",
-            0: "overdue"
-        }
+        milestones = {7: "7_days", 3: "3_days", 1: "1_day", 0: "overdue"}
 
         if days_left not in milestones:
-            return
-        
+            continue
+
         milestone = milestones[days_left]
+
+        # Skip if notification already exists
+        existing = Notification.query.filter_by(
+            user_id=admin_user_id,
+            dog_id=dog.id,
+            type="stray",          # unified type for stray dogs
+            milestone=milestone
+        ).first()
+        if existing:
+            continue
 
         # Prepare message
         if milestone == "overdue":
-            title = "Vaccination Overdue"
-            message = ( f"Dear {dog.owner_name},\n\n"
-            f"Our records indicate that {dog.name}'s vaccination is overdue. "
-            f"We strongly recommend that you schedule a visit with your veterinarian "
-            f"as soon as possible to ensure {dog.name}'s continued health and wellbeing.\n\n"
-            f"Thank you for your attention."
-            )
+            title = "Stray Dog Vaccination Overdue"
+            message = f"'{dog.name}' vaccination is overdue!"
             notif_type = "overdue"
         else:
-            title = "Vaccination Due Soon"
-            message = ( f"Dear {dog.owner_name},\n\n"
-            f"This is a friendly reminder that {dog.name} is due for vaccination in {days_left} day{'s' if days_left > 1 else ''}. "
-            f"Please schedule an appointment with your veterinarian to keep {dog.name} up-to-date with vaccinations.\n\n"
-            f"Thank you for ensuring your pet’s health."
-            )
+            title = "Stray Dog Vaccination Due Soon"
+            message = f"'{dog.name}' needs vaccination in {days_left} day{'s' if days_left > 1 else ''}!"
             notif_type = "reminder"
 
-        existing = Notification.query.filter_by(
-            user_id=user_id,
-            dog_id=dog.id,
-            type=notif_type,    # ⚡ MUST include type
-            milestone=milestone
-        ).first()
-
-        if existing:
-            return
-        
+        # Create notification in DB
         notif = Notification(
-            user_id=user_id,
+            user_id=admin_user_id,
             dog_id=dog.id,
             title=title,
             message=message,
-            type=notif_type,
+            type="stray",
             milestone=milestone,
             due_date=dog.next_vaccination,
             email_sent=False
         )
         db.session.add(notif)
-        db.session.flush()
+        db.session.commit()  # ensure notif.id exists
 
-        # Send email
-        user = db.session.get(User, user_id)
-        if user.email and not notif.email_sent:
-            send_notification_email(to=user.email, subject=title, body=message)
+        # Send email safely
+        admin_user = db.session.get(User, admin_user_id)
+        if admin_user and admin_user.email:
+            send_notification_email(admin_user.email, title, message)
             notif.email_sent = True
+            db.session.commit()
 
-        db.session.commit()
+# ------------------ Email Helpers ------------------
 
-def generate_admin_notifications(admin_user_id):
-        today = date.today()
-        dogs = Dog.query.filter_by(owner_id=None).all()
+# Ensure free-hosting friendly
+def send_email(to_email, subject, html_content):
+    """
+    Sends an email if MAIL_SUPPRESS_SEND=False.
+    Logs the email otherwise for free/test environments.
+    """
+    if not to_email:
+        app.logger.warning(f"Attempted to send email with empty recipient: {subject}")
+        return
 
-        for dog in dogs:
-            if not dog.next_vaccination:
-                continue
+    msg = Message(
+        subject=subject,
+        recipients=[to_email],
+        sender=app.config['MAIL_DEFAULT_SENDER'],
+        html=html_content
+    )
 
-            # Owner-style milestones
-            days_left = (dog.next_vaccination - today).days
-            milestones = {7: "7_days", 3: "3_days", 1: "1_day", 0: "overdue"}
-
-            if days_left not in milestones:
-                continue
-
-            milestone = milestones[days_left]
-
-            existing = Notification.query.filter_by(
-                user_id=admin_user_id,
-                dog_id=dog.id,
-                milestone=milestone
-            ).first()
-
-            if existing:
-                continue
-
-            if milestone == "overdue":
-                title = "Stray Dog Vaccination Overdue"
-                message = f"'{dog.name}' vaccination is overdue!"
-                notif_type = "overdue"
-            else:
-                title = "Stray Dog Vaccination Due Soon"
-                message = f"'{dog.name}' needs vaccination in {days_left} days!"
-                notif_type = "reminder"
-
-            existing = Notification.query.filter_by(
-                    user_id=admin_user_id,
-                    dog_id=dog.id,
-                    type="stray_registered"
-                ).first()
-            if existing:
-                continue
-
-            notif = Notification(
-                user_id=admin_user_id,
-                dog_id=dog.id,
-                title=title,
-                message=message,
-                type=notif_type,
-                milestone=milestone,
-                due_date=dog.next_vaccination,
-                email_sent=False
-            )
-            db.session.add(notif)
-
-        db.session.commit()
-
-def send_notification_email(user, subject, html_template):
     try:
-        msg = Message(
-            subject=subject,
-            recipients=[user.email],
-            sender=app.config['MAIL_DEFAULT_SENDER'],
-            html=html_template
-        )
-        mail.send(msg)
+        if app.config['MAIL_SUPPRESS_SEND']:
+            # Free/test environment: log instead of sending
+            print(f"[EMAIL LOG] To: {to_email} | Subject: {subject}\n{html_content}\n")
+        else:
+            mail.send(msg)
+            app.logger.info(f"Email sent to {to_email} | Subject: {subject}")
     except Exception as e:
-        app.logger.error(f"Notification email failed for {user.email}: {e}")
-        flash("Could not send notification email. Please contact support.", "warning")
+        app.logger.error(f"Failed to send email to {to_email}: {e}")
+
+
+def send_signup_email(user):
+    """
+    Sends verification email to new users.
+    """
+    token = serializer.dumps(user.email, salt="email-verify")
+    user.verification_token = token
+    db.session.commit()
+
+    verify_link = f"{BASE_URL}/verify-email/{token}"
+    html_template = f"""
+        <p>Hello {user.name},</p>
+        <p>Click below to verify your email:</p>
+        <a href="{verify_link}">Verify Email</a>
+    """
+    send_email(user.email, "Verify Your Email", html_template)
+
+
+def send_notification_email(user_email, subject, message):
+    """
+    Sends vaccination or notification emails.
+    """
+    html_template = f"<p>{message}</p>"
+    send_email(user_email, subject, html_template)
 
 def run_daily_notifications(user):
     today = date.today()
@@ -575,35 +620,40 @@ def handle_notifications():
         g.notifications = []
         return
 
+    today = date.today()
     now = datetime.utcnow()
 
-    # Clean up old notifications
+    # ------------------ CLEAN UP OLD NOTIFICATIONS ------------------
+    # Delete read notifications older than 1 minute
     Notification.query.filter(
         Notification.is_read == True,
         Notification.created_at < now - timedelta(minutes=1)
     ).delete(synchronize_session=False)
 
+    # Dismiss unread notifications older than 2 minutes
     Notification.query.filter(
         Notification.is_read == False,
         Notification.created_at < now - timedelta(minutes=2)
     ).update({Notification.dismissed: True}, synchronize_session=False)
+
     db.session.commit()
 
-    today = date.today()
-
-    # Generate notifications once per day
+    # ------------------ GENERATE NOTIFICATIONS DAILY ------------------
     if current_user.last_notification_run != today:
         if current_user.role == "owner":
+            # Generate vaccination notifications for each dog
             dogs = Dog.query.filter_by(owner_id=current_user.id, is_archived=False).all()
             for dog in dogs:
                 generate_vaccination_notifications(current_user.id, dog)
-        elif current_user.role == 'admin':
+
+        elif current_user.role == "admin":
+            # Generate notifications for stray dogs
             generate_admin_notifications(current_user.id)
 
         current_user.last_notification_run = today
         db.session.commit()
 
-    # Load notifications for UI
+    # ------------------ LOAD NOTIFICATIONS FOR UI ------------------
     g.notifications = Notification.query.filter_by(
         user_id=current_user.id,
         dismissed=False
@@ -711,14 +761,7 @@ def signup():
         <a href="{verify_link}">Verify Email</a>
         """
 
-        msg = Message(
-            subject="Verify Your Email",
-            recipients=[user.email],
-            sender=app.config['MAIL_DEFAULT_SENDER'],
-            html=html_template
-        )
-        mail.send(msg)
-
+        send_signup_email(user)
         flash("Verification email sent. Please check your inbox.", "info")
         return redirect(url_for("login"))
 
