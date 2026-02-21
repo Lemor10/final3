@@ -24,12 +24,7 @@ import matplotlib
 matplotlib.use("Agg")  # VERY IMPORTANT
 import matplotlib.pyplot as plt
 
-if os.environ.get("RENDER"):
-    BASE_URL = os.environ.get("BASE_URL")
-    if not BASE_URL:
-        raise RuntimeError("❌ BASE_URL is NOT set in Render environment variables")
-else:
-    BASE_URL = "http://localhost:5000"
+BASE_URL = os.environ.get("BASE_URL", "http://localhost:5000")
 
 app = Flask(__name__)
 
@@ -332,13 +327,16 @@ def generate_admin_notifications(admin_user_id):
         db.session.commit()
 
 def send_notification_email(to, subject, body):
-    msg = Message(
-        subject=subject,
-        recipients=[to],
-        body=body,
-        sender=app.config['MAIL_DEFAULT_SENDER']
-    )
-    mail.send(msg)
+    try:
+        msg = Message(
+            subject=subject,
+            recipients=[to],
+            body=body,
+            sender=app.config['MAIL_DEFAULT_SENDER']
+        )
+        mail.send(msg)
+    except Exception as e:
+        print("Notification email failed:", e)
 
 def run_daily_notifications(user):
     today = date.today()
