@@ -28,6 +28,9 @@ BASE_URL = os.environ.get("BASE_URL", "http://localhost:5000")
 
 app = Flask(__name__)
 
+app.config['DEBUG'] = True
+app.config['TESTING'] = True
+
 app.config['DOG_UPLOAD_FOLDER'] = os.path.join('static', 'dog_images')
 os.makedirs(app.config['DOG_UPLOAD_FOLDER'], exist_ok=True)
 
@@ -326,17 +329,18 @@ def generate_admin_notifications(admin_user_id):
 
         db.session.commit()
 
-def send_notification_email(to, subject, body):
+def send_notification_email(user, subject, html_template):
     try:
         msg = Message(
             subject=subject,
-            recipients=[to],
-            body=body,
-            sender=app.config['MAIL_DEFAULT_SENDER']
+            recipients=[user.email],
+            sender=app.config['MAIL_DEFAULT_SENDER'],
+            html=html_template
         )
         mail.send(msg)
     except Exception as e:
-        print("Notification email failed:", e)
+        app.logger.error(f"Notification email failed for {user.email}: {e}")
+        flash("Could not send notification email. Please contact support.", "warning")
 
 def run_daily_notifications(user):
     today = date.today()
