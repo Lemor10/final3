@@ -258,9 +258,12 @@
           <div class="text-start mb-2">
               <label class="form-label">Upload Dog Image</label>
               <input type="file" name="dog_image" class="form-control" accept="image/*">
-            <small style="font-size: 12.5px;">
-              Dog image must be whole body
-            </small>
+<div class="alert alert-warning py-2 mt-2 d-flex align-items-center" role="alert">
+  <i class="bi bi-exclamation-circle-fill me-2"></i>
+  <small class="mb-0">
+    Please upload a clear full-body photo of the dog.
+  </small>
+</div>
           </div>
 
           <div class="mb-3">

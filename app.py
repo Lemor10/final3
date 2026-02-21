@@ -17,6 +17,12 @@ from sqlalchemy import func, or_
 from itsdangerous import URLSafeTimedSerializer
 from flask import render_template_string
 from dateutil.relativedelta import relativedelta
+from openpyxl import Workbook
+from docx import Document
+from docx.shared import Inches
+import matplotlib
+matplotlib.use("Agg")  # VERY IMPORTANT
+import matplotlib.pyplot as plt
 
 if os.environ.get("RENDER"):
     BASE_URL = os.environ.get("BASE_URL")
@@ -35,21 +41,25 @@ os.makedirs(app.config['UPLOAD_FOLDER_PROFILE'], exist_ok=True)
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Dog_Registration_Secret_Key')
 on_render = os.environ.get('RENDER') is not None 
-if on_render:
-    database_url = os.environ.get("DATABASE_URL")
 
-    if database_url and database_url.startswith("postgres://"):
+database_url = os.environ.get("DATABASE_URL")
+
+if database_url:
+    # Fix Render postgres URL
+    if database_url.startswith("postgres://"):
         database_url = database_url.replace("postgres://", "postgresql://", 1)
 
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://final3_qgjp_user:sDzcu1JYnbFS0jVJJ6wQSctYY2JbLgpk@dpg-d6c5g9p5pdvs73folaag-a.singapore-postgres.render.com/final3_qgjp' 
+else:
+    app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://drs_user:somepassword@localhost:5432/drs_local" 
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'dogrnw2026@gmail.com'
-app.config['MAIL_PASSWORD'] = 'jgrpmgucdltkvdir'
+app.config['MAIL_USERNAME'] = os.environ.get("MAIL_USERNAME")
+app.config['MAIL_PASSWORD'] = os.environ.get("MAIL_PASSWORD")
 app.config['MAIL_DEFAULT_SENDER'] = 'Dog Registration <dogrnw2026@gmail.com>'
 
 mail = Mail(app)
@@ -257,7 +267,7 @@ def generate_vaccination_notifications(user_id, dog):
         db.session.flush()
 
         # Send email
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         if user.email and not notif.email_sent:
             send_notification_email(to=user.email, subject=title, body=message)
             notif.email_sent = True
@@ -350,6 +360,81 @@ def calculate_vaccination_expiry(last_vaccination):
         return None
     return last_vaccination + timedelta(days=365)
 
+def get_analysis_data(start_month=None, end_month=None):
+
+    query = Dog.query.filter(Dog.is_archived == False)
+
+    if start_month and end_month:
+        start_date = datetime.strptime(start_month + "-01", "%Y-%m-%d")
+        end_date = datetime.strptime(end_month + "-01", "%Y-%m-%d")
+        end_day = 28 if end_date.month == 2 else 30
+        end_date = datetime(end_date.year, end_date.month, end_day, 23, 59, 59)
+
+        query = query.filter(
+            Dog.created_at >= start_date,
+            Dog.created_at <= end_date
+        )
+
+    dogs = query.all()
+
+    # ---------------- DEATH ANALYTICS ----------------
+    death_query = Dog.query.filter(
+        Dog.deleted_by_owner_id.isnot(None),
+        Dog.deleted_reason == "Death"
+    )
+
+    if start_month and end_month:
+        death_query = death_query.filter(
+            Dog.archived_at >= start_date,
+            Dog.archived_at <= end_date
+        )
+
+    archived_dogs = death_query.all()
+    total_deaths = len(archived_dogs)
+
+    death_causes_list = [
+        d.deleted_cause if d.deleted_cause else "Unknown"
+        for d in archived_dogs
+    ]
+
+    death_causes = list(set(death_causes_list))
+    death_counts = [death_causes_list.count(c) for c in death_causes]
+
+    total_owners = len(set(d.owner_id for d in dogs))
+    total_dogs = len(dogs)
+
+    breeds_list = [d.breed.capitalize() if d.breed else "Unknown" for d in dogs]
+    breeds = list(set(breeds_list))
+    breed_numbers = [breeds_list.count(b) for b in breeds]
+
+    vaccinated_count = sum(1 for d in dogs if d.vaccinated == "Vaccinated")
+    unvaccinated_count = sum(1 for d in dogs if d.vaccinated == "Not Vaccinated")
+
+    month_counts_dict = {}
+    for d in dogs:
+        m = d.created_at.strftime("%b %Y")
+        month_counts_dict[m] = month_counts_dict.get(m, 0) + 1
+
+    months = sorted(
+        month_counts_dict.keys(),
+        key=lambda x: datetime.strptime(x, "%b %Y")
+    )
+    month_counts = [month_counts_dict[m] for m in months]
+
+    return {
+        "total_owners": total_owners,
+        "total_dogs": total_dogs,
+        "breeds": breeds,
+        "breed_numbers": breed_numbers,
+        "vaccinated_count": vaccinated_count,
+        "unvaccinated_count": unvaccinated_count,
+        "months": months,
+        "month_counts": month_counts,
+        "total_deaths": total_deaths,
+        "death_causes": death_causes,
+        "death_counts": death_counts
+    }
+
 @app.route("/check-username")
 def check_username():
     username = request.args.get("username", "").strip().lower()
@@ -425,7 +510,7 @@ def admin_notifications():
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id))
 
 @app.route('/notifications/read/<int:notif_id>', methods=['POST'])
 @login_required
@@ -463,17 +548,17 @@ with app.app_context():
     admin_email = os.environ.get('ADMIN_EMAIL', 'admin@gmail.com')
     admin_pass = os.environ.get('ADMIN_PASSWORD', 'admin123')
 #    admin = User.query.filter_by(email=admin_email).first()
-#    if not admin:
+##   if not admin:
 #        admin = User(email=admin_email, name='Administrator', role='admin')
 #        admin.set_password(admin_pass)
-#        db.session.add(admin)
+#       db.session.add(admin)
 #        db.session.commit()
 #        print(f"✅ Created admin: {admin_email}")
 
-#with app.app_context():
-#    User.query.filter(User.created_at == None)\
-#        .update({User.created_at: datetime.utcnow()})
-#    db.session.commit()
+with app.app_context():
+    User.query.filter(User.created_at == None)\
+        .update({User.created_at: datetime.utcnow()})
+    db.session.commit()
 
 @app.before_request
 def handle_notifications():
@@ -685,7 +770,7 @@ def reset_password(token):
         flash("Reset session expired or invalid. Try again.", "danger")
         return redirect(url_for('forgot_password'))
 
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         flash("User not found.", "danger")
         return redirect(url_for('login'))
@@ -1019,6 +1104,8 @@ def admin_data_analysis():
     start_month = request.args.get("start_month")
     end_month = request.args.get("end_month")
 
+    data = get_analysis_data(start_month, end_month)
+
     query = Dog.query.filter(Dog.is_archived == False)
     if start_month and end_month:
         start_date = datetime.strptime(start_month + "-01", "%Y-%m-%d")
@@ -1072,35 +1159,117 @@ def admin_data_analysis():
     month_counts = [month_counts_dict[m] for m in months]
 
     if request.args.get("ajax"):
-        return jsonify({
-            "total_owners": total_owners,
-            "total_dogs": total_dogs,
-            "breeds": breeds,
-            "breed_numbers": breed_numbers,
-            "vaccinated_count": vaccinated_count,
-            "unvaccinated_count": unvaccinated_count,
-            "months": months,
-            "month_counts": month_counts,
-            "total_deaths": total_deaths,
-            "death_causes": death_causes,
-            "death_counts": death_counts
-        })
-
+        return jsonify(data)
+    
     return render_template(
         'admin_data_analysis.html',
-        total_owners=total_owners,
-        total_dogs=total_dogs,
-        breeds=breeds,
-        breed_numbers=breed_numbers,
-        vaccinated_count=vaccinated_count,
-        unvaccinated_count=unvaccinated_count,
-        months=months,
-        month_counts=month_counts,
-        total_deaths=total_deaths,
-        death_causes=death_causes,
-        death_counts=death_counts,
+        **data,
         start_month=start_month,
         end_month=end_month
+    )
+
+@app.route("/admin/data-analysis/download")
+@login_required
+def download_data_analysis():
+
+    if current_user.role != 'admin':
+        abort(403)
+
+    start_month = request.args.get("start_month")
+    end_month = request.args.get("end_month")
+
+    data = get_analysis_data(start_month, end_month)
+
+    downloaded_at = datetime.utcnow()
+    formatted_date = downloaded_at.strftime("%B %d, %Y")
+
+    # Create Word document
+    document = Document()
+    document.add_heading("Dog Registration Data Analysis Report", level=1)
+    document.add_paragraph(f"Data Analysis Report as of {formatted_date}")
+    document.add_paragraph("")  # spacing
+
+    document.add_paragraph(f"Total Owners: {data['total_owners']}")
+    document.add_paragraph(f"Total Dogs: {data['total_dogs']}")
+    document.add_paragraph(f"Total Deaths: {data['total_deaths']}")
+
+    document.add_heading("Dogs per Breed", level=2)
+
+    # ---------- BREED CHART ----------
+    plt.figure()
+    plt.bar(data["breeds"], data["breed_numbers"])
+    plt.xticks(rotation=45)
+    plt.title("Dogs per Breed")
+    plt.tight_layout()
+
+    breed_chart = io.BytesIO()
+    plt.savefig(breed_chart, format="png")
+    plt.close()
+    breed_chart.seek(0)
+
+    document.add_picture(breed_chart, width=Inches(5))
+
+    # ---------- VACCINATION CHART ----------
+    document.add_heading("Vaccination Status", level=2)
+
+    plt.figure()
+    plt.pie(
+        [data["vaccinated_count"], data["unvaccinated_count"]],
+        labels=["Vaccinated", "Not Vaccinated"],
+        autopct="%1.1f%%"
+    )
+    plt.title("Vaccination Distribution")
+
+    vac_chart = io.BytesIO()
+    plt.savefig(vac_chart, format="png")
+    plt.close()
+    vac_chart.seek(0)
+
+    document.add_picture(vac_chart, width=Inches(4))
+
+    # ---------- MONTHLY REGISTRATION ----------
+    document.add_heading("Monthly Registrations", level=2)
+
+    plt.figure()
+    plt.plot(data["months"], data["month_counts"], marker='o')
+    plt.xticks(rotation=45)
+    plt.title("Monthly Registrations")
+    plt.tight_layout()
+
+    month_chart = io.BytesIO()
+    plt.savefig(month_chart, format="png")
+    plt.close()
+    month_chart.seek(0)
+
+    document.add_picture(month_chart, width=Inches(5))
+
+    # ---------- DEATH CAUSE ----------
+    document.add_heading("Cause of Death", level=2)
+
+    if data["death_causes"]:
+        plt.figure()
+        plt.bar(data["death_causes"], data["death_counts"])
+        plt.xticks(rotation=45)
+        plt.title("Cause of Death")
+        plt.tight_layout()
+
+        death_chart = io.BytesIO()
+        plt.savefig(death_chart, format="png")
+        plt.close()
+        death_chart.seek(0)
+
+        document.add_picture(death_chart, width=Inches(5))
+
+    # Save file
+    file_stream = io.BytesIO()
+    document.save(file_stream)
+    file_stream.seek(0)
+
+    return send_file(
+        file_stream,
+        as_attachment=True,
+        download_name="Dog_Data_Analysis_Report.docx",
+        mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
 
 @app.route('/admin/search-dogs')
@@ -1232,7 +1401,6 @@ def admin_edit_dog(dog_id):
 
     dog.name = request.form['name']
     dog.breed = request.form['breed']
-    dog.age = request.form['age']
     dog.vaccinated = request.form['status']
     dog.last_vaccination = request.form.get('last_vaccination') or None
     dog.next_vaccination = request.form.get('next_vaccination') or None
@@ -1354,8 +1522,7 @@ def admin_restore_dog(dog_id):
 @app.route('/admin/delete_owner/<int:owner_id>', methods=['POST'])
 @login_required
 def admin_delete_owner(owner_id):
-    owner = User.query.get(owner_id)
-
+    owner = db.session.get(User, owner_id)
     if not owner:
         return redirect(url_for('admin_dashboard'))
 
@@ -1384,4 +1551,4 @@ def export_csv():
     return send_file(output, mimetype='text/csv', as_attachment=True, download_name='dogs.csv')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT',5000)), debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT',5000)), debug=False)
