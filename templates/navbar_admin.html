@@ -1,0 +1,316 @@
+<style>
+.navbar-nav .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 20px;
+  transition: all 0.2s ease;
+}
+
+.navbar-nav .nav-link:hover {
+  color: white !important;
+  transform: translateY(-2px);
+}
+.navbar{
+  position: sticky;
+  top: 0;
+  z-index: 1050; 
+}
+
+/* Modal enhancements */
+#adminLogoutModal .modal-content {
+  border: none;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+#adminLogoutModal .modal-header {
+  background: linear-gradient(90deg, #FF6B6B, #FF4D4D);
+  color: white;
+  border-bottom: none;
+  justify-content: center;
+  text-align: center;
+}
+
+#adminLogoutModal .modal-header h5 {
+  font-size: 1.2rem;
+}
+
+#adminLogoutModal .modal-body {
+  font-size: 0.95rem;
+  color: #333;
+}
+
+#adminLogoutModal .modal-footer {
+  border-top: none;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* Buttons */
+#adminLogoutModal .btn {
+  border-radius: 5px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+#adminLogoutModal .btn:hover {
+  transform: translateY(-2px);
+}
+
+#adminLogoutModal .btn-primary {
+  background-color: #4DA6FF;
+  border: none;
+}
+
+#adminLogoutModal .btn-primary:hover {
+  background-color: #3399FF;
+}
+
+#adminLogoutModal .btn-outline-secondary {
+  border-color: #ccc;
+  color: #555;
+}
+
+#adminLogoutModal .btn-outline-secondary:hover {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+/* Icon styling */
+#adminLogoutModal .modal-header i {
+  font-size: 1.3rem;
+  vertical-align: middle;
+  margin-right: 6px;
+  transition: transform 0.2s ease;
+}
+
+#adminLogoutModal .modal-header i:hover {
+  transform: rotate(-15deg);
+}
+
+/* Fade-in animation for modal */
+.modal.fade .modal-dialog {
+  transform: translateY(-50px);
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+.modal.fade.show .modal-dialog {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+@media (max-width: 576px) {
+
+  
+  .navbar-brand,
+  .navbar-toggler {
+    display: none;
+  }
+
+  
+  .navbar {
+    position: fixed;
+    bottom: 0;
+    top: auto;
+    width: 100%;
+    z-index: 1050;
+    padding: 0.3rem 0;
+  }
+
+  
+  .navbar-collapse {
+    display: flex !important;
+    justify-content: center;
+  }
+
+  .navbar-nav {
+    flex-direction: row;
+    justify-content: space-around;
+    width: 100%;
+    margin: 0;
+  }
+
+  .navbar-nav .nav-item {
+    flex: 1;
+    text-align: center;
+  }
+
+  
+  .navbar-nav .nav-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    color: rgba(255,255,255,0.7);
+    position: relative;
+    transition: transform 0.3s ease, color 0.3s ease;
+  }
+
+  .navbar-nav .nav-link i,
+  .navbar-nav .nav-link .nav-title {
+    transition: transform 0.3s ease, color 0.3s ease;
+  }
+
+  
+  .navbar-nav .nav-link.active i,
+  .navbar-nav .nav-link.active .nav-title {
+    transform: scale(1.3) translateY(-2px);
+    color: #fff;
+  }
+
+  
+  .navbar-nav .nav-link.active::after {
+    display: none; 
+  }
+
+  
+  .nav-title {
+    font-size: 0.60rem;
+    font-weight: 500;
+    opacity: 0.9;
+  }
+
+  
+  .navbar-nav .nav-link i {
+    font-size: 1.2rem;
+  }
+
+  
+  .logout-link i {
+    font-size: 1.0rem;
+  }
+
+  .logout-link .nav-title {
+    font-size: 0.60rem;
+  }
+
+  
+  .navbar .btn {
+    display: none;
+  }
+
+    #notif-dot {
+    top: 10px;
+    right: 5px;
+  }
+
+  
+  body {
+    padding-bottom: 65px;
+  }
+}
+</style>
+
+<nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color:#4DA6FF;">
+  <div class="container-fluid">
+
+    
+    <a class="navbar-brand fw-bold">
+      {% if request.endpoint == 'admin_dashboard' %}
+        <i class="bi bi-shield-lock-fill me-1"></i> Admin Dashboard
+      {% elif request.endpoint == 'admin_data_analysis' %}
+        <i class="bi bi-bar-chart-fill me-2"></i> Data Analysis
+      {% elif request.endpoint == 'admin_notifications' %}
+        <i class="bi bi-bell me-2"></i> Notifications
+      {% elif request.endpoint == 'admin_archive' %}
+        <i class="bi bi-archive-fill me-2"></i> Archive
+      {% else %}
+        <i class="bi bi-info-circle me-2"></i> Page
+      {% endif %}
+    </a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+
+        <li class="nav-item" title="Dashboard">
+          <a class="nav-link {% if request.endpoint=='admin_dashboard' %}active{% endif %}" 
+             href="{{ url_for('admin_dashboard') }}">
+             <i class="bi bi-shield-lock-fill me-1"></i>
+             <span class="nav-title">Dashboard</span>
+          </a>
+        </li>
+
+        <li class="nav-item" title="Data Analysis">
+          <a class="nav-link {% if request.endpoint=='admin_data_analysis' %}active{% endif %}" 
+             href="{{ url_for('admin_data_analysis') }}">
+             <i class="bi bi-bar-chart-fill me-1"></i>
+             <span class="nav-title">Data Analysis</span>
+          </a>
+        </li>
+
+        <li class="nav-item position-relative" title="Notifications">
+          <a class="nav-link d-flex align-items-center gap-1
+              {% if request.endpoint=='admin_notifications' %}active{% endif %}"
+            href="{{ url_for('admin_notifications') }}">
+            <i class="bi bi-bell-fill"></i>
+            <span class="nav-title">Notifications</span>
+
+              <span id="notif-dot"
+                class="position-absolute top-10 start-55 translate-middle
+                      p-1 bg-danger border border-light rounded-circle d-none">
+          </span>
+          </a>
+        </li>
+
+        <li class="nav-item" title="Archive">
+          <a class="nav-link {% if request.endpoint=='admin_archive' %}active{% endif %}" 
+            href="{{ url_for('admin_archive') }}">
+            <i class="bi bi-archive-fill me-1"></i>
+            <span class="nav-title">Archive</span>
+          </a>
+        </li>
+
+        <li class="nav-item" title="Logout">
+          <a class="nav-link logout-link" href="{{ url_for('index') }}" data-bs-toggle="modal" data-bs-target="#adminLogoutModal">
+            <i class="bi bi-box-arrow-right"></i>
+            <span class="nav-title">Logout</span>
+          </a>
+        </li>
+
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Logout Modal HTML -->
+<div class="modal fade" id="adminLogoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content shadow-lg">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="logoutModalLabel">
+          <i class="bi bi-box-arrow-right"></i> Confirm Logout
+        </h5>
+      </div>
+      <div class="modal-body text-center py-4">
+        <p class="mb-0">Are you sure you want to log out?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary btn-sm px-4" data-bs-dismiss="modal">
+          Cancel
+        </button>
+        <a href="{{ url_for('logout') }}" class="btn btn-primary btn-sm px-4">
+          Logout
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  if (window.innerWidth <= 576) {
+    document.querySelectorAll('.navbar-nav .nav-link').forEach(link => {
+      link.addEventListener('click', () => {
+        document.querySelectorAll('.navbar-nav .nav-link.active .nav-title').forEach(active => {
+          active.classList.remove('active');
+        });
+        link.classList.add('active');
+      });
+    });
+  }
+</script>

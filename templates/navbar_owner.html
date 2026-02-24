@@ -1,0 +1,359 @@
+<style>
+.navbar-nav .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 20px;
+  transition: all 0.2s ease;
+}
+
+.navbar-nav .nav-link:hover {
+  color: white !important;
+  transform: translateY(-2px);
+}
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1050; 
+}
+
+
+.navbar.scrolled {
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+}
+
+/* Modal enhancements */
+#LogoutModal .modal-content {
+  border: none;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+#LogoutModal .modal-header {
+  background: linear-gradient(90deg, #FF6B6B, #FF4D4D);
+  color: white;
+  border-bottom: none;
+  justify-content: center;
+  text-align: center;
+}
+
+#LogoutModal .modal-header h5 {
+  font-size: 1.2rem;
+}
+
+#LogoutModal .modal-body {
+  font-size: 0.95rem;
+  color: #333;
+}
+
+#LogoutModal .modal-footer {
+  border-top: none;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* Buttons */
+#LogoutModal .btn {
+  border-radius: 5px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+#LogoutModal .btn:hover {
+  transform: translateY(-2px);
+}
+
+#LogoutModal .btn-primary {
+  background-color: #4DA6FF;
+  border: none;
+}
+
+#LogoutModal .btn-primary:hover {
+  background-color: #3399FF;
+}
+
+#LogoutModal .btn-outline-secondary {
+  border-color: #ccc;
+  color: #555;
+}
+
+#LogoutModal .btn-outline-secondary:hover {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+/* Icon styling */
+#LogoutModal .modal-header i {
+  font-size: 1.3rem;
+  vertical-align: middle;
+  margin-right: 6px;
+  transition: transform 0.2s ease;
+}
+
+#LogoutModal .modal-header i:hover {
+  transform: rotate(-15deg);
+}
+
+/* Fade-in animation for modal */
+.modal.fade .modal-dialog {
+  transform: translateY(-50px);
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+.modal.fade.show .modal-dialog {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+@media (max-width: 576px) {
+
+  
+  .navbar-brand,
+  .navbar-toggler {
+    display: none;
+  }
+
+  
+  .navbar {
+    position: fixed;
+    bottom: 0;
+    top: auto;
+    width: 100%;
+    z-index: 1050;
+    padding: 0.3rem 0;
+  }
+
+  
+  .navbar-collapse {
+    display: flex !important;
+    justify-content: center;
+  }
+
+  .navbar-nav {
+    flex-direction: row;
+    justify-content: space-around;
+    width: 100%;
+    margin: 0;
+  }
+
+  .navbar-nav .nav-item {
+    flex: 1;
+    text-align: center;
+  }
+
+  
+  .navbar-nav .nav-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    color: rgba(255,255,255,0.7);
+    position: relative;
+    transition: transform 0.3s ease, color 0.3s ease;
+  }
+
+  .navbar-nav .nav-link i,
+  .navbar-nav .nav-link .nav-title {
+    transition: transform 0.3s ease, color 0.3s ease;
+  }
+
+  
+  .navbar-nav .nav-link.active i,
+  .navbar-nav .nav-link.active .nav-title {
+    transform: scale(1.15) translateY(-1px);
+    color: #fff;
+  }
+
+  
+  .navbar-nav .nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: 4px;
+    width: 6px;
+    height: 6px;
+    background: white;
+    border-radius: 50%;
+    transform: scale(1);
+    transition: transform 0.3s ease;
+  }
+
+  
+  .nav-text {
+    display: none;
+  }
+
+  
+  .nav-title {
+    font-size: 0.65rem;
+    font-weight: 500;
+    line-height: 1;
+    opacity: 0.9;
+  }
+
+  
+  .navbar-nav .nav-link i {
+    font-size: 1.2rem;
+  }
+
+  
+  .navbar .btn {
+    display: none;
+  }
+
+  .navbar-nav .nav-link.active::after {
+    display: none;
+  }
+  .logout-link i {
+    font-size: 1.2rem;
+  }
+
+  .logout-link .nav-title {
+    font-size: 0.65rem;
+  }
+
+  
+  .navbar .btn {
+    display: none;
+  }
+  
+  
+  #notif-dot {
+    top: 8px;
+    right: 4px;
+  }
+
+  
+  body {
+    padding-bottom: 65px;
+  }
+
+}
+
+
+</style>
+
+<nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color:#4DA6FF;">
+  <div class="container-fluid">
+
+    
+    <a class="navbar-brand fw-bold">
+      {% if request.endpoint == 'owner_dashboard' %}
+        <i class="bi bi-house-door-fill me-1"></i> Dashboard
+      {% elif request.endpoint == 'scan_qr' %}
+        <i class="bi bi-qr-code-scan me-2"></i> Scan QR
+      {% elif request.endpoint == 'owner_profile' %}
+        <i class="bi bi-person-fill me-2"></i> Profile
+      {% elif request.endpoint == 'owner_notifications' %}
+        <i class="bi bi-bell-fill me-2"></i> Notifications
+      {% else %}
+        <i class="bi bi-info-circle me-2"></i> Page
+      {% endif %}
+    </a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+
+        <li class="nav-item" title="Dashboard">
+          <a class="nav-link {% if request.endpoint=='owner_dashboard' %}active{% endif %}" 
+             href="{{ url_for('owner_dashboard') }}">
+             <i class="bi bi-house-door-fill me-1"></i> 
+             <span class="nav-title">Dashboard</span>
+          </a>
+        </li>
+
+        <li class="nav-item" title="Scan QR">
+          <a class="nav-link {% if request.endpoint=='scan_qr' %}active{% endif %}" 
+             href="{{ url_for('scan_qr') }}">
+             <i class="bi bi-qr-code-scan me-1"></i> 
+             <span class="nav-title">Scan QR</span>
+          </a>
+        </li>
+
+        <li class="nav-item" title="Profile">
+          <a class="nav-link {% if request.endpoint=='owner_profile' %}active{% endif %}" 
+             href="{{ url_for('owner_profile') }}">
+             <i class="bi bi-person-fill me-1"></i> 
+             <span class="nav-title">Profile</span>
+          </a>
+        </li>
+
+        <li class="nav-item position-relative" title="Notifications">
+          <a class="nav-link d-flex align-items-center gap-1
+              {% if request.endpoint=='owner_notifications' %}active{% endif %}"
+            href="{{ url_for('owner_notifications') }}">
+            <i class="bi bi-bell-fill"></i>
+            <span class="nav-title">Notifications</span>
+
+              <span id="notif-dot"
+                class="position-absolute top-10 start-55 translate-middle
+                      p-1 bg-danger border border-light rounded-circle d-none">
+          </span>
+          </a>
+        </li>
+          <li class="nav-item" title="Logout">
+          <a class="nav-link logout-link" href="{{ url_for('index') }}" data-bs-toggle="modal" data-bs-target="#LogoutModal">
+            <i class="bi bi-box-arrow-right"></i>
+            <span class="nav-title">Logout</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+<!-- Logout Modal HTML -->
+<div class="modal fade" id="LogoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content shadow-lg">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="logoutModalLabel">
+          <i class="bi bi-box-arrow-right"></i> Confirm Logout
+        </h5>
+      </div>
+      <div class="modal-body text-center py-4">
+        <p class="mb-0">Are you sure you want to log out?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary btn-sm px-4" data-bs-dismiss="modal">
+          Cancel
+        </button>
+        <a href="{{ url_for('logout') }}" class="btn btn-primary btn-sm px-4">
+          Logout
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+  if (window.innerWidth <= 576) {
+  document.querySelectorAll('.navbar-nav .nav-link').forEach(link => {
+    link.addEventListener('click', () => {
+      document.querySelectorAll('.navbar-nav .nav-link.active .nav-title').forEach(active => {
+        active.classList.remove('active');
+      });
+      link.classList.add('active');
+    });
+  });
+  async function updateNotifDot() {
+    const res = await fetch("/api/notification-count");
+    const data = await res.json();
+    const dot = document.getElementById("notif-dot");
+    if(dot) dot.classList.toggle("d-none", data.count === 0);
+}
+
+// Run on page load
+updateNotifDot();
+
+// Optional: poll every 10 seconds for live updates
+setInterval(updateNotifDot, 10000);
+}
+</script>
+

@@ -1,0 +1,136 @@
+ {% for d in dogs if d.vaccinated == 'Vaccinated' %}
+        <div class="dog-card p-3 bg-white shadow-sm rounded mb-3">
+          <div class="row g-3 align-items-center">
+            
+            
+            <div class="col-lg-4 col-12 dog-img-wrapper">
+                 <img src="{{ url_for('static', filename='dog_images/' ~ (d.image if d.image else 'default_dog.png')) }}"
+                  class="dog-img"
+                  alt="{{ d.name }}"
+                  style="cursor: pointer;"
+                  onclick="openQrFullscreen(this.src)">
+            </div>
+
+            <div class="col-8 col-md-8">
+              <h5 class="fw-bold text-success mb-1"><i class="text-success bi bi-shield-check"></i> {{ d.name }}</h5>
+              <p class="text-muted small mb-1"><strong>Breed:</strong> {{ d.breed }}</p>
+              <p class="text-muted small mb-1"><strong>Owner:</strong> {{ d.owner_name or "Stray" }}</p>
+              <p class="text-muted small mb-1"><strong>Birthdate:</strong> {{ d.birthdate if d.birthdate else 'N/A' }}</p>
+              <p class="text-muted small mb-1"><strong>Age:</strong> {{ d.age if d.age else 'N/A' }}</p>
+              <p class="text-muted small mb-1">
+                <strong>Gender:</strong>
+                {% if d.gender == 'Male' %}
+                  <i class="bi bi-gender-male text-primary"></i>
+                {% elif d.gender == 'Female' %}
+                  <i class="bi bi-gender-female text-danger"></i>
+                {% else %}
+                  N/A
+                {% endif %}
+              </p>
+              <p class="text-muted small mb-1"><strong>Last Vaccinated:</strong> 
+                {{ d.last_vaccination if d.last_vaccination else "N/A" }}
+              </p>
+
+              <p class="text-muted small mb-2"><strong>Next Vaccination:</strong> 
+                {{ d.next_vaccination if d.next_vaccination else "N/A" }}
+              </p>
+              <p class="text-muted small mb-2"><strong>Vaccination Expiry:</strong> {{ d.vaccination_expiry if d.vaccination_expiry else "N/A" }}</p>
+              {% if d.qr_code %}
+              <img src="{{ url_for('qrcodes', filename=d.qr_code) }}" alt="{{ d.name}} QR"
+                  class="border rounded p-1 mb-2 qr-clickable"
+                  style="height: 90px; width: 90px; cursor: pointer;"
+                  onclick="openQrFullscreen(this.src)">
+              {% endif %}
+
+              <div class="mt-2">
+                <button class="btn btn-primary btn-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#editDogModal{{ d.id }}">
+                  Edit
+                </button>
+              <button type="button" 
+                      class="btn btn-danger btn-sm" 
+                      data-bs-toggle="modal" 
+                      data-bs-target="#deleteDogModal" 
+                      onclick="setDeleteDogForm('{{ url_for('admin_archive_dog', dog_id=d.id) }}')">
+                Delete
+              </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+
+  {% for d in dogs if d.vaccinated == 'Not Vaccinated' %}
+        <div class="dog-card p-3 bg-white shadow-sm rounded mb-3">
+          <div class="row g-3 align-items-center">
+            
+            
+            <div class="col-lg-4 col-12 dog-img-wrapper">
+                 <img src="{{ url_for('static', filename='dog_images/' ~ (d.image if d.image else 'default_dog.png')) }}"
+                  class="dog-img"
+                  alt="{{ d.name }}"
+                  style="cursor: pointer;"
+                  onclick="openQrFullscreen(this.src)">
+            </div>
+
+            
+            <div class="col-8 col-md-8">
+              <h5 class="fw-bold text-danger mb-1"><i class="text-danger bi bi-x-circle"></i> {{ d.name }}</h5>
+              <p class="text-muted small mb-1"><strong>Breed:</strong> {{ d.breed }}</p>
+              <p class="text-muted small mb-1"><strong>Owner:</strong> {{ d.owner_name or "Stray" }}</p>
+              <p class="text-muted small mb-1"><strong>Birthdate:</strong> {{ d.birthdate if d.birthdate else 'N/A' }}</p>
+              <p class="text-muted small mb-1"><strong>Age:</strong> {{ d.age if d.age else 'N/A' }}</p>
+              <p class="text-muted small mb-1">
+                <strong>Gender:</strong>
+                {% if d.gender == 'Male' %}
+                  <i class="bi bi-gender-male text-primary"></i>
+                {% elif d.gender == 'Female' %}
+                  <i class="bi bi-gender-female text-danger"></i>
+                {% else %}
+                  N/A
+                {% endif %}
+              </p>
+              <p class="text-muted small mb-1"><strong>Last Vaccinated:</strong> 
+                {{ d.last_vaccinated if d.last_vaccinated else "N/A" }}
+              </p>
+              <p class="text-muted small mb-2"><strong>Next Vaccination:</strong> 
+                {{ d.next_vaccination if d.next_vaccination else "N/A" }}
+              </p>
+              <p class="text-muted small mb-2"><strong>Vaccination Expiry:</strong> {{ d.vaccination_expiry if d.vaccination_expiry else "N/A" }}</p>
+
+              {% if d.qr_code %}
+                <img src="{{ url_for('qrcodes', filename=d.qr_code) }}" alt="{{ d.name}} QR"
+                    class="rounded p-1 mb-2 qr-clickable"
+                    style="height: 90px; width: 90px; cursor: pointer;"
+                    onclick="openQrFullscreen(this.src)">
+              {% endif %}
+
+              <div class="mt-2">
+                <button class="btn btn-primary btn-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#editDogModal{{ d.id }}">
+                  Edit
+                </button>
+
+              <button type="button" 
+                      class="btn btn-danger btn-sm" 
+                      data-bs-toggle="modal" 
+                      data-bs-target="#deleteDogModal" 
+                      onclick="setDeleteDogForm('{{ url_for('admin_archive_dog', dog_id=d.id) }}')">
+                Delete
+              </button>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+{% if dogs|length == 0 %}
+<p class="text-muted">No dogs found.</p>
+{% endif %}

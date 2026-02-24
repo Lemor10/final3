@@ -1,0 +1,291 @@
+{% extends "base_owner.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block styles %}
+<style>
+body {
+    font-family: "Poppins", sans-serif;
+    background: #f8f9fa;      color: #212529;
+    min-height: 100vh;
+}
+
+.dashboard-container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 0 15px;
+}
+
+.collapsible {
+    background: #007bff;
+    color: white;
+    cursor: pointer;
+    padding: 0.75rem 1rem;
+    border: none;
+    border-radius: 0.5rem;
+    width: 100%;
+    text-align: left;
+    outline: none;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+.collapsible:after {
+    content: '\002B';
+    float: right;
+    font-weight: bold;
+}
+.collapsible.active:after {
+    content: "\2212";
+}
+.content {
+    padding: 0 1rem;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease-out;
+    background-color: #f1f3f5;
+    border-radius: 0 0 0.5rem 0.5rem;
+    margin-bottom: 1rem;
+}
+.content ul {
+    padding-left: 1.2rem;
+}
+
+.system-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 10px 0;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.collapsible.active + .content .system-steps {
+    opacity: 1;
+}
+.step-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #ffffff;
+    padding: 12px;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.step-card p {
+    margin: 0;
+    font-size: 0.95rem;
+}
+.step-icon {
+    font-size: 1.8rem;
+    flex-shrink: 0;
+    color: #007bff;
+}
+
+.dogs-table {
+    background: #ffffff;
+    border-radius: 0.75rem;
+    padding: 15px;
+    overflow-x: auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.dogs-table table {
+    width: 100%;
+    color: #212529;
+    background: transparent;
+}
+.dogs-table th, .dogs-table td {
+    border-color: #dee2e6;
+}
+.dogs-table tbody tr:hover {
+    background: #f1f3f5;
+}
+
+.dog-card {
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+.dog-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.15);
+}
+.dog-img {
+  padding: 10px;
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 20px;
+}
+.section-title {
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+    .stats {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+
+<div class="row mt-4">
+
+  
+  <div class="col-lg-6 col-12 mb-4 order-1">
+    <h4 class="section-title text-success">
+      <i class="bi bi-shield-check"></i> Vaccinated Dogs
+    </h4>
+
+    {% for dog in dogs if dog.vaccinated == 'Vaccinated' %}
+    <div class="dog-card card border-0 shadow-sm overflow-hidden rounded-4 mb-3">
+      <div class="row g-0">
+        <div class="col-4">
+          <img src="{{ url_for('static', filename='dog_images/' ~ (dog.image if dog.image else 'default_dog.png')) }}"
+               class="dog-img"
+               alt="{{ dog.name }}">
+        </div>
+        <div class="col-8">
+          <div class="card-body">
+            <h6 class="fw-bold text-primary mb-1 mt-1"><i class="text-success bi bi-shield-check"></i> {{ dog.name }}</h6>
+            <p class="text-muted mb-1 small"><strong>Breed:</strong> {{ dog.breed }}</p>
+            <p class="text-muted mb-1 small"><strong>Gender:</strong>                     
+              {% if dog.gender == 'Male' %}
+              <i class="bi bi-gender-male text-primary"></i>
+              {% elif dog.gender == 'Female' %}
+              <i class="bi bi-gender-female text-danger"></i>
+              {% else %}
+              N/A
+              {% endif %}
+            </p>
+            <p class="text-muted mb-1 small"><strong>Age:</strong> {{ dog.age }}</p>
+                  <p class="text-muted mb-1 small">
+                    <strong>Vaccination Address:</strong>
+                    {% if dog.vaccination_barangay %}
+                      {{ dog.vaccination_barangay }},
+                      {{ dog.vaccination_municipality }},
+                      {{ dog.vaccination_province }}
+                    {% else %}
+                      N/A
+                    {% endif %}
+                  </p>
+                  <p class="text-muted mb-1 small">
+                    <strong>Vaccination Conducted At:</strong>
+                    {% if dog.vaccination_location %}
+                      {{ dog.vaccination_location }}
+                    {% else %}
+                      N/A
+                    {% endif %}
+                  </p>
+            <p class="mb-0 text-muted small">
+              Next Vaccination:
+              {{ dog.next_vaccination if dog.next_vaccination else "N/A" }}
+            </p>
+            <p class="mb-0 text-muted small">
+              Vaccine Expiration:
+              {{ dog.vaccination_expiry if dog.vaccination_expiry else "N/A" }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <p class="text-muted small">No vaccinated dogs yet.</p>
+    {% endfor %}
+  </div>
+
+  
+  <div class="col-lg-6 col-12 mb-4 order-2">
+    <h4 class="section-title text-danger">
+      <i class="bi bi-exclamation-triangle"></i> Not Vaccinated Dogs
+    </h4>
+
+    {% for dog in dogs if dog.vaccinated == 'Not Vaccinated' %}
+    <div class="dog-card card border-0 shadow-sm overflow-hidden rounded-4 mb-3">
+      <div class="row g-0">
+        <div class="col-4">
+          <img src="{{ url_for('static', filename='dog_images/' ~ (dog.image if dog.image else 'default_dog.png')) }}"
+               class="dog-img"
+               alt="{{ dog.name }}">
+        </div>
+        <div class="col-8">
+          <div class="card-body">
+            <h6 class="fw-bold text-primary mb-1"><i class="text-danger bi bi-x-circle"></i> {{ dog.name }}</h6>
+            <p class="mb-1 small"><strong>Breed:</strong> {{ dog.breed }}</p>
+            <p class="mb-1 small"><strong>Gender:</strong> {{ dog.gender if dog.gender else 'N/A' }}</p>
+            <p class="mb-1 small"><strong>Age:</strong> {{ dog.age }}</p>
+                              <p class="text-muted mb-1 small">
+                    <strong>Vaccination Address:</strong>
+                    {% if dog.vaccination_barangay %}
+                      {{ dog.vaccination_barangay }},
+                      {{ dog.vaccination_municipality }},
+                      {{ dog.vaccination_province }}
+                    {% else %}
+                      N/A
+                    {% endif %}
+                  </p>
+                  <p class="text-muted mb-1 small">
+                    <strong>Vaccination Conducted At:</strong>
+                    {% if dog.vaccination_location %}
+                      {{ dog.vaccination_location }}
+                    {% else %}
+                      N/A
+                    {% endif %}
+                  </p>
+            <p class="mb-0 text-muted small">
+              Last Vaccinated:
+              {{ dog.last_vaccination if dog.last_vaccination else "N/A" }}
+            </p>
+            <p class="mb-0 text-muted small">
+              Vaccine Expiration:
+              {{ dog.vaccination_expiry if dog.vaccination_expiry else "N/A" }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <p class="text-muted small">No unvaccinated dogs 🎉</p>
+    {% endfor %}
+  </div>
+
+</div>
+
+<button type="button" class="collapsible">How the System Works</button>
+<div class="content">
+    <div class="system-steps">
+        <div class="step-card">
+            <div class="step-icon"><i class="bi bi-qr-code-scan"></i></div>
+            <p><strong>Register Dogs:</strong> Each dog gets a unique QR code that contains the dog and owner's info .</p>
+        </div>
+        <div class="step-card">
+            <div class="step-icon"><i class="bi bi-heart-pulse"></i></div>
+            <p><strong>Track Vaccinations:</strong> Notifications automatically remind owners of vaccination schedules.</p>
+        </div>
+        <div class="step-card">
+            <div class="step-icon"><i class="bi bi-person-badge"></i></div>
+            <p><strong>Owner Profiles:</strong> Owners can view and update their profiles and their dogs’ info anytime.</p>
+        </div>
+        <div class="step-card">
+            <div class="step-icon"><i class="bi bi-shield-check"></i></div>
+            <p><strong>Admin Monitoring:</strong> Admins monitor dogs and ensure vaccination compliance.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const coll = document.querySelectorAll(".collapsible");
+    coll.forEach(btn => {
+        btn.addEventListener("click", function() {
+            this.classList.toggle("active");
+            const content = this.nextElementSibling;
+            if (content.style.maxHeight){
+                content.style.maxHeight = null;
+            } else {
+                content.style.maxHeight = content.scrollHeight + "px";
+            } 
+        });
+    });
+</script>
+{% endblock %}
+
