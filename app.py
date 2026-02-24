@@ -45,7 +45,7 @@ if on_render:
     database_url = os.environ.get('DATABASE_URL')
     if database_url and database_url.startswith("postgres://"):
         database_url = database_url.replace("postgres://", "postgresql://", 1)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:somepassword@localhost:5432/drs_local' 
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://final3_qgjp_user:sDzcu1JYnbFS0jVJJ6wQSctYY2JbLgpk@dpg-d6c5g9p5pdvs73folaag-a/final3_qgjp' 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # ---------------- MAIL CONFIG (SENDGRID) ----------------
