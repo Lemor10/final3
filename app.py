@@ -24,12 +24,7 @@ import matplotlib
 matplotlib.use("Agg")  # VERY IMPORTANT
 import matplotlib.pyplot as plt
 
-if os.environ.get("DATABASE_URL"):
-    BASE_URL = os.environ.get("BASE_URL")
-    if not BASE_URL:
-        raise RuntimeError("❌ BASE_URL is NOT set in Render environment variables")
-else:
-    BASE_URL = "http://localhost:5000"
+BASE_URL = os.environ.get("BASE_URL", "http://localhost:5000")
 
 app = Flask(__name__)
 
@@ -561,10 +556,10 @@ with app.app_context():
 #        db.session.commit()
 #        print(f"✅ Created admin: {admin_email}")
 
-with app.app_context():
-    User.query.filter(User.created_at == None)\
-        .update({User.created_at: datetime.utcnow()})
-    db.session.commit()
+#with app.app_context():
+#    User.query.filter(User.created_at == None)\
+#        .update({User.created_at: datetime.utcnow()})
+#    db.session.commit()
 
 @app.before_request
 def handle_notifications():
