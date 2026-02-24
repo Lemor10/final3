@@ -328,7 +328,10 @@ def send_notification_email(to, subject, body):
         body=body,
         sender=app.config['MAIL_DEFAULT_SENDER']
     )
-    mail.send(msg)
+    try:
+        mail.send(msg)
+    except Exception as e:
+        print("Email send failed:", e)
 
 def run_daily_notifications(user):
     today = date.today()
@@ -698,7 +701,10 @@ def signup():
             sender=app.config['MAIL_DEFAULT_SENDER'],
             html=html_template
         )
-        mail.send(msg)
+        try:
+            mail.send(msg)
+        except Exception as e:
+            print("Email send failed:", e)
 
         flash("Verification email sent. Please check your inbox.", "info")
         return redirect(url_for("login"))
@@ -1541,5 +1547,17 @@ def export_csv():
     return send_file(output, mimetype='text/csv', as_attachment=True, download_name='dogs.csv')
 
 if __name__ == "__main__":
+    import logging
+
+    # Ensure matplotlib works without a display (headless mode)
+    import matplotlib
+    matplotlib.use("Agg")
+
+    # Get the port Render provides, default to 5000 for local testing
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+
+    # Optional: log the port for debugging
+    logging.info(f"Starting Flask on 0.0.0.0:{port}")
+
+    # Run the app
+    app.run(host="0.0.0.0", port=port, debug=False)
