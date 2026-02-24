@@ -41,8 +41,11 @@ os.makedirs(app.config['UPLOAD_FOLDER_PROFILE'], exist_ok=True)
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Dog_Registration_Secret_Key')
 on_render = os.environ.get('RENDER') is not None 
-if on_render: app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') 
-else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:somepassword@localhost:5432/drs_local' 
+if on_render:
+    database_url = os.environ.get('DATABASE_URL')
+    if database_url and database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:somepassword@localhost:5432/drs_local' 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # ---------------- MAIL CONFIG (SENDGRID) ----------------
@@ -52,7 +55,7 @@ app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'apikey'   # ⚠️ MUST be literally 'apikey'
 app.config['MAIL_PASSWORD'] = os.environ.get('SENDGRID_API_KEY')
 if not app.config['MAIL_PASSWORD']:
-    raise RuntimeError("SENDGRID_API_KEY is not set in environment variables.")
+    print("WARNING: SENDGRID_API_KEY not set. Email will not work.")
 app.config['MAIL_DEFAULT_SENDER'] = os.environ.get(
     'MAIL_DEFAULT_SENDER',
     'Dog Registration <no-reply@yourdomain.com>'
@@ -346,7 +349,9 @@ def run_daily_notifications(user):
         return  # ❌ already ran today
 
     if user.role == "owner":
-        generate_vaccination_notifications(user.id)
+        dogs = Dog.query.filter_by(owner_id=user.id).all()
+        for dog in dogs:
+            generate_vaccination_notifications(user.id, dog)
 
     elif user.role == "admin":
         generate_admin_notifications(user.id)
