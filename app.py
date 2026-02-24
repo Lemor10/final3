@@ -714,10 +714,13 @@ def signup():
             sender=app.config['MAIL_DEFAULT_SENDER'],
             html=html_template
         )
-        try:
-            mail.send(msg)
-        except Exception as e:
-            print("EMAIL ERROR:", e)
+        if not app.config['MAIL_PASSWORD']:
+            print("Skipping email: SENDGRID not configured")
+        else:
+            try:
+                mail.send(msg)
+            except Exception as e:
+                print("EMAIL ERROR:", e)
 
         flash("Verification email sent. Please check your inbox.", "info")
         return redirect(url_for("login"))
