@@ -714,7 +714,10 @@ def signup():
             sender=app.config['MAIL_DEFAULT_SENDER'],
             html=html_template
         )
-        mail.send(msg)
+        try:
+            mail.send(msg)
+        except Exception as e:
+            print("EMAIL ERROR:", e)
 
         flash("Verification email sent. Please check your inbox.", "info")
         return redirect(url_for("login"))
@@ -828,9 +831,9 @@ def login():
             return redirect(url_for('login'))
         
         # ✅ Only require email verification for owners
-        #if user.role == 'owner' and not user.email_verified:
-        #    flash("Please verify your email before logging in.", "warning")
-        #    return redirect(url_for("login"))
+        if user.role == 'owner' and not user.email_verified:
+            flash("Please verify your email before logging in.", "warning")
+            return redirect(url_for("login"))
 
         login_user(user)
 
