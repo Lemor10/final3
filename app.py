@@ -24,7 +24,12 @@ import matplotlib
 matplotlib.use("Agg")  # VERY IMPORTANT
 import matplotlib.pyplot as plt
 
-BASE_URL = os.environ.get("BASE_URL", "http://localhost:5000")
+if os.environ.get("RENDER"):
+    BASE_URL = os.environ.get("BASE_URL")
+    if not BASE_URL:
+        raise RuntimeError("❌ BASE_URL is NOT set in Render environment variables")
+else:
+    BASE_URL = "http://localhost:5000"
 
 app = Flask(__name__)
 
@@ -35,28 +40,17 @@ app.config['UPLOAD_FOLDER_PROFILE'] = os.path.join('static', 'profile_images')
 os.makedirs(app.config['UPLOAD_FOLDER_PROFILE'], exist_ok=True)
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Dog_Registration_Secret_Key')
-database_url = os.environ.get("DATABASE_URL")
-
-if database_url:
-    if database_url.startswith("postgres://"):
-        database_url = database_url.replace("postgres://", "postgresql://", 1)
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-else:
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:somepassword@localhost:5432/drs_local'
+on_render = os.environ.get('RENDER') is not None 
+if on_render: app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') 
+else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:somepassword@localhost:5432/drs_local' 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# ---------------- MAIL CONFIG (SENDGRID) ----------------
-app.config['MAIL_SERVER'] = 'smtp.sendgrid.net'
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'apikey'   # ⚠️ MUST be literally 'apikey'
-app.config['MAIL_PASSWORD'] = os.environ.get('SENDGRID_API_KEY')
-if not app.config['MAIL_PASSWORD']:
-    print("WARNING: SENDGRID_API_KEY not set. Email will not work.")
-app.config['MAIL_DEFAULT_SENDER'] = os.environ.get(
-    'MAIL_DEFAULT_SENDER',
-    'Dog Registration <no-reply@yourdomain.com>'
-)
+app.config['MAIL_USERNAME'] = 'dogrnw2026@gmail.com'
+app.config['MAIL_PASSWORD'] = 'jgrpmgucdltkvdir'
+app.config['MAIL_DEFAULT_SENDER'] = 'Dog Registration <dogrnw2026@gmail.com>'
 
 mail = Mail(app)
 
@@ -334,10 +328,7 @@ def send_notification_email(to, subject, body):
         body=body,
         sender=app.config['MAIL_DEFAULT_SENDER']
     )
-    try:
-        mail.send(msg)
-    except Exception as e:
-            print("EMAIL ERROR:", e)
+    mail.send(msg)
 
 def run_daily_notifications(user):
     today = date.today()
@@ -346,9 +337,7 @@ def run_daily_notifications(user):
         return  # ❌ already ran today
 
     if user.role == "owner":
-        dogs = Dog.query.filter_by(owner_id=user.id).all()
-        for dog in dogs:
-            generate_vaccination_notifications(user.id, dog)
+        generate_vaccination_notifications(user.id)
 
     elif user.role == "admin":
         generate_admin_notifications(user.id)
@@ -556,10 +545,10 @@ with app.app_context():
 #        db.session.commit()
 #        print(f"✅ Created admin: {admin_email}")
 
-#with app.app_context():
-#    User.query.filter(User.created_at == None)\
-#        .update({User.created_at: datetime.utcnow()})
-#    db.session.commit()
+with app.app_context():
+    User.query.filter(User.created_at == None)\
+        .update({User.created_at: datetime.utcnow()})
+    db.session.commit()
 
 @app.before_request
 def handle_notifications():
@@ -709,13 +698,7 @@ def signup():
             sender=app.config['MAIL_DEFAULT_SENDER'],
             html=html_template
         )
-        if not app.config['MAIL_PASSWORD']:
-            print("Skipping email: SENDGRID not configured")
-        else:
-            try:
-                mail.send(msg)
-            except Exception as e:
-                print("EMAIL ERROR:", e)
+        mail.send(msg)
 
         flash("Verification email sent. Please check your inbox.", "info")
         return redirect(url_for("login"))
@@ -829,9 +812,9 @@ def login():
             return redirect(url_for('login'))
         
         # ✅ Only require email verification for owners
-        if user.role == 'owner' and not user.email_verified:
-            flash("Please verify your email before logging in.", "warning")
-            return redirect(url_for("login"))
+        #if user.role == 'owner' and not user.email_verified:
+        #    flash("Please verify your email before logging in.", "warning")
+        #    return redirect(url_for("login"))
 
         login_user(user)
 
