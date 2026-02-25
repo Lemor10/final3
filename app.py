@@ -4,6 +4,7 @@ from alembic.util import msg
 from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory, send_file, abort, jsonify ,session
 from flask_mail import Mail, Message
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -24,14 +25,14 @@ import matplotlib
 matplotlib.use("Agg")  # VERY IMPORTANT
 import matplotlib.pyplot as plt
 
-if os.environ.get("RENDER"):
+if os.environ.get("DATABASE_URL"):
     BASE_URL = os.environ.get("BASE_URL")
-    if not BASE_URL:
-        raise RuntimeError("❌ BASE_URL is NOT set in Render environment variables")
 else:
     BASE_URL = "http://localhost:5000"
 
 app = Flask(__name__)
+
+app.config["PROPAGATE_EXCEPTIONS"] = True
 
 app.config['DOG_UPLOAD_FOLDER'] = os.path.join('static', 'dog_images')
 os.makedirs(app.config['DOG_UPLOAD_FOLDER'], exist_ok=True)
@@ -39,8 +40,8 @@ os.makedirs(app.config['DOG_UPLOAD_FOLDER'], exist_ok=True)
 app.config['UPLOAD_FOLDER_PROFILE'] = os.path.join('static', 'profile_images')
 os.makedirs(app.config['UPLOAD_FOLDER_PROFILE'], exist_ok=True)
 
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Dog_Registration_Secret_Key')
-on_render = os.environ.get('RENDER') is not None 
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+on_render = os.environ.get('DATABASE_URL') is not None
 if on_render:
     database_url = os.environ.get('DATABASE_URL')
 
@@ -65,6 +66,7 @@ mail = Mail(app)
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 login_manager = LoginManager()
 login_manager.login_view = 'login'
@@ -559,9 +561,6 @@ with app.app_context():
     User.query.filter(User.created_at == None)\
         .update({User.created_at: datetime.utcnow()})
     db.session.commit()
-
-with app.app_context():
-    db.create_all()    
 
 @app.before_request
 def handle_notifications():
@@ -1555,6 +1554,12 @@ def export_csv():
     output = io.BytesIO(si.getvalue().encode())
     output.seek(0)
     return send_file(output, mimetype='text/csv', as_attachment=True, download_name='dogs.csv')
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    import traceback
+    app.logger.error("UNHANDLED EXCEPTION:\n%s", traceback.format_exc())
+    return "Internal Server Error", 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
