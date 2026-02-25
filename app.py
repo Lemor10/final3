@@ -4,7 +4,6 @@ from alembic.util import msg
 from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory, send_file, abort, jsonify ,session
 from flask_mail import Mail, Message
 from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -66,7 +65,6 @@ mail = Mail(app)
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
 db = SQLAlchemy(app)
-migrate = Migrate(app, db)
 
 login_manager = LoginManager()
 login_manager.login_view = 'login'
@@ -561,6 +559,9 @@ with app.app_context():
     User.query.filter(User.created_at == None)\
         .update({User.created_at: datetime.utcnow()})
     db.session.commit()
+
+with app.app_context():
+    db.create_all()    
 
 @app.before_request
 def handle_notifications():
