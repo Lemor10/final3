@@ -1,5 +1,6 @@
 import os
 import token
+from alembic.util import msg
 from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory, send_file, abort, jsonify ,session
 from flask_mail import Mail, Message
 from flask_sqlalchemy import SQLAlchemy
@@ -41,16 +42,24 @@ os.makedirs(app.config['UPLOAD_FOLDER_PROFILE'], exist_ok=True)
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Dog_Registration_Secret_Key')
 on_render = os.environ.get('RENDER') is not None 
-if on_render: app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') 
-else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:somepassword@localhost:5432/drs_local' 
+if on_render:
+    database_url = os.environ.get('DATABASE_URL')
+
+    # 🔥 FIX FOR RENDER POSTGRES
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+else:
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:somepassword@localhost:5432/drs_local'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'dogrnw2026@gmail.com')
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'jgrpmgucdltkvdir')
-app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', 'My Dog Registration <dogrnw2026@gmail.com>')
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME')
 
 mail = Mail(app)
 
@@ -331,7 +340,7 @@ def send_notification_email(to, subject, body):
     try:
         mail.send(msg)
     except Exception as e:
-        print("Email send failed:", e)
+        app.logger.error(f"Email failed: {e}")
 
 def run_daily_notifications(user):
     today = date.today()
@@ -704,7 +713,7 @@ def signup():
         try:
             mail.send(msg)
         except Exception as e:
-            print("Email send failed:", e)
+            app.logger.error(f"Email failed: {e}")
 
         flash("Verification email sent. Please check your inbox.", "info")
         return redirect(url_for("login"))
