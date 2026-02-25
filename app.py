@@ -33,37 +33,25 @@ else:
 
 app = Flask(__name__)
 
-app.config['PROPAGATE_EXCEPTIONS'] = True
-
-app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
-
 app.config['DOG_UPLOAD_FOLDER'] = os.path.join('static', 'dog_images')
 os.makedirs(app.config['DOG_UPLOAD_FOLDER'], exist_ok=True)
 
 app.config['UPLOAD_FOLDER_PROFILE'] = os.path.join('static', 'profile_images')
 os.makedirs(app.config['UPLOAD_FOLDER_PROFILE'], exist_ok=True)
 
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'd1f4eb1ea051a0cf47ddb5be36e4d5e5f3073bb242b8ea7136bda03612b82c58')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Dog_Registration_Secret_Key')
 on_render = os.environ.get('RENDER') is not None 
-database_url = os.environ.get("DATABASE_URL")
-
-if database_url and database_url.startswith("postgres://"):
-    database_url = database_url.replace("postgres://", "postgresql://", 1)
-
-if on_render:
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-else:
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:somepassword@localhost:5432/drs_local'
+if on_render: app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') 
+else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:somepassword@localhost:5432/drs_local' 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# ---------------- SENDGRID CONFIG ----------------
+# SendGrid SMTP setup
 app.config['MAIL_SERVER'] = 'smtp.sendgrid.net'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USE_SSL'] = False
 app.config['MAIL_USERNAME'] = 'apikey'  # literally 'apikey'
-app.config['MAIL_PASSWORD'] = os.environ.get('SENDGRID_API_KEY')
-app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER')
+app.config['MAIL_PASSWORD'] = os.environ.get('SENDGRID_API_KEY')  # your SendGrid API key
+app.config['MAIL_DEFAULT_SENDER'] = 'TrackPawPH <dogrnw2026@gmail.com>'
 
 mail = Mail(app)
 
@@ -267,7 +255,8 @@ def generate_vaccination_notifications(user_id, dog):
             email_sent=False
         )
         db.session.add(notif)
-        
+        db.session.flush()
+
         # Send email
         user = db.session.get(User, user_id)
         if user.email and not notif.email_sent:
@@ -275,7 +264,6 @@ def generate_vaccination_notifications(user_id, dog):
             notif.email_sent = True
 
         db.session.commit()
-        db.session.flush()
 
 def generate_admin_notifications(admin_user_id):
         today = date.today()
@@ -335,20 +323,13 @@ def generate_admin_notifications(admin_user_id):
         db.session.commit()
 
 def send_notification_email(to, subject, body):
-    print("Sending email to:", to)
-    print("MAIL_USERNAME:", app.config['MAIL_USERNAME'])
-    print("MAIL_PASSWORD exists:", bool(app.config['MAIL_PASSWORD']))
-    print("MAIL_DEFAULT_SENDER:", app.config['MAIL_DEFAULT_SENDER'])
     msg = Message(
         subject=subject,
         recipients=[to],
         body=body,
         sender=app.config['MAIL_DEFAULT_SENDER']
     )
-    try:
-        mail.send(msg)
-    except Exception as e:
-        print("EMAIL ERROR:", e)
+    mail.send(msg)
 
 def run_daily_notifications(user):
     today = date.today()
@@ -357,10 +338,8 @@ def run_daily_notifications(user):
         return  # ❌ already ran today
 
     if user.role == "owner":
-        dogs = Dog.query.filter_by(owner_id=user.id, is_archived=False).all()
-        for dog in dogs:
-            generate_vaccination_notifications(user.id, dog)
-            
+        generate_vaccination_notifications(user.id)
+
     elif user.role == "admin":
         generate_admin_notifications(user.id)
 
@@ -447,20 +426,16 @@ def get_analysis_data(start_month=None, end_month=None):
         "death_counts": death_counts
     }
 
-@app.route("/test-email")
+@app.route('/test-email')
 def test_email():
-    try:
-        msg = Message(
-            subject="Test Email from Render",
-            recipients=[os.environ.get('ADMIN_EMAIL')],
-            body="This is a test email from your Render deployment.",
-        )
-        mail.send(msg)
-        
-        return "Email sent successfully!"
-    except Exception as e:
-        return f"Email failed: {e}"
-    
+    msg = Message(
+        subject="Test Email from SendGrid",
+        recipients=["dogrnw2026@gmail.com"],
+        body="Hello! This is a test email from Flask using SendGrid."
+    )
+    mail.send(msg)
+    return "Email sent!"
+
 @app.route("/check-username")
 def check_username():
     username = request.args.get("username", "").strip().lower()
@@ -715,29 +690,28 @@ def signup():
         db.session.add(user)
         db.session.commit()
 
-        # After db.session.commit()
         token = serializer.dumps(user.email, salt="email-verify")
         user.verification_token = token
         db.session.commit()
 
-        # Send verification email safely
-        try:
-            verify_link = f"{BASE_URL}/verify-email/{token}"
-            html_template = f"""
-            <p>Hello {user.name},</p>
-            <p>Click below to verify your email:</p>
-            <a href="{verify_link}">Verify Email</a>
-            """
-            msg = Message(
-                subject="Verify Your Email",
-                recipients=[user.email],
-                sender=app.config['MAIL_DEFAULT_SENDER'],
-                html=html_template
-            )
-            mail.send(msg)
-        except Exception as e:
-                print("EMAIL ERROR:", e)
-                flash("Signup succeeded, but verification email failed. Contact admin.", "warning")
+        # Use BASE_URL instead of url_for
+        verify_link = f"{BASE_URL}/verify-email/{token}"
+
+        html_template = f"""
+        <p>Hello {user.name},</p>
+        <p>Click below to verify your email:</p>
+        <a href="{verify_link}">Verify Email</a>
+        """
+
+        msg = Message(
+            subject="Verify Your Email",
+            recipients=[user.email],
+            sender=app.config['MAIL_DEFAULT_SENDER'],
+            html=html_template
+        )
+        mail.send(msg)
+
+        flash("Verification email sent. Please check your inbox.", "info")
         return redirect(url_for("login"))
 
     return render_template('signup.html')
@@ -1577,6 +1551,5 @@ def export_csv():
     output.seek(0)
     return send_file(output, mimetype='text/csv', as_attachment=True, download_name='dogs.csv')
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Render sets PORT automatically
-    app.run(host="0.0.0.0", port=port)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT',5000)), debug=True)
