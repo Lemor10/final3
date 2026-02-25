@@ -335,9 +335,12 @@ def send_notification_email(to, subject, body):
         subject=subject,
         recipients=[to],
         body=body,
-        sender=app.config['MAIL_DEFAULT_SENDER']
+        sender=app.config['MAIL_DEFAULT_SENDER'] or app.config['MAIL_USERNAME']
     )
-    mail.send(msg)
+    try:
+        mail.send(msg)
+    except Exception as e:
+        print("EMAIL ERROR:", e)
 
 def run_daily_notifications(user):
     today = date.today()
@@ -704,10 +707,13 @@ def signup():
         msg = Message(
             subject="Verify Your Email",
             recipients=[user.email],
-            sender=app.config['MAIL_DEFAULT_SENDER'],
+            sender=app.config['MAIL_DEFAULT_SENDER'] or app.config['MAIL_USERNAME'],
             html=html_template
         )
-        mail.send(msg)
+        try:
+            mail.send(msg)
+        except Exception as e:
+            print("EMAIL ERROR:", e)
 
         flash("Verification email sent. Please check your inbox.", "info")
         return redirect(url_for("login"))
