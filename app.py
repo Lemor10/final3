@@ -1,6 +1,5 @@
 import os
 import token
-from alembic.util import msg
 from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory, send_file, abort, jsonify ,session
 from flask_mail import Mail, Message
 from flask_sqlalchemy import SQLAlchemy
@@ -25,14 +24,14 @@ import matplotlib
 matplotlib.use("Agg")  # VERY IMPORTANT
 import matplotlib.pyplot as plt
 
-if os.environ.get("DATABASE_URL"):
+if os.environ.get("RENDER"):
     BASE_URL = os.environ.get("BASE_URL")
+    if not BASE_URL:
+        raise RuntimeError("❌ BASE_URL is NOT set in Render environment variables")
 else:
     BASE_URL = "http://localhost:5000"
 
 app = Flask(__name__)
-
-app.config["PROPAGATE_EXCEPTIONS"] = True
 
 app.config['DOG_UPLOAD_FOLDER'] = os.path.join('static', 'dog_images')
 os.makedirs(app.config['DOG_UPLOAD_FOLDER'], exist_ok=True)
@@ -40,26 +39,18 @@ os.makedirs(app.config['DOG_UPLOAD_FOLDER'], exist_ok=True)
 app.config['UPLOAD_FOLDER_PROFILE'] = os.path.join('static', 'profile_images')
 os.makedirs(app.config['UPLOAD_FOLDER_PROFILE'], exist_ok=True)
 
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
-on_render = os.environ.get('DATABASE_URL') is not None
-if on_render:
-    database_url = os.environ.get('DATABASE_URL')
-
-    # 🔥 FIX FOR RENDER POSTGRES
-    if database_url.startswith("postgres://"):
-        database_url = database_url.replace("postgres://", "postgresql://", 1)
-
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-else:
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:somepassword@localhost:5432/drs_local'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Dog_Registration_Secret_Key')
+on_render = os.environ.get('RENDER') is not None 
+if on_render: app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') 
+else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:somepassword@localhost:5432/drs_local' 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
-app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME')
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'dogrnw2026@gmail.com')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'jgrpmgucdltkvdir')
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', 'TrackPawPH <dogrnw2026@gmail.com>')
 
 mail = Mail(app)
 
@@ -337,10 +328,7 @@ def send_notification_email(to, subject, body):
         body=body,
         sender=app.config['MAIL_DEFAULT_SENDER']
     )
-    try:
-        mail.send(msg)
-    except Exception as e:
-        app.logger.error(f"Email failed: {e}")
+    mail.send(msg)
 
 def run_daily_notifications(user):
     today = date.today()
@@ -710,10 +698,7 @@ def signup():
             sender=app.config['MAIL_DEFAULT_SENDER'],
             html=html_template
         )
-        try:
-            mail.send(msg)
-        except Exception as e:
-            app.logger.error(f"Email failed: {e}")
+        mail.send(msg)
 
         flash("Verification email sent. Please check your inbox.", "info")
         return redirect(url_for("login"))
@@ -1555,12 +1540,5 @@ def export_csv():
     output.seek(0)
     return send_file(output, mimetype='text/csv', as_attachment=True, download_name='dogs.csv')
 
-@app.errorhandler(Exception)
-def handle_exception(e):
-    import traceback
-    app.logger.error("UNHANDLED EXCEPTION:\n%s", traceback.format_exc())
-    return "Internal Server Error", 500
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT',5000)), debug=True)
