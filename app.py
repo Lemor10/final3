@@ -61,15 +61,8 @@ app.config['MAIL_SERVER'] = 'smtp.sendgrid.net'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
-
-# ⚠️ IMPORTANT:
-# SendGrid username is ALWAYS literally "apikey"
-app.config['MAIL_USERNAME'] = 'apikey'
-
-# This must be your SendGrid API Key (NOT Gmail password)
+app.config['MAIL_USERNAME'] = 'apikey'  # literally 'apikey'
 app.config['MAIL_PASSWORD'] = os.environ.get('SENDGRID_API_KEY')
-
-# Verified sender email from SendGrid dashboard
 app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER')
 
 mail = Mail(app)
@@ -342,11 +335,15 @@ def generate_admin_notifications(admin_user_id):
         db.session.commit()
 
 def send_notification_email(to, subject, body):
+    print("Sending email to:", to)
+    print("MAIL_USERNAME:", app.config['MAIL_USERNAME'])
+    print("MAIL_PASSWORD exists:", bool(app.config['MAIL_PASSWORD']))
+    print("MAIL_DEFAULT_SENDER:", app.config['MAIL_DEFAULT_SENDER'])
     msg = Message(
         subject=subject,
         recipients=[to],
         body=body,
-        sender=app.config['MAIL_DEFAULT_SENDER'] or app.config['MAIL_USERNAME']
+        sender=app.config['MAIL_DEFAULT_SENDER']
     )
     try:
         mail.send(msg)
@@ -450,6 +447,20 @@ def get_analysis_data(start_month=None, end_month=None):
         "death_counts": death_counts
     }
 
+@app.route("/test-email")
+def test_email():
+    try:
+        msg = Message(
+            subject="Test Email from Render",
+            recipients=[os.environ.get('ADMIN_EMAIL')],
+            body="This is a test email from your Render deployment.",
+        )
+        mail.send(msg)
+        
+        return "Email sent successfully!"
+    except Exception as e:
+        return f"Email failed: {e}"
+    
 @app.route("/check-username")
 def check_username():
     username = request.args.get("username", "").strip().lower()
