@@ -274,8 +274,7 @@ def generate_vaccination_notifications(user_id, dog):
             email_sent=False
         )
         db.session.add(notif)
-        db.session.flush()
-
+        
         # Send email
         user = db.session.get(User, user_id)
         if user.email and not notif.email_sent:
@@ -283,6 +282,7 @@ def generate_vaccination_notifications(user_id, dog):
             notif.email_sent = True
 
         db.session.commit()
+        db.session.flush()
 
 def generate_admin_notifications(admin_user_id):
         today = date.today()
@@ -360,8 +360,10 @@ def run_daily_notifications(user):
         return  # ❌ already ran today
 
     if user.role == "owner":
-        generate_vaccination_notifications(user.id, dog=None)  # dog=None means it will check all dogs of the owner
-
+        dogs = Dog.query.filter_by(owner_id=user.id, is_archived=False).all()
+        for dog in dogs:
+            generate_vaccination_notifications(user.id, dog)
+            
     elif user.role == "admin":
         generate_admin_notifications(user.id)
 
@@ -702,31 +704,29 @@ def signup():
         db.session.add(user)
         db.session.commit()
 
+        # After db.session.commit()
         token = serializer.dumps(user.email, salt="email-verify")
         user.verification_token = token
         db.session.commit()
 
-        # Use BASE_URL instead of url_for
-        verify_link = f"{BASE_URL}/verify-email/{token}"
-
-        html_template = f"""
-        <p>Hello {user.name},</p>
-        <p>Click below to verify your email:</p>
-        <a href="{verify_link}">Verify Email</a>
-        """
-
-        msg = Message(
-            subject="Verify Your Email",
-            recipients=[user.email],
-            sender=app.config['MAIL_DEFAULT_SENDER'] or app.config['MAIL_USERNAME'],
-            html=html_template
-        )
+        # Send verification email safely
         try:
+            verify_link = f"{BASE_URL}/verify-email/{token}"
+            html_template = f"""
+            <p>Hello {user.name},</p>
+            <p>Click below to verify your email:</p>
+            <a href="{verify_link}">Verify Email</a>
+            """
+            msg = Message(
+                subject="Verify Your Email",
+                recipients=[user.email],
+                sender=app.config['MAIL_DEFAULT_SENDER'],
+                html=html_template
+            )
             mail.send(msg)
         except Exception as e:
-            print("EMAIL ERROR:", e)
-
-        flash("Verification email sent. Please check your inbox.", "info")
+                print("EMAIL ERROR:", e)
+                flash("Signup succeeded, but verification email failed. Contact admin.", "warning")
         return redirect(url_for("login"))
 
     return render_template('signup.html')
