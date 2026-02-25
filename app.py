@@ -54,11 +54,20 @@ else:
     app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:somepassword@localhost:5432/drs_local'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+# ---------------- SENDGRID CONFIG ----------------
+app.config['MAIL_SERVER'] = 'smtp.sendgrid.net'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+app.config['MAIL_USE_SSL'] = False
+
+# ⚠️ IMPORTANT:
+# SendGrid username is ALWAYS literally "apikey"
+app.config['MAIL_USERNAME'] = 'apikey'
+
+# This must be your SendGrid API Key (NOT Gmail password)
+app.config['MAIL_PASSWORD'] = os.environ.get('SENDGRID_API_KEY')
+
+# Verified sender email from SendGrid dashboard
 app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER')
 
 mail = Mail(app)
