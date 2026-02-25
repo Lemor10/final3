@@ -33,6 +33,8 @@ else:
 
 app = Flask(__name__)
 
+app.config['PROPAGATE_EXCEPTIONS'] = True
+
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 app.config['DOG_UPLOAD_FOLDER'] = os.path.join('static', 'dog_images')
@@ -41,7 +43,7 @@ os.makedirs(app.config['DOG_UPLOAD_FOLDER'], exist_ok=True)
 app.config['UPLOAD_FOLDER_PROFILE'] = os.path.join('static', 'profile_images')
 os.makedirs(app.config['UPLOAD_FOLDER_PROFILE'], exist_ok=True)
 
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Dog_Registration_Secret_Key')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'd1f4eb1ea051a0cf47ddb5be36e4d5e5f3073bb242b8ea7136bda03612b82c58')
 on_render = os.environ.get('RENDER') is not None 
 database_url = os.environ.get("DATABASE_URL")
 
@@ -358,7 +360,7 @@ def run_daily_notifications(user):
         return  # ❌ already ran today
 
     if user.role == "owner":
-        generate_vaccination_notifications(user.id)
+        generate_vaccination_notifications(user.id, dog=None)  # dog=None means it will check all dogs of the owner
 
     elif user.role == "admin":
         generate_admin_notifications(user.id)
