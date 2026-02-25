@@ -33,6 +33,8 @@ else:
 
 app = Flask(__name__)
 
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
 app.config['DOG_UPLOAD_FOLDER'] = os.path.join('static', 'dog_images')
 os.makedirs(app.config['DOG_UPLOAD_FOLDER'], exist_ok=True)
 
@@ -1541,4 +1543,4 @@ def export_csv():
     return send_file(output, mimetype='text/csv', as_attachment=True, download_name='dogs.csv')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT',5000)), debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT',5000)))
