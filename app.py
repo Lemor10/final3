@@ -703,15 +703,20 @@ def signup():
         <a href="{verify_link}">Verify Email</a>
         """
 
-        msg = Message(
-            subject="Verify Your Email",
-            recipients=[user.email],
-            sender=app.config['MAIL_DEFAULT_SENDER'],
-            html=html_template
-        )
-        mail.send(msg)
+        # ---------------- Safe Email Sending ----------------
+        try:
+            msg = Message(
+                subject="Verify Your Email",
+                recipients=[user.email],
+                sender=app.config['MAIL_DEFAULT_SENDER'],
+                html=html_template
+            )
+            mail.send(msg)
+            flash("Verification email sent. Please check your inbox.", "info")
+        except Exception as e:
+            print(f"❌ Email failed to send: {e}")  # logs the error in Render logs
+            flash("Signup successful, but verification email could not be sent. Admin will assist.", "warning")
 
-        flash("Verification email sent. Please check your inbox.", "info")
         return redirect(url_for("login"))
 
     return render_template('signup.html')
