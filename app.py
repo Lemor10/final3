@@ -1,7 +1,7 @@
 import os
 import token
 from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory, send_file, abort, jsonify ,session
-from flask_mail import Mail, Message
+#from flask_mail import Mail, Message
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
@@ -23,6 +23,8 @@ from docx.shared import Inches
 import matplotlib
 matplotlib.use("Agg")  # VERY IMPORTANT
 import matplotlib.pyplot as plt
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 
 if os.environ.get("RENDER"):
     BASE_URL = os.environ.get("BASE_URL")
@@ -44,16 +46,6 @@ on_render = os.environ.get('RENDER') is not None
 if on_render: app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') 
 else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:somepassword@localhost:5432/drs_local' 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# SendGrid SMTP setup
-app.config['MAIL_SERVER'] = 'smtp.sendgrid.net'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'apikey'  # literally 'apikey'
-app.config['MAIL_PASSWORD'] = os.environ.get('SENDGRID_API_KEY')  # your SendGrid API key
-app.config['MAIL_DEFAULT_SENDER'] = 'TrackPawPH <dogrnw2026@gmail.com>'
-
-mail = Mail(app)
 
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
@@ -323,13 +315,19 @@ def generate_admin_notifications(admin_user_id):
         db.session.commit()
 
 def send_notification_email(to, subject, body):
-    msg = Message(
+    message = Mail(
+        from_email='TrackPawPH <your_verified_email@example.com>',
+        to_emails=to,
         subject=subject,
-        recipients=[to],
-        body=body,
-        sender=app.config['MAIL_DEFAULT_SENDER']
+        html_content=f"<p>{body}</p>"
     )
-    mail.send(msg)
+
+    try:
+        sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+        response = sg.send(message)
+        print("Email sent:", response.status_code)
+    except Exception as e:
+        print("SendGrid error:", str(e))
 
 def run_daily_notifications(user):
     today = date.today()
@@ -425,16 +423,6 @@ def get_analysis_data(start_month=None, end_month=None):
         "death_causes": death_causes,
         "death_counts": death_counts
     }
-
-@app.route('/test-email')
-def test_email():
-    msg = Message(
-        subject="Test Email from SendGrid",
-        recipients=["dogrnw2026@gmail.com"],
-        body="Hello! This is a test email from Flask using SendGrid."
-    )
-    mail.send(msg)
-    return "Email sent!"
 
 @app.route("/check-username")
 def check_username():
@@ -703,20 +691,20 @@ def signup():
         <a href="{verify_link}">Verify Email</a>
         """
 
-        # ---------------- Safe Email Sending ----------------
-        try:
-            msg = Message(
-                subject="Verify Your Email",
-                recipients=[user.email],
-                sender=app.config['MAIL_DEFAULT_SENDER'],
-                html=html_template
-            )
-            mail.send(msg)
-            flash("Verification email sent. Please check your inbox.", "info")
-        except Exception as e:
-            print(f"❌ Email failed to send: {e}")  # logs the error in Render logs
-            flash("Signup successful, but verification email could not be sent. Admin will assist.", "warning")
+        message = Mail(
+            from_email='TrackPawPH <your_verified_email@example.com>',
+            to_emails=user.email,
+            subject="Verify Your Email",
+            html_content=html_template
+        )
 
+        try:
+            sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+            sg.send(message)
+        except Exception as e:
+            print("Verification email failed:", e)
+
+        flash("Verification email sent. Please check your inbox.", "info")
         return redirect(url_for("login"))
 
     return render_template('signup.html')
