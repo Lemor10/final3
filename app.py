@@ -29,6 +29,7 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv()
+sg = SendGridAPIClient(os.getenv("SENDGRID_API_KEY"))
 
 if os.environ.get("RENDER"):
     BASE_URL = os.environ.get("BASE_URL")
@@ -51,7 +52,6 @@ if on_render: app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_U
 else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:somepassword@localhost:5432/drs_local' 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-sg = SendGridAPIClient(os.environ.get("SENDGRID_API_KEY"))
 print("SENDGRID KEY EXISTS:", bool(os.getenv("SENDGRID_API_KEY")))
 
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
@@ -322,17 +322,19 @@ def generate_admin_notifications(admin_user_id):
         db.session.commit()
 
 def send_notification_email(to, subject, body):
+    if not to:
+        return
+
     message = Mail(
-        from_email='TrackPawPH <dogrnw2026@gmail.com>',
+        from_email='TrackPawPH <dogrnw2026@gmail.com>',  # MUST be verified in SendGrid
         to_emails=to,
         subject=subject,
         html_content=f"<p>{body}</p>"
     )
 
     try:
-        sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
         response = sg.send(message)
-        print("Email sent:", response.status_code)
+        print(f"Email sent to {to} (Status {response.status_code})")
     except Exception as e:
         print("SendGrid error:", str(e))
 
