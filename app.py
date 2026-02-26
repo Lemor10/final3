@@ -431,15 +431,6 @@ def get_analysis_data(start_month=None, end_month=None):
         "death_counts": death_counts
     }
 
-@app.route("/test-email")
-def test_email():
-    message = Mail(
-        from_email="your_verified_email@gmail.com",
-        to_emails="youremail@gmail.com",
-        subject="Test Email",
-        html_content="<strong>If you see this, SendGrid works.</strong>"
-    )
-
     try:
         sg = SendGridAPIClient(os.getenv("SENDGRID_API_KEY"))
         response = sg.send(message)
@@ -843,9 +834,9 @@ def login():
             return redirect(url_for('login'))
         
         # ✅ Only require email verification for owners
-        #if user.role == 'owner' and not user.email_verified:
-        #    flash("Please verify your email before logging in.", "warning")
-        #    return redirect(url_for("login"))
+        if user.role == 'owner' and not user.email_verified:
+            flash("Please verify your email before logging in.", "warning")
+            return redirect(url_for("login"))
 
         login_user(user)
 
