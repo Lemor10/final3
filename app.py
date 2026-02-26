@@ -52,6 +52,7 @@ else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:somepasswor
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 sg = SendGridAPIClient(os.environ.get("SENDGRID_API_KEY"))
+print("SENDGRID KEY EXISTS:", bool(os.getenv("SENDGRID_API_KEY")))
 
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
@@ -322,7 +323,7 @@ def generate_admin_notifications(admin_user_id):
 
 def send_notification_email(to, subject, body):
     message = Mail(
-        from_email='TrackPawPH <your_verified_email@example.com>',
+        from_email='TrackPawPH <dogrnw2026@gmail.com>',
         to_emails=to,
         subject=subject,
         html_content=f"<p>{body}</p>"
@@ -430,6 +431,22 @@ def get_analysis_data(start_month=None, end_month=None):
         "death_counts": death_counts
     }
 
+@app.route("/test-email")
+def test_email():
+    message = Mail(
+        from_email="your_verified_email@gmail.com",
+        to_emails="youremail@gmail.com",
+        subject="Test Email",
+        html_content="<strong>If you see this, SendGrid works.</strong>"
+    )
+
+    try:
+        sg = SendGridAPIClient(os.getenv("SENDGRID_API_KEY"))
+        response = sg.send(message)
+        return f"Status: {response.status_code}"
+    except Exception as e:
+        return str(e)
+    
 @app.route("/check-username")
 def check_username():
     username = request.args.get("username", "").strip().lower()
@@ -698,7 +715,7 @@ def signup():
         """
 
         message = Mail(
-            from_email='TrackPawPH <your_verified_email@example.com>',
+            from_email='TrackPawPH <dogrnw2026@gmail.com>',
             to_emails=user.email,
             subject="Verify Your Email",
             html_content=html_template
@@ -706,7 +723,11 @@ def signup():
 
         try:
             sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
-            sg.send(message)
+            response = sg.send(message)
+            print("Status Code:", response.status_code)
+            print("Body:", response.body)
+            print("Headers:", response.headers)
+
         except Exception as e:
             print("Verification email failed:", e)
 
