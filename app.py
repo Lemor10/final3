@@ -25,6 +25,10 @@ matplotlib.use("Agg")  # VERY IMPORTANT
 import matplotlib.pyplot as plt
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 if os.environ.get("RENDER"):
     BASE_URL = os.environ.get("BASE_URL")
@@ -46,6 +50,8 @@ on_render = os.environ.get('RENDER') is not None
 if on_render: app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') 
 else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:somepassword@localhost:5432/drs_local' 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+sg = SendGridAPIClient(os.environ.get("SENDGRID_API_KEY"))
 
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
