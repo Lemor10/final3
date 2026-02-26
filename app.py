@@ -45,7 +45,7 @@ os.makedirs(app.config['DOG_UPLOAD_FOLDER'], exist_ok=True)
 app.config['UPLOAD_FOLDER_PROFILE'] = os.path.join('static', 'profile_images')
 os.makedirs(app.config['UPLOAD_FOLDER_PROFILE'], exist_ok=True)
 
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Dog_Registration_Secret_Key')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'd1f4eb1ea051a0cf47ddb5be36e4d5e5f3073bb242b8ea7136bda03612b82c58')
 on_render = os.environ.get('RENDER') is not None 
 if on_render: app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') 
 else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:somepassword@localhost:5432/drs_local' 
