@@ -432,13 +432,6 @@ def get_analysis_data(start_month=None, end_month=None):
         "death_causes": death_causes,
         "death_counts": death_counts
     }
-
-    try:
-        sg = SendGridAPIClient(os.getenv("SENDGRID_API_KEY"))
-        response = sg.send(message)
-        return f"Status: {response.status_code}"
-    except Exception as e:
-        return str(e)
     
 @app.route("/check-username")
 def check_username():
