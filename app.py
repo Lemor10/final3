@@ -586,16 +586,16 @@ def handle_notifications():
     today = date.today()
 
     # Generate notifications once per day
-    if current_user.last_notification_run != today:
-        if current_user.role == "owner":
+    #if current_user.last_notification_run != today:
+    if current_user.role == "owner":
             dogs = Dog.query.filter_by(owner_id=current_user.id, is_archived=False).all()
             for dog in dogs:
                 generate_vaccination_notifications(current_user.id, dog)
-        elif current_user.role == 'admin':
+    elif current_user.role == 'admin':
             generate_admin_notifications(current_user.id)
 
-        current_user.last_notification_run = today
-        db.session.commit()
+        #current_user.last_notification_run = today
+    db.session.commit()
 
     # Load notifications for UI
     g.notifications = Notification.query.filter_by(
