@@ -32,7 +32,7 @@ load_dotenv()
 sg = SendGridAPIClient(os.getenv("SENDGRID_API_KEY"))
 
 if os.environ.get("RENDER"):
-    BASE_URL = os.environ.get("BASE_URL", "https://trackpawph.com")
+    BASE_URL = os.environ.get("BASE_URL", "https://www.trackpawph.com")
 else:
     BASE_URL = "http://localhost:5000"
 
@@ -322,7 +322,7 @@ def send_notification_email(to, subject, body):
         return
 
     message = Mail(
-        from_email='TrackPawPH <dogrnw2026@gmail.com>',  # MUST be verified in SendGrid
+        from_email='TrackPawPH <em7587.trackpawph.com>',  # MUST be verified in SendGrid
         to_emails=to,
         subject=subject,
         html_content=f"<p>{body}</p>"
@@ -731,20 +731,20 @@ def verify_email(token):
         email = serializer.loads(token, salt="email-verify", max_age=3600)
     except Exception:
         flash("Verification link expired.", "danger")
-        return redirect(f"{BASE_URL}/login")
+        return redirect(url_for("login"))
 
     user = User.query.filter_by(email=email).first()
 
     if not user:
         flash("Invalid verification link.", "danger")
-        return redirect(f"{BASE_URL}/login")
+        return redirect(url_for("login"))
 
     user.email_verified = True
     user.verification_token = None
     db.session.commit()
 
     flash("Email verified! You can now log in.", "success")
-    return redirect(f"{BASE_URL}/login")
+    return redirect(url_for("login"))
 
 
 @app.route('/forgot_password', methods=['GET', 'POST'])
