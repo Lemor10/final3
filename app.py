@@ -429,13 +429,6 @@ def get_analysis_data(start_month=None, end_month=None):
         "death_counts": death_counts
     }
 
-    try:
-        sg = SendGridAPIClient(os.getenv("SENDGRID_API_KEY"))
-        response = sg.send(message)
-        return f"Status: {response.status_code}"
-    except Exception as e:
-        return str(e)
-    
 @app.route("/check-username")
 def check_username():
     username = request.args.get("username", "").strip().lower()
@@ -704,7 +697,7 @@ def signup():
         """
 
         message = Mail(
-            from_email='TrackPawPH <trackpawph.com>',
+            from_email='TrackPawPH <em7587.trackpawph.com',
             to_emails=user.email,
             subject="Verify Your Email",
             html_content=html_template
@@ -713,12 +706,9 @@ def signup():
         try:
             sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
             response = sg.send(message)
-            print("Status Code:", response.status_code)
-            print("Body:", response.body)
-            print("Headers:", response.headers)
-
+            print("Verification email sent:", response.status_code)
         except Exception as e:
-            print("Verification email failed:", e)
+            print("SendGrid error:", e)
 
         flash("Verification email sent. Please check your inbox.", "info")
         return redirect(url_for("login"))
