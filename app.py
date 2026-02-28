@@ -579,6 +579,9 @@ def handle_notifications():
         g.notifications = []
         return
 
+    tz = pytz.timezone("Asia/Manila")
+    today = datetime.now(tz).date()   # ✅ ADD THIS
+
     now = datetime.utcnow()
 
     # Clean up old notifications
@@ -591,21 +594,26 @@ def handle_notifications():
         Notification.is_read == False,
         Notification.created_at < now - timedelta(minutes=2)
     ).update({Notification.dismissed: True}, synchronize_session=False)
+
     db.session.commit()
 
     # Generate notifications once per day
     if current_user.last_notification_run != today:
         if current_user.role == "owner":
-            dogs = Dog.query.filter_by(owner_id=current_user.id, is_archived=False).all()
+            dogs = Dog.query.filter_by(
+                owner_id=current_user.id,
+                is_archived=False
+            ).all()
+
             for dog in dogs:
                 generate_vaccination_notifications(current_user.id, dog)
+
         elif current_user.role == 'admin':
             generate_admin_notifications(current_user.id)
 
-    current_user.last_notification_run = today
-    db.session.commit()
+        current_user.last_notification_run = today
+        db.session.commit()
 
-    # Load notifications for UI
     g.notifications = Notification.query.filter_by(
         user_id=current_user.id,
         dismissed=False
