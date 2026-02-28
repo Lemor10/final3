@@ -27,8 +27,10 @@ from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 from dotenv import load_dotenv
 import os
+import pytz
 
 load_dotenv()
+
 sg = SendGridAPIClient(os.getenv("SENDGRID_API_KEY"))
 
 if os.environ.get("RENDER"):
@@ -142,7 +144,8 @@ class Dog(db.Model):
     def age(self):
         if not self.birthdate:
             return "N/A"
-        today = date.today()
+        tz = pytz.timezone("Asia/Manila")
+        today = datetime.now(tz).date()
         rd = relativedelta(today, self.birthdate)
         parts = []
         if rd.years > 0:
@@ -193,7 +196,8 @@ class Notification(db.Model):
         return f"<Notification {self.id} - User {self.user_id} - Read {self.is_read}>"
 
 def generate_vaccination_notifications(user_id, dog):
-        today = date.today()
+        tz = pytz.timezone("Asia/Manila")
+        today = datetime.now(tz).date()
         if not dog.next_vaccination:
             return
 
@@ -251,6 +255,10 @@ def generate_vaccination_notifications(user_id, dog):
             due_date=dog.next_vaccination,
             email_sent=False
         )
+        print("Dog:", dog.name)
+        print("Next Vaccination:", dog.next_vaccination)
+        print("Days left:", days_left)
+        print("Today:", date.today())
         db.session.add(notif)
         db.session.flush()
 
@@ -263,7 +271,8 @@ def generate_vaccination_notifications(user_id, dog):
         db.session.commit()
 
 def generate_admin_notifications(admin_user_id):
-        today = date.today()
+        tz = pytz.timezone("Asia/Manila")
+        today = datetime.now(tz).date()
         dogs = Dog.query.filter_by(owner_id=None).all()
 
         for dog in dogs:
@@ -337,7 +346,8 @@ def send_notification_email(to, subject, body):
         print("SendGrid error:", str(e))
 
 def run_daily_notifications(user):
-    today = date.today()
+    tz = pytz.timezone("Asia/Manila")
+    today = datetime.now(tz).date()
 
     if user.last_notification_run == today:
         return  # ❌ already ran today
@@ -583,18 +593,16 @@ def handle_notifications():
     ).update({Notification.dismissed: True}, synchronize_session=False)
     db.session.commit()
 
-    today = date.today()
-
     # Generate notifications once per day
-    #if current_user.last_notification_run != today:
-    if current_user.role == "owner":
+    if current_user.last_notification_run != today:
+        if current_user.role == "owner":
             dogs = Dog.query.filter_by(owner_id=current_user.id, is_archived=False).all()
             for dog in dogs:
                 generate_vaccination_notifications(current_user.id, dog)
-    elif current_user.role == 'admin':
+        elif current_user.role == 'admin':
             generate_admin_notifications(current_user.id)
 
-        #current_user.last_notification_run = today
+    current_user.last_notification_run = today
     db.session.commit()
 
     # Load notifications for UI
