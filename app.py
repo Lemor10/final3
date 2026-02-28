@@ -322,7 +322,7 @@ def send_notification_email(to, subject, body):
         return
 
     message = Mail(
-        from_email='TrackPawPH <em7587.trackpawph.com>',  # MUST be verified in SendGrid
+        from_email='TrackPawPH <no-reply@trackpawph.com>',  # MUST be verified in SendGrid
         to_emails=to,
         subject=subject,
         html_content=f"<p>{body}</p>"
@@ -697,7 +697,7 @@ def signup():
         """
 
         message = Mail(
-            from_email='TrackPawPH <em7587.trackpawph.com',
+            from_email='TrackPawPH <no-reply@trackpawph.com>',
             to_emails=user.email,
             subject="Verify Your Email",
             html_content=html_template
