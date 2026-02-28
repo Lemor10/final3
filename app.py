@@ -32,7 +32,9 @@ load_dotenv()
 sg = SendGridAPIClient(os.getenv("SENDGRID_API_KEY"))
 
 if os.environ.get("RENDER"):
-    BASE_URL = os.environ.get("BASE_URL", "https://www.trackpawph.com") 
+    BASE_URL = os.environ.get("BASE_URL")
+    if not BASE_URL:
+        raise RuntimeError("❌ BASE_URL is NOT set in Render environment variables")
 else:
     BASE_URL = "http://localhost:5000"
 
@@ -44,7 +46,7 @@ os.makedirs(app.config['DOG_UPLOAD_FOLDER'], exist_ok=True)
 app.config['UPLOAD_FOLDER_PROFILE'] = os.path.join('static', 'profile_images')
 os.makedirs(app.config['UPLOAD_FOLDER_PROFILE'], exist_ok=True)
 
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Dog_Registration_Secret_Key')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'd1f4eb1ea051a0cf47ddb5be36e4d5e5f3073bb242b8ea7136bda03612b82c58')
 on_render = os.environ.get('RENDER') is not None 
 if on_render: app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') 
 else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:somepassword@localhost:5432/drs_local' 
@@ -318,19 +320,21 @@ def generate_admin_notifications(admin_user_id):
         db.session.commit()
 
 def send_notification_email(to, subject, body):
-            message = Mail(
-                from_email='TrackPawPH <no-reply@trackpawph.com>',
-                to_emails=to,
-                subject=subject,
-                html_content=body
-            )
+    if not to:
+        return
 
-            try:
-                sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
-                response = sg.send(message)
-                print("Verification email sent:", response.status_code)
-            except Exception as e:
-                print("SendGrid error:", e)
+    message = Mail(
+        from_email= 'TrackPawPH <no-reply@trackpawph.com>',  # MUST be verified in SendGrid
+        to_emails=to,
+        subject=subject,
+        html_content=f"<p>{body}</p>"
+    )
+
+    try:
+        response = sg.send(message)
+        print(f"Email sent to {to} (Status {response.status_code})")
+    except Exception as e:
+        print("SendGrid error:", str(e))
 
 def run_daily_notifications(user):
     today = date.today()
@@ -427,6 +431,13 @@ def get_analysis_data(start_month=None, end_month=None):
         "death_counts": death_counts
     }
 
+    try:
+        sg = SendGridAPIClient(os.getenv("SENDGRID_API_KEY"))
+        response = sg.send(message)
+        return f"Status: {response.status_code}"
+    except Exception as e:
+        return str(e)
+    
 @app.route("/check-username")
 def check_username():
     username = request.args.get("username", "").strip().lower()
@@ -704,9 +715,12 @@ def signup():
         try:
             sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
             response = sg.send(message)
-            print("Verification email sent:", response.status_code)
+            print("Status Code:", response.status_code)
+            print("Body:", response.body)
+            print("Headers:", response.headers)
+
         except Exception as e:
-            print("SendGrid error:", e)
+            print("Verification email failed:", e)
 
         flash("Verification email sent. Please check your inbox.", "info")
         return redirect(url_for("login"))
@@ -820,9 +834,9 @@ def login():
             return redirect(url_for('login'))
         
         # ✅ Only require email verification for owners
-        #if user.role == 'owner' and not user.email_verified:
-        #    flash("Please verify your email before logging in.", "warning")
-        #    return redirect(url_for("login"))
+        if user.role == 'owner' and not user.email_verified:
+            flash("Please verify your email before logging in.", "warning")
+            return redirect(url_for("login"))
 
         login_user(user)
 
