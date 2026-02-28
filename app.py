@@ -32,9 +32,7 @@ load_dotenv()
 sg = SendGridAPIClient(os.getenv("SENDGRID_API_KEY"))
 
 if os.environ.get("RENDER"):
-    BASE_URL = os.environ.get("BASE_URL")
-    if not BASE_URL:
-        raise RuntimeError("❌ BASE_URL is NOT set in Render environment variables")
+    BASE_URL = os.environ.get("BASE_URL", "https://trackpawph.com")
 else:
     BASE_URL = "http://localhost:5000"
 
@@ -706,7 +704,7 @@ def signup():
         """
 
         message = Mail(
-            from_email='TrackPawPH <dogrnw2026@gmail.com>',
+            from_email='TrackPawPH <trackpawph.com>',
             to_emails=user.email,
             subject="Verify Your Email",
             html_content=html_template
@@ -733,20 +731,20 @@ def verify_email(token):
         email = serializer.loads(token, salt="email-verify", max_age=3600)
     except Exception:
         flash("Verification link expired.", "danger")
-        return redirect(url_for("login"))
+        return redirect(f"{BASE_URL}/login")
 
     user = User.query.filter_by(email=email).first()
 
     if not user:
         flash("Invalid verification link.", "danger")
-        return redirect(url_for("login"))
+        return redirect(f"{BASE_URL}/login")
 
     user.email_verified = True
     user.verification_token = None
     db.session.commit()
 
     flash("Email verified! You can now log in.", "success")
-    return redirect(url_for("login"))
+    return redirect(f"{BASE_URL}/login")
 
 
 @app.route('/forgot_password', methods=['GET', 'POST'])
