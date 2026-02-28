@@ -32,7 +32,7 @@ load_dotenv()
 sg = SendGridAPIClient(os.getenv("SENDGRID_API_KEY"))
 
 if os.environ.get("RENDER"):
-    BASE_URL = os.environ.get("BASE_URL", "https://www.trackpawph.com")
+    BASE_URL = os.environ.get("BASE_URL", "https://www.trackpawph.com") 
 else:
     BASE_URL = "http://localhost:5000"
 
@@ -44,7 +44,7 @@ os.makedirs(app.config['DOG_UPLOAD_FOLDER'], exist_ok=True)
 app.config['UPLOAD_FOLDER_PROFILE'] = os.path.join('static', 'profile_images')
 os.makedirs(app.config['UPLOAD_FOLDER_PROFILE'], exist_ok=True)
 
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'd1f4eb1ea051a0cf47ddb5be36e4d5e5f3073bb242b8ea7136bda03612b82c58')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'Dog_Registration_Secret_Key')
 on_render = os.environ.get('RENDER') is not None 
 if on_render: app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') 
 else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:somepassword@localhost:5432/drs_local' 
@@ -318,21 +318,19 @@ def generate_admin_notifications(admin_user_id):
         db.session.commit()
 
 def send_notification_email(to, subject, body):
-    if not to:
-        return
+            message = Mail(
+                from_email='TrackPawPH <no-reply@trackpawph.com>',
+                to_emails=to,
+                subject=subject,
+                html_content=body
+            )
 
-    message = Mail(
-        from_email='TrackPawPH <no-reply@trackpawph.com>',  # MUST be verified in SendGrid
-        to_emails=to,
-        subject=subject,
-        html_content=f"<p>{body}</p>"
-    )
-
-    try:
-        response = sg.send(message)
-        print(f"Email sent to {to} (Status {response.status_code})")
-    except Exception as e:
-        print("SendGrid error:", str(e))
+            try:
+                sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+                response = sg.send(message)
+                print("Verification email sent:", response.status_code)
+            except Exception as e:
+                print("SendGrid error:", e)
 
 def run_daily_notifications(user):
     today = date.today()
@@ -822,9 +820,9 @@ def login():
             return redirect(url_for('login'))
         
         # ✅ Only require email verification for owners
-        if user.role == 'owner' and not user.email_verified:
-            flash("Please verify your email before logging in.", "warning")
-            return redirect(url_for("login"))
+        #if user.role == 'owner' and not user.email_verified:
+        #    flash("Please verify your email before logging in.", "warning")
+        #    return redirect(url_for("login"))
 
         login_user(user)
 
