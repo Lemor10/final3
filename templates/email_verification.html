@@ -1,0 +1,110 @@
+<!-- templates/email_verification.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verify Your Email</title>
+<style>
+    body {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        background-color: #f4f4f7;
+        margin: 0;
+        padding: 0;
+        color: #333;
+    }
+    .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    .header {
+        text-align: center;
+      background: linear-gradient(135deg, #007bff, #9c4506);
+        color: white;
+        padding: 20px;
+    }
+    .header img {
+        max-height: 50px;
+    }
+    .content {
+        padding: 25px 30px;
+        line-height: 1.6;
+    }
+    .btn {
+        display: inline-block;
+      background: linear-gradient(135deg, #007bff, #9c4506);
+        color: #fff !important;
+        text-decoration: none;
+        padding: 12px 25px;
+        border-radius: 5px;
+        margin: 20px 0;
+        font-weight: bold;
+    }
+    .footer {
+        text-align: center;
+        font-size: 12px;
+        color: #999;
+        padding: 20px 30px;
+        border-top: 1px solid #e4e4e4;
+    }
+    .social-icons img {
+        width: 24px;
+        margin: 0 5px;
+        vertical-align: middle;
+    }
+    a { color: #0d6efd; text-decoration: none; }
+    @media only screen and (max-width: 600px) {
+        .container { width: 95% !important; }
+        .content { padding: 20px 15px; }
+        .footer { padding: 15px 10px; }
+    }
+</style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <img src="{{ logo_url }}" alt="{{ brand_name }} Logo">
+        </div>
+
+        <!-- CONTENT -->
+        <div class="content">
+            <p>Hello {{ user_name }},</p>
+            <p>You've listed this email as the contact for your account at <strong>{{ brand_name }}</strong>. To start using your account, please confirm your email address by clicking the button below:</p>
+            
+            <p style="text-align:center;">
+                <a href="{{ verify_link }}" class="btn">Verify Email</a>
+            </p>
+
+            <p>By verifying your email, you agree to our <a href="{{ terms_url }}">Terms of Service</a> and related policies.</p>
+
+            <p>If you fail to verify your email by <strong>{{ deadline }}</strong>, your account may be temporarily restricted.</p>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="footer">
+            <p>You received this email because you registered at {{ brand_name }}.</p>
+
+            <!-- SOCIAL ICONS -->
+            <p class="social-icons">
+                <a href="{{ facebook_url }}"><img src="{{ facebook_icon_url }}" alt="Facebook"></a>
+                <a href="{{ instagram_url }}"><img src="{{ instagram_icon_url }}" alt="Instagram"></a>
+                <a href="{{ twitter_url }}"><img src="{{ twitter_icon_url }}" alt="X"></a>
+                <a href="{{ youtube_url }}"><img src="{{ youtube_icon_url }}" alt="YouTube"></a>
+                <a href="{{ linkedin_url }}"><img src="{{ linkedin_icon_url }}" alt="LinkedIn"></a>
+            </p>
+
+            <p>
+                <a href="{{ privacy_url }}">Privacy Policy</a> | 
+                <a href="{{ help_url }}">Help Center</a>
+            </p>
+
+            <p>© {{ year }} {{ brand_name }}. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

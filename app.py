@@ -715,17 +715,35 @@ def signup():
         # Use BASE_URL instead of url_for
         verify_link = f"{BASE_URL}/verify-email/{token}"
 
-        html_template = f"""
-        <p>Hello {user.name},</p>
-        <p>Click below to verify your email:</p>
-        <a href="{verify_link}">Verify Email</a>
-        """
+        html_content = render_template(
+            'email_verification.html',
+            brand_name='TrackPawPH',
+            logo_url=f"{BASE_URL}/static/logo.png",
+            user_name=user.name,
+            verify_link=verify_link,
+            deadline='March 15, 2026',
+            terms_url=f"{BASE_URL}/terms",
+            privacy_url=f"{BASE_URL}/privacy",
+            help_url=f"{BASE_URL}/help",
+            year=datetime.now().year,
+            facebook_url="https://facebook.com/trackpawph",
+            instagram_url="https://instagram.com/trackpawph",
+            twitter_url="https://twitter.com/trackpawph",
+            youtube_url="https://youtube.com/trackpawph",
+            linkedin_url="https://linkedin.com/company/trackpawph",
+            facebook_icon_url=f"{BASE_URL}/static/icons/facebook.png",
+            instagram_icon_url=f"{BASE_URL}/static/icons/instagram.png",
+            twitter_icon_url=f"{BASE_URL}/static/icons/twitter.png",
+            youtube_icon_url=f"{BASE_URL}/static/icons/youtube.png",
+            linkedin_icon_url=f"{BASE_URL}/static/icons/linkedin.png"
+        )
+        
 
         message = Mail(
             from_email='TrackPawPH <no-reply@trackpawph.com>',
             to_emails=user.email,
-            subject="Verify Your Email",
-            html_content=html_template
+            html_content=html_content,
+            subject="Verify Your Email Confirm Your Email for TrackPawPH"
         )
 
         try:
@@ -763,7 +781,6 @@ def verify_email(token):
 
     flash("Email verified! You can now log in.", "success")
     return redirect(url_for("login"))
-
 
 @app.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
