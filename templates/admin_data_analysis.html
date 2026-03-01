@@ -22,6 +22,11 @@
 {% endblock %}
 
 {% block content %}
+<div class="d-flex align-items-center mb-1 fw-bold" style="font-size: 1.5rem;">
+  <i class="bi bi-bar-chart-fill me-2" style="font-size: 30px;"></i>
+  Admin Data Analysis
+</div>
+<hr>
 <div class="container">
 
     <div class="text-center mb-4">
@@ -94,6 +99,7 @@
     <div class="chart-container mx-auto" style="max-width: 700px;">
         <h5 class="text-center summary-header">Vaccination Status</h5>
         <canvas id="vaccineChart"></canvas>
+        <p class="no-data d-none">No data available for this date range.</p>
     </div>
 
     <div class="chart-container mx-auto" style="max-width: 700px;">
@@ -105,6 +111,7 @@
     <div class="chart-container mx-auto" style="max-width: 700px;">
         <h5 class="text-center summary-header">Cause of Death</h5>
         <canvas id="deathChart"></canvas>
+        <p class="no-data d-none">No data available for this date range.</p>
     </div>
 
 </div>
@@ -167,10 +174,10 @@ function renderCharts(data) {
         monthlyChart = new Chart(document.getElementById('monthlyChart'), {
             type: 'line',
             data: {
-                labels: {{ months_labels|tojson }},
+                labels: data.months,
                 datasets: [{
                     label: 'Dogs Registered',
-                    data: {{ monthly_data|tojson }},
+                    data: data.month_counts,
                     fill: false,
                     tension: 0.2,
                     borderColor: '#36A2EB',
@@ -205,9 +212,12 @@ if (data.death_counts.length > 0) {
             maintainAspectRatio: true
         }
     });
+} else {
+       document.querySelector('#deathChart').style.display = 'none';
+        document.querySelector('#deathChart').nextElementSibling?.classList.remove('d-none');
+    }
 }
 
-}
 window.addEventListener('DOMContentLoaded', () => {
     axios.get(`/admin/data-analysis?ajax=1`)
         .then(res => renderCharts(res.data))
