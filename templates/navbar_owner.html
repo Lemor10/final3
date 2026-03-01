@@ -22,6 +22,13 @@
   box-shadow: 0 2px 10px rgba(0,0,0,0.15);
 }
 
+/* Logo styling */
+.navbar-logo {
+  height: 40px;       /* adjust as needed */
+  width: auto;
+}
+
+
 /* Modal enhancements */
 #LogoutModal .modal-content {
   border: none;
@@ -106,146 +113,25 @@
   opacity: 1;
 }
 
-@media (max-width: 576px) {
-
-  
-  .navbar-brand,
-  .navbar-toggler {
-    display: none;
-  }
-
-  
-  .navbar {
-    position: fixed;
-    bottom: 0;
-    top: auto;
-    width: 100%;
-    z-index: 1050;
-    padding: 0.3rem 0;
-  }
-
-  
-  .navbar-collapse {
-    display: flex !important;
-    justify-content: center;
-  }
-
-  .navbar-nav {
-    flex-direction: row;
-    justify-content: space-around;
-    width: 100%;
-    margin: 0;
-  }
-
-  .navbar-nav .nav-item {
-    flex: 1;
-    text-align: center;
-  }
-
-  
-  .navbar-nav .nav-link {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    color: rgba(255,255,255,0.7);
-    position: relative;
-    transition: transform 0.3s ease, color 0.3s ease;
-  }
-
-  .navbar-nav .nav-link i,
-  .navbar-nav .nav-link .nav-title {
-    transition: transform 0.3s ease, color 0.3s ease;
-  }
-
-  
-  .navbar-nav .nav-link.active i,
-  .navbar-nav .nav-link.active .nav-title {
-    transform: scale(1.15) translateY(-1px);
-    color: #fff;
-  }
-
-  
-  .navbar-nav .nav-link.active::after {
-    content: '';
-    position: absolute;
-    bottom: 4px;
-    width: 6px;
-    height: 6px;
-    background: white;
-    border-radius: 50%;
-    transform: scale(1);
-    transition: transform 0.3s ease;
-  }
-
-  
-  .nav-text {
-    display: none;
-  }
-
-  
-  .nav-title {
-    font-size: 0.65rem;
-    font-weight: 500;
-    line-height: 1;
-    opacity: 0.9;
-  }
-
-  
-  .navbar-nav .nav-link i {
-    font-size: 1.2rem;
-  }
-
-  
-  .navbar .btn {
-    display: none;
-  }
-
-  .navbar-nav .nav-link.active::after {
-    display: none;
-  }
-  .logout-link i {
-    font-size: 1.2rem;
-  }
-
-  .logout-link .nav-title {
-    font-size: 0.65rem;
-  }
-
-  
-  .navbar .btn {
-    display: none;
-  }
-  
-  
-  #notif-dot {
-    top: 8px;
-    right: 4px;
-  }
-
-  
-  body {
-    padding-bottom: 65px;
-  }
-
-}
-
-
 </style>
 
-<nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color:#4DA6FF;">
+<nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color:#081a30;">
   <div class="container-fluid">
 
     
-    <a class="navbar-brand fw-bold">
+        <a class="navbar-brand fw-bold d-flex align-items-center" href="#">
+  <!-- Logo Image -->
+  <img src="{{ url_for('static', filename='images/logo1.png') }}" 
+       alt="Logo" 
+       class="navbar-logo">
       {% if request.endpoint == 'owner_dashboard' %}
-        <i class="bi bi-house-door-fill me-1"></i> Dashboard
+  
       {% elif request.endpoint == 'scan_qr' %}
-        <i class="bi bi-qr-code-scan me-2"></i> Scan QR
+
       {% elif request.endpoint == 'owner_profile' %}
-        <i class="bi bi-person-fill me-2"></i> Profile
+
       {% elif request.endpoint == 'owner_notifications' %}
-        <i class="bi bi-bell-fill me-2"></i> Notifications
+
       {% else %}
         <i class="bi bi-info-circle me-2"></i> Page
       {% endif %}

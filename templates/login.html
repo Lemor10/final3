@@ -3,111 +3,179 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Login | DogRegistration</title>
+  <title>Login | TrackPawPh</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <style>
-    body {
-      background: linear-gradient(135deg, #007bff, #9c4506);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: "Poppins", sans-serif;
-    }
+<style>
+  body {
+  background: linear-gradient(135deg, #081a30, #9c4506);
+    min-height: 100vh;
+    overflow-x: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "Poppins", sans-serif;
+    color: white;
+  }
 
+  /* Background blobs */
+.blob {
+  position: absolute;
+  width: 350px;
+  height: 350px;
+  background: rgba(255, 255, 255, 0.292);
+  border-radius: 50%;
+  filter: blur(80px);
+
+}
+
+.blob.one { top: -100px; left: -100px; }
+.blob.two { bottom: -0px; right: -120px; }
+
+  .card {
+    background: rgba(255, 255, 255, 0.150);
+    backdrop-filter: blur(14px);
+    border: none;
+    border-radius: 1.5rem;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+    animation: fadeIn 0.6s ease-in-out;
+    width: 100%;
+    max-width: 400px; /* smaller on small devices */
+    padding: 2rem 1.5rem;
+    text-align: center;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-header {
+    text-align: center;
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .card-header .text-muted {
+    font-size: 0.9rem;
+  }
+
+  .btn-primary {
+    background-color: #007bff;
+    border: none;
+    border-radius: 50px;
+    transition: all 0.2s ease;
+  }
+  .btn-primary:hover {
+    background-color: #004da0;
+    transform: scale(1.02);
+  }
+
+  .form-label {
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .form-control {
+    border-radius: 50px;
+    padding: 0.5rem 1rem;
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+  }
+
+  .form-control::placeholder {
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.7);
+  }
+
+  .form-control:focus {
+    border-color: #0062ff;
+    box-shadow: 0 0 0 0.15rem rgba(111,66,193,0.25);
+    background: rgba(255, 255, 255, 0.148);
+    color: rgb(0, 0, 0);
+  }
+
+  .is-invalid {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.15rem rgba(220,53,69,.25);
+  }
+
+  a {
+    text-decoration: underline;
+  }
+  a:hover {
+    color: #002e60;
+    text-decoration: none;
+  }
+
+.text-muted {
+  color: rgba(255,255,255,0.8) !important;
+}
+
+.card {
+  color: white;
+}
+  hr {
+    margin: 1.5rem 0;
+  }
+.form-check-input {
+  background-color: transparent;
+  border: 2px solid white;
+}
+
+.form-check-input:checked {
+  background-color: transparent;
+  border-color: white;
+}
+
+.form-check-input:focus {
+  box-shadow: none;
+}
+  /* ===== Responsive adjustments ===== */
+  @media (max-width: 575px) {
     .card {
-      background: rgba(255, 255, 255, 0.429);
-      backdrop-filter: blur(14px);
-      border: none;
-      border-radius: 1.5rem;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.25);
-      animation: fadeIn 0.6s ease-in-out;
-      max-width: 370px;
-      width: 100%;
-      padding: 2.5rem 2rem;
-      text-align: center;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+      padding: 1.5rem 1rem;
     }
 
     .card-header {
-      text-align: center;
-      font-size: 1.4rem;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-    }
-
-    .card-header .text-muted {
-      font-size: 0.9rem;
+      font-size: 1.25rem;
     }
 
     .btn-primary {
-      background-color: #007bff;
-      border: none;
-      border-radius: 50px;
-      transition: all 0.2s ease;
-    }
-    .btn-primary:hover {
-      background-color: #004da0;
-      transform: scale(1.02);
-    }
-
-    .form-label {
-      font-size: 13px;
-      font-weight: 500;
-    }
-
-    .form-control {
-      border-radius: 50px;
+      font-size: 0.95rem;
       padding: 0.5rem 1rem;
-      background: rgba(255,255,255,0.2); /* slightly transparent input */
-      border: 1px solid rgba(255,255,255,0.3);
     }
 
-    .form-control::placeholder {
-      font-size: 14px;
-      color: rgba(0, 0, 0, 0.7);
+    input.form-control {
+      padding: 0.45rem 0.9rem;
+    }
+  }
+
+  @media (max-width: 400px) {
+    body {
+      padding: 0.5rem;
     }
 
-    .form-control:focus {
-      border-color: #9c4506;
-      box-shadow: 0 0 0 0.15rem rgba(111,66,193,0.25);
-      background: rgba(255, 255, 255, 0.148);
-      color: rgb(0, 0, 0);
+    .card {
+      padding: 1rem;
     }
-
-    .is-invalid {
-      border-color: #dc3545;
-      box-shadow: 0 0 0 0.15rem rgba(220,53,69,.25);
-    }
-
-    a {
-      color: #004da0;
-      text-decoration: underline;
-    }
-    a:hover {
-      color: #002e60;
-      text-decoration: none;
-    }
-
-    .text-muted {
-      color: rgba(0, 0, 0, 0.8) !important;
-    }
-
-    hr {
-      margin: 1.5rem 0;
-    }
-
-  </style>
+  }
+</style>
 </head>
-
+  <div class="blob one"></div>
+  <div class="blob two"></div>
 <body>
   <div class="card">
+        <div class="text-center">
+    <img src="{{ url_for('static', filename='images/logo1.png') }}" 
+         alt="Track Paw PH Logo" 
+         style="height: 65px; width: auto;">
+  </div>
+
+
     <div class="card-header">
       Welcome Back
       <div class="text-muted fw-normal" style="font-size: 13px;">
@@ -163,7 +231,7 @@
 
       <p class="text-center mt-2 mb-0" style="font-size: 15px;">
         Don't have an account?
-        <a href="{{ url_for('signup') }}" class="fw-semibold text-decoration-none">Create one</a>
+        <a href="{{ url_for('signup') }}" class="fw-semibold text-white">Create one</a>
       </p>
     </div>
   </div>

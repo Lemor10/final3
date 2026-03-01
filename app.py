@@ -718,7 +718,7 @@ def signup():
         html_content = render_template(
             'email_verification.html',
             brand_name='TrackPawPH',
-            logo_url=f"{BASE_URL}/static/logo.png",
+            logo_url=f"{BASE_URL}/static/images/logo.png",
             user_name=user.name,
             verify_link=verify_link,
             deadline='March 15, 2026',
@@ -729,13 +729,9 @@ def signup():
             facebook_url="https://facebook.com/trackpawph",
             instagram_url="https://instagram.com/trackpawph",
             twitter_url="https://twitter.com/trackpawph",
-            youtube_url="https://youtube.com/trackpawph",
-            linkedin_url="https://linkedin.com/company/trackpawph",
-            facebook_icon_url=f"{BASE_URL}/static/icons/facebook.png",
-            instagram_icon_url=f"{BASE_URL}/static/icons/instagram.png",
-            twitter_icon_url=f"{BASE_URL}/static/icons/twitter.png",
-            youtube_icon_url=f"{BASE_URL}/static/icons/youtube.png",
-            linkedin_icon_url=f"{BASE_URL}/static/icons/linkedin.png"
+            facebook_icon_url=f"{BASE_URL}/static/images/facebook.png",
+            instagram_icon_url=f"{BASE_URL}/static/images/instagram.png",
+            twitter_icon_url=f"{BASE_URL}/static/images/x.png",
         )
         
 

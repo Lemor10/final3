@@ -3,14 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Signup | DogRegistration</title>
+  <title>Signup | TrackPawPH</title>
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
     body {
-      background: linear-gradient(135deg, #007bff, #9c4506);
+  background: linear-gradient(135deg, #081a30, #9c4506);
       min-height: 100vh;
       display: flex;
       align-items: center;
@@ -19,87 +20,135 @@
       color: rgb(0, 0, 0);
     }
 
-    .split-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-    }
+    .blob {
+  position: absolute;
+  width: 350px;
+  height: 350px;
+  background: rgba(255, 255, 255, 0.292);
+  border-radius: 50%;
+  filter: blur(80px);
 
-    .progress {
-      background-color: rgba(255, 255, 255, 0);
-    }
+}
 
-    @media (min-width: 992px) {
-      .split-container {
-        flex-direction: row;
-        align-items: center;
-      }
-    }
+.blob.one { top: -100px; left: -100px; }
+.blob.two { bottom: -200px; right: -0px; }
 
-    .info-side {
-      color: white;
-      padding: 40px 20px;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
+/* Ensure the container centers on all screens */
+.split-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
 
-    @media (max-width: 991px) {
-      .info-side {
-        align-items: center;
-        text-align: center;
-        padding: 50px 10px;
-      }
-    }
+.progress {
+  background-color: transparent !important; /* Makes container transparent */
+  height: 6px; /* keep your height */
+}
 
-    .info-side h1 {
-      font-weight: 700;
-      font-size: 2rem;
-      margin-bottom: 0.8rem;
-    }
+.progress-bar {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+/* Desktop view keeps row layout */
+@media (min-width: 992px) {
+  .split-container {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-evenly;
+    gap: 150px;
+  }
+}
 
-    .info-side p {
-      font-size: 1rem;
-      color: rgba(255,255,255,0.85);
-      max-width: 420px;
-      margin-bottom: 1.5rem;
-    }
+/* Info section adjustments */
+.info-side {
+  color: white;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center; /* Center on mobile */
+  max-width: 450px;   /* Prevent too wide text */
+}
 
-    .feature {
-      margin-top: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      color: white;
-    }
+/* Features wrap nicely on mobile */
+.feature {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  color: white;
+}
 
-    .feature i {
-      font-size: 1.4rem;
-      color: #f5f0ff;
-    }
+.feature i {
+  font-size: 1.2rem;
+}
 
-    @media (max-width: 991px) {
-      .feature i {
-        font-size: 1.2rem;
-      }
-    }
+/* Card adjustments for mobile */
+.card {
+  max-width: 100%;   /* Full width on mobile */
+  width: 100%;
+  margin: 20px 0;
+  color: #ffffff;
+}
 
+    /* Transparent checkbox */
+.form-check-input {
+  background-color: transparent;
+  border: 2px solid white;
+}
+
+.form-check-input:checked {
+  background-color: transparent;
+  border-color: white;
+}
+
+/* White checkmark */
+.form-check-input:checked[type="checkbox"] {
+  background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M13.485 1.929l-7.07 7.071-3.536-3.536L1.465 6.88l4.95 4.95 8.485-8.485z'/%3e%3c/svg%3e");
+}
+
+.form-check-input:focus {
+  box-shadow: none;
+}
+
+.card .text-muted {
+  color: rgba(255,255,255,0.85) !important;
+}
+.signup-logo {
+  width: 80px;
+  margin-bottom: 12px;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.25));
+}
+/* Reduce padding for small screens */
+@media (max-width: 576px) {
+
+  .info-side h1 {
+    font-size: 1.5rem;
+  }
+
+  .info-side p {
+    font-size: 0.95rem;
+  }
+}
     .card {
-      background: rgba(255, 255, 255, 0.429);
+      background: rgba(255, 255, 255, 0.150);
       backdrop-filter: blur(14px);
       border: none;
       border-radius: 1.5rem;
       box-shadow: 0 20px 40px rgba(0,0,0,0.25);
       max-width: 560px;
       width: 100%;
-      padding: 2rem;
+      padding: 1rem;
       flex: 1;
       margin: 20px;
       color: rgb(0, 0, 0);
       text-align: center;
       animation: fadeIn 0.6s ease-in-out;
+      color: #ffffff;
     }
 
     @keyframes fadeIn {
@@ -115,7 +164,7 @@
     }
 
     .card-header .text-muted {
-      color: rgb(0, 0, 0);
+      color: rgb(255, 255, 255);
       font-weight: normal;
       font-size: 0.85rem;
     }
@@ -130,7 +179,7 @@
       border-radius: 50px;
       border: 1px solid rgba(255,255,255,0.3);
       background: rgba(255,255,255,0.2);
-      color: black;
+      color: rgb(255, 255, 255);
     }
 
     .form-floating-custom input::placeholder {
@@ -182,6 +231,7 @@
 
     .btn-primary {
       background-color: #007bff;
+      font-size: 15px;
       border: none;
       border-radius: 50px;
       transition: all 0.2s ease;
@@ -194,13 +244,20 @@
     .form-check-label {
       color: rgba(255, 255, 255, 0);
     }
-
   </style>
 </head>
-
+  <div class="blob one"></div>
+  <div class="blob two"></div>
 <body>
 <div class="split-container" >
-  <div class="info-side">
+  <div class="info-side mt-4">
+
+        <div class="text-center mb-2">
+    <img src="{{ url_for('static', filename='images/logo1.png') }}" 
+         alt="Track Paw PH Logo" 
+         style="height: 76px; width: auto;">
+  </div>
+
     <h1>Create an Account</h1>
     <p>
       Register your dogs, generate QR codes, and keep vaccination records
@@ -221,10 +278,16 @@
       <i class="bi bi-heart-pulse"></i>
       <span>Vaccination tracking for safer communities</span>
     </div>
+
+    <div class="feature">
+      <i class="bi bi-bell-fill"></i>
+      <span>Keeps owner informed of updates</span>
+    </div>
   </div>
 
   <div class="d-flex justify-content-center align-items-center p-4" style="max-width: 550px;">
     <div class="card">
+      
       <div class="card-header">
         Create Your Account
         <div class="text-muted fw-normal" style="font-size:13px;">
@@ -332,7 +395,7 @@
 
           <p class="text-center text-muted mt-1 mb-0" style="font-size:14px;">
             Already have an account?
-            <a href="{{ url_for('login') }}" class="fw-semibold text-decoration-none">Sign In</a>
+            <a href="{{ url_for('login') }}" class="fw-semibold text-white">Sign In</a>
           </p>
         </div>
       </div>
