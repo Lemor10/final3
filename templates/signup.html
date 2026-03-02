@@ -33,6 +33,20 @@
 .blob.one { top: -100px; left: -100px; }
 .blob.two { bottom: -200px; right: -0px; }
 
+  .card {
+    background: rgba(255, 255, 255, 0.150);
+    backdrop-filter: blur(14px);
+    border: none;
+    border-radius: 1.5rem;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+    animation: fadeIn 0.6s ease-in-out;
+    width: 100%;
+    max-width: 420px; /* smaller on small devices */
+    padding: 1.5rem 1.0rem;
+    text-align: center;
+  }
+
+
 /* Ensure the container centers on all screens */
 .split-container {
   display: flex;
@@ -134,22 +148,6 @@
     font-size: 0.95rem;
   }
 }
-    .card {
-      background: rgba(255, 255, 255, 0.150);
-      backdrop-filter: blur(14px);
-      border: none;
-      border-radius: 1.5rem;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.25);
-      max-width: 560px;
-      width: 100%;
-      padding: 1rem;
-      flex: 1;
-      margin: 20px;
-      color: rgb(0, 0, 0);
-      text-align: center;
-      animation: fadeIn 0.6s ease-in-out;
-      color: #ffffff;
-    }
 
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
@@ -295,7 +293,9 @@
         </div>
       </div>
 
-      <div class="card-body mt-3">
+      <hr>
+
+      <div class="card-body">
         <form method="POST">
          <div class="mb-4 form-floating-custom">
             <input type="text" class="form-control" name="name" value="{{ form_data.name if form_data else '' }}" placeholder="" required>
