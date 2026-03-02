@@ -29,90 +29,86 @@
 }
 
 
-/* Modal enhancements */
-#LogoutModal .modal-content {
-  border: none;
-  border-radius: 12px;
-  overflow: hidden;
-  transition: transform 0.3s ease, opacity 0.3s ease;
+/* Logout Modal */
+#LogoutModal .modal-content{
+  border:none;
+  border-radius:16px;
+  overflow:hidden;
+  background:#ffffff;
+  box-shadow:0 12px 35px rgba(0,0,0,0.18);
 }
 
-#LogoutModal .modal-header {
-  background: linear-gradient(90deg, #FF6B6B, #FF4D4D);
-  color: white;
-  border-bottom: none;
-  justify-content: center;
-  text-align: center;
+/* Header */
+#LogoutModal .modal-header{
+  background:#081a30;
+  color:white;
+  border:none;
+  justify-content:center;
+  text-align:center;
+  padding:18px;
 }
 
-#LogoutModal .modal-header h5 {
-  font-size: 1.2rem;
+/* Icon Circle */
+.logout-icon{
+  width:60px;
+  height:60px;
+  background:#f5f3f1;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin:0 auto 12px auto;
+  font-size:26px;
+  color:#081a30;
 }
 
-#LogoutModal .modal-body {
-  font-size: 0.95rem;
-  color: #333;
+/* Body */
+#LogoutModal .modal-body{
+  padding:25px;
 }
 
-#LogoutModal .modal-footer {
-  border-top: none;
-  justify-content: center;
-  gap: 10px;
+#LogoutModal .modal-body p{
+  color:#555;
+  font-size:0.95rem;
+}
+
+/* Footer */
+#LogoutModal .modal-footer{
+  border:none;
+  justify-content:center;
+  gap:10px;
+  padding-bottom:20px;
 }
 
 /* Buttons */
-#LogoutModal .btn {
-  border-radius: 5px;
-  font-weight: 500;
-  transition: all 0.2s ease;
+#LogoutModal .btn{
+  border-radius:8px;
+  padding:6px 18px;
+  font-size:0.9rem;
+  transition:all .2s ease;
 }
 
-#LogoutModal .btn:hover {
-  transform: translateY(-2px);
+#LogoutModal .btn:hover{
+  transform:translateY(-2px);
 }
 
-#LogoutModal .btn-primary {
-  background-color: #4DA6FF;
-  border: none;
+/* Cancel button */
+#LogoutModal .btn-outline-secondary{
+  border-color:#dee2e6;
+  color:#495057;
 }
 
-#LogoutModal .btn-primary:hover {
-  background-color: #3399FF;
+/* Modal animation */
+.modal.fade .modal-dialog{
+  transform:translateY(-40px) scale(.95);
+  opacity:0;
+  transition:all .25s ease;
 }
 
-#LogoutModal .btn-outline-secondary {
-  border-color: #ccc;
-  color: #555;
+.modal.fade.show .modal-dialog{
+  transform:translateY(0) scale(1);
+  opacity:1;
 }
-
-#LogoutModal .btn-outline-secondary:hover {
-  background-color: #f5f5f5;
-  color: #333;
-}
-
-/* Icon styling */
-#LogoutModal .modal-header i {
-  font-size: 1.3rem;
-  vertical-align: middle;
-  margin-right: 6px;
-  transition: transform 0.2s ease;
-}
-
-#LogoutModal .modal-header i:hover {
-  transform: rotate(-15deg);
-}
-
-/* Fade-in animation for modal */
-.modal.fade .modal-dialog {
-  transform: translateY(-50px);
-  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
-}
-
-.modal.fade.show .modal-dialog {
-  transform: translateY(0);
-  opacity: 1;
-}
-
 </style>
 
 <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color:#081a30;">
@@ -194,25 +190,35 @@
 
 
 <!-- Logout Modal HTML -->
-<div class="modal fade" id="LogoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+<div class="modal fade" id="LogoutModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered modal-sm">
-    <div class="modal-content shadow-lg">
+    <div class="modal-content">
+
       <div class="modal-header">
-        <h5 class="modal-title fw-bold" id="logoutModalLabel">
-          <i class="bi bi-box-arrow-right"></i> Confirm Logout
-        </h5>
+        <h5 class="fw-bold mb-0">Confirm Logout</h5>
       </div>
-      <div class="modal-body text-center py-4">
-        <p class="mb-0">Are you sure you want to log out?</p>
+
+      <div class="modal-body text-center">
+        <div class="logout-icon">
+          <i class="bi bi-box-arrow-right"></i>
+        </div>
+
+        <p class="mb-3">
+          Are you sure you want to log out of your account?
+        </p>
+        <hr>
+        <div class="d-flex justify-content-center gap-2">
+          <button class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            Cancel
+          </button>
+
+          <a href="{{ url_for('logout') }}" class="btn btn-danger">
+            Logout
+          </a>
+        </div>
+
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary btn-sm px-4" data-bs-dismiss="modal">
-          Cancel
-        </button>
-        <a href="{{ url_for('logout') }}" class="btn btn-primary btn-sm px-4">
-          Logout
-        </a>
-      </div>
+
     </div>
   </div>
 </div>
