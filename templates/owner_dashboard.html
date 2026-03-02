@@ -180,7 +180,7 @@ body {
     <div class="dog-card card border-0 shadow-sm overflow-hidden rounded-4 mb-3">
       <div class="row g-0">
         <div class="col-4">
-          <img src="{{ url_for('static', filename='dog_images/' ~ (dog.image if dog.image else 'default_dog.png')) }}"
+          <img src="{{ url_for('static', filename='dog_images/' ~ (dog.image if dog.image else 'logo.png')) }}"
                class="dog-img"
                alt="{{ dog.name }}">
         </div>
@@ -243,7 +243,7 @@ body {
     <div class="dog-card card border-0 shadow-sm overflow-hidden rounded-4 mb-3">
       <div class="row g-0">
         <div class="col-4">
-          <img src="{{ url_for('static', filename='dog_images/' ~ (dog.image if dog.image else 'default_dog.png')) }}"
+          <img src="{{ url_for('static', filename='dog_images/' ~ (dog.image if dog.image else 'logo.png')) }}"
                class="dog-img"
                alt="{{ dog.name }}">
         </div>
