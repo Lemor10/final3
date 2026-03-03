@@ -28,6 +28,7 @@ from sendgrid.helpers.mail import Mail
 from dotenv import load_dotenv
 import os
 import pytz
+from time import time
 
 load_dotenv()
 
@@ -753,51 +754,130 @@ def signup():
             print("Verification email failed:", e)
 
         flash("Verification email sent. Please check your inbox.", "info")
-        return redirect(url_for("login"))
+        return redirect(url_for("check_email", email=user.email))
 
     return render_template('signup.html')
 
-@app.route('/verify-email/<token>')
+@app.route("/check-email")
+def check_email():
+    email = request.args.get("email")
+    verified = request.args.get("verified")
+
+    return render_template(
+        "check_email.html",
+        email=email,
+        verified=verified
+    )
+
+@app.route("/resend-verification", methods=["POST"])
+def resend_verification():
+
+    email = request.form.get("email")
+    user = User.query.filter_by(email=email).first()
+
+    if not user:
+        flash("User not found.", "danger")
+        return redirect(url_for("login"))
+
+    if user.email_verified:
+        flash("Email already verified.", "success")
+        return redirect(url_for("login"))
+
+    token = serializer.dumps(user.email, salt="email-verify")
+    user.verification_token = token
+    db.session.commit()
+
+    verify_link = f"{BASE_URL}/verify-email/{token}"
+
+    html_content = render_template(
+        "email_verification.html",
+        user_name=user.name,
+        verify_link=verify_link,
+        year=datetime.now().year
+    )
+
+    message = Mail(
+        from_email='TrackPawPH <no-reply@trackpawph.com>',
+        to_emails=user.email,
+        subject="Verify your email",
+        html_content=html_content
+    )
+
+    try:
+        sg.send(message)
+        flash("Verification email resent successfully.", "success")
+    except Exception as e:
+        print("Resend email error:", e)
+        flash("Failed to resend email.", "danger")
+
+    return redirect(url_for("check_email", email=user.email))
+
+@app.route("/verify-email/<token>")
 def verify_email(token):
     try:
         email = serializer.loads(token, salt="email-verify", max_age=3600)
-    except Exception:
-        flash("Verification link expired.", "danger")
+    except:
+        flash("Verification link is invalid or expired.", "danger")
         return redirect(url_for("login"))
 
     user = User.query.filter_by(email=email).first()
 
-    if not user:
-        flash("Invalid verification link.", "danger")
-        return redirect(url_for("login"))
+    if user:
+        user.email_verified = True
+        db.session.commit()
 
-    user.email_verified = True
-    user.verification_token = None
-    db.session.commit()
+        return redirect(url_for("check_email", email=user.email, verified=1))
 
-    flash("Email verified! You can now log in.", "success")
     return redirect(url_for("login"))
 
-@app.route('/forgot_password', methods=['GET', 'POST'])
+@app.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
-    if request.method == 'POST':
-        username = request.form['username'].strip().lower()
-        email = request.form['email']
+    if request.method == "POST":
+        last_request = session.get("last_reset_request")
+        if last_request and time() - last_request < 60:
+            flash("Please wait 1 minute before requesting another reset link.", "warning")
+            return redirect(url_for("forgot_password"))
 
-        user = User.query.filter_by(
-            username=username,
-            email=email
-        ).first()
+        session["last_reset_request"] = time()
+        email = request.form.get("email")
+        user = User.query.filter_by(email=email).first()
 
+        # Always show same message (security)
         if not user:
-            flash("Username and email do not match.", "danger")
-            return redirect(url_for('forgot_password'))
+            flash("If the email exists, a reset link has been sent to your inbox.", "info")
+            return redirect(url_for("forgot_password"))
 
-        token = serializer.dumps(user.id, salt='reset-password')
+        # create reset token
+        token = serializer.dumps(user.id, salt="reset-password")
 
-        return redirect(url_for('reset_password', token=token))
+        reset_link = f"{BASE_URL}/reset_password/{token}"
 
-    return render_template('forgot_password.html')
+        html_content = render_template(
+            "reset_password_email.html",
+            user_name=user.name,
+            reset_link=reset_link,
+            brand_name="TrackPawPH",
+            logo_url=f"{BASE_URL}/static/images/logo.png",
+            year=datetime.now().year
+        )
+
+        message = Mail(
+            from_email='TrackPawPH <no-reply@trackpawph.com>',
+            to_emails=user.email,
+            subject="Reset Your TrackPawPH Password",
+            html_content=html_content
+        )
+
+        try:
+            sg.send(message)
+            flash("Reset link sent. Please check your email inbox.", "success")
+        except Exception as e:
+            print("Reset email error:", e)
+            flash("Failed to send reset email. Please try again.", "danger")
+
+        return redirect(url_for("forgot_password"))
+
+    return render_template("forgot_password.html")
 
 @app.route('/reset_password/<token>', methods=['GET', 'POST'])
 def reset_password(token):
@@ -805,7 +885,7 @@ def reset_password(token):
         user_id = serializer.loads(
             token,
             salt='reset-password',
-            max_age=600  
+            max_age=600
         )
     except Exception:
         flash("Reset session expired or invalid. Try again.", "danger")
@@ -824,24 +904,25 @@ def reset_password(token):
             flash("Passwords do not match.", "danger")
             return redirect(request.url)
 
-        if len(password) < 8 \
-           or not re.search(r"[A-Z]", password) \
-           or not re.search(r"[a-z]", password) \
-           or not re.search(r"[0-9]", password) \
-           or not re.search(r"[^A-Za-z0-9]", password):
-            flash(
-                "Password must be at least 8 characters and include uppercase, lowercase, number, and special character.",
-                "danger"
-            )
-            return redirect(request.url)
-
         user.set_password(password)
         db.session.commit()
 
         flash("Password reset successful! You can now log in.", "success")
         return redirect(url_for('login'))
 
-    return render_template('reset_password.html')
+    return render_template('reset_password.html', token=token)
+
+@app.route("/terms")
+def terms():
+    return render_template("terms.html", brand_name="TrackPawPH", year=2026)
+
+@app.route("/privacy")
+def privacy():
+    return render_template("privacy.html", brand_name="TrackPawPH", year=2026)
+
+@app.route("/help")
+def help_center():
+    return render_template("help.html", brand_name="TrackPawPH", year=2026)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Help Center | {{ brand_name }}</title>
+
+<style>
+
+body{
+font-family:'Segoe UI', Arial, sans-serif;
+background:#f4f4f7;
+margin:0;
+color:#333;
+}
+
+.container{
+max-width:900px;
+margin:auto;
+background:white;
+padding:40px;
+border-radius:8px;
+box-shadow:0 0 10px rgba(0,0,0,0.05);
+margin-top:40px;
+margin-bottom:40px;
+}
+
+.header{
+text-align:center;
+background:linear-gradient(135deg,#007bff,#9c4506);
+color:white;
+padding:25px;
+border-radius:8px 8px 0 0;
+}
+
+.section{
+margin-top:25px;
+}
+
+h2{
+margin-bottom:10px;
+}
+
+.footer{
+text-align:center;
+font-size:13px;
+color:#777;
+margin-top:40px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="header">
+<h1>Help Center</h1>
+<p>{{ brand_name }}</p>
+</div>
+
+<div class="section">
+<h2>Account Issues</h2>
+<p>[Instructions for login or verification problems.]</p>
+</div>
+
+<div class="section">
+<h2>Dog Registration</h2>
+<p>[Explain how users register their dogs.]</p>
+</div>
+
+<div class="section">
+<h2>Vaccination Tracking</h2>
+<p>[Explain vaccination features.]</p>
+</div>
+
+<div class="section">
+<h2>Contact Support</h2>
+<p>Email: support@trackpawph.com</p>
+</div>
+
+<div class="footer">
+© {{ year }} {{ brand_name }}. All rights reserved.
+</div>
+
+</div>
+
+</body>
+</html>
