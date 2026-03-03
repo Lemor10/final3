@@ -3,55 +3,83 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Privacy Policy | {{ brand_name }}</title>
+<title>Privacy & Terms | {{ brand_name }}</title>
 
 <style>
-
 body{
-font-family:'Segoe UI', Arial, sans-serif;
-background:#f4f4f7;
-margin:0;
-color:#333;
+  font-family:'Segoe UI', Arial, sans-serif;
+  background:#f4f4f7;
+  margin:0;
+  color:#333;
 }
 
 .container{
-max-width:900px;
-margin:auto;
-background:white;
-padding:40px;
-border-radius:8px;
-box-shadow:0 0 10px rgba(0,0,0,0.05);
-margin-top:40px;
-margin-bottom:40px;
+  max-width:900px;
+  margin:auto;
+  background:white;
+  padding:40px;
+  border-radius:8px;
+  box-shadow:0 0 10px rgba(0,0,0,0.05);
+  margin-top:40px;
+  margin-bottom:40px;
 }
 
 .header{
-text-align:center;
-background:linear-gradient(135deg,#007bff,#9c4506);
-color:white;
-padding:25px;
-border-radius:8px 8px 0 0;
+  text-align:center;
+  background:linear-gradient(135deg,#007bff,#9c4506);
+  color:white;
+  padding:25px;
+  border-radius:8px 8px 0 0;
 }
 
 .section{
-margin-top:25px;
+  margin-top:25px;
 }
 
 h1,h2{
-margin-bottom:10px;
+  margin-bottom:10px;
+  color:#007bff;
 }
 
-p{
-line-height:1.6;
+p, li{
+  line-height:1.6;
+}
+
+ul{
+  margin-left:20px;
+}
+
+.back-home{
+  display:inline-block;
+  margin-top:25px;
+  padding:10px 20px;
+  background:#007bff;
+  color:white;
+  text-decoration:none;
+  border-radius:5px;
+  transition: background 0.3s;
+}
+
+.back-home:hover{
+  background:#0056b3;
 }
 
 .footer{
-text-align:center;
-font-size:13px;
-color:#777;
-margin-top:40px;
+  text-align:center;
+  font-size:13px;
+  color:#777;
+  margin-top:40px;
 }
 
+@media(max-width:600px){
+  .container{
+    padding:20px;
+  }
+  .back-home{
+    width:100%;
+    text-align:center;
+  }
+}
 </style>
 </head>
 
@@ -60,44 +88,91 @@ margin-top:40px;
 <div class="container">
 
 <div class="header">
-<h1>Privacy Policy</h1>
+<h1>Privacy & Terms</h1>
 <p>{{ brand_name }}</p>
 </div>
 
 <div class="section">
-<h2>1. Information We Collect</h2>
-<p>
-[Describe the types of information collected.]
-</p>
+<h2>1. Use of Our Services</h2>
+<ul>
+<li>You must be at least 13 years old (or legal age in your area).</li>
+<li>Use the service responsibly and legally.</li>
+<li>You are responsible for any content you post or share.</li>
+</ul>
 </div>
 
 <div class="section">
-<h2>2. How We Use Information</h2>
-<p>
-[Explain how user data is used.]
-</p>
+<h2>2. Account Responsibility</h2>
+<ul>
+<li>Keep your login details secure.</li>
+<li>Notify us if you suspect unauthorized access.</li>
+<li>We may suspend or terminate accounts violating these terms.</li>
+</ul>
 </div>
 
 <div class="section">
-<h2>3. Data Protection</h2>
-<p>
-[Explain how you protect user data.]
-</p>
+<h2>3. Intellectual Property</h2>
+<p>All content, logos, and designs belong to us or our partners. You may not copy, distribute, or create derivative works without permission.</p>
 </div>
 
 <div class="section">
-<h2>4. Sharing Information</h2>
-<p>
-[Explain if you share user data.]
-</p>
+<h2>4. Information We Collect</h2>
+<ul>
+<li><strong>Personal Info:</strong> Name, email, phone (if provided).</li>
+<li><strong>Non-Personal Info:</strong> IP address, browser type, device info, cookies.</li>
+<li>Information is collected to provide services, communicate updates, and improve your experience.</li>
+</ul>
 </div>
 
 <div class="section">
-<h2>5. User Rights</h2>
-<p>
-[Explain users’ rights regarding their data.]
-</p>
+<h2>5. How We Use Information</h2>
+<p>We use collected information to:</p>
+<ul>
+<li>Provide and improve our services.</li>
+<li>Communicate with users about updates or notifications.</li>
+<li>Analyze usage and trends to enhance user experience.</li>
+</ul>
 </div>
+
+<div class="section">
+<h2>6. Sharing Information</h2>
+<p>We do not sell or rent user data. Information may be shared with trusted partners for service delivery or disclosed if required by law.</p>
+</div>
+
+<div class="section">
+<h2>7. Data Protection</h2>
+<p>We implement reasonable measures to protect your information. However, no method of internet transmission is completely secure.</p>
+</div>
+
+<div class="section">
+<h2>8. User Rights</h2>
+<ul>
+<li>Access, correct, or delete personal information.</li>
+<li>Opt-out of marketing communications.</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>9. Cookies</h2>
+<p>We use cookies to improve functionality and user experience. You can disable cookies via your browser settings.</p>
+</div>
+
+<div class="section">
+<h2>10. Limitation of Liability</h2>
+<p>Services are provided “as is” without warranties. We are not liable for any damages from using our service.</p>
+</div>
+
+<div class="section">
+<h2>11. Changes</h2>
+<p>We may update this document at any time. Continued use after updates means acceptance of new terms.</p>
+</div>
+
+<div class="section">
+<h2>12. Governing Law</h2>
+<p>These terms are governed by the laws of [Your Country/State]. Any disputes will be resolved in the courts of [Your Country/State].</p>
+</div>
+
+<a class="back-home" href="/">← Back to Home</a>
 
 <div class="footer">
 © {{ year }} {{ brand_name }}. All rights reserved.

@@ -65,6 +65,25 @@
   height: 100%;
   transition: width 0.3s ease;
 }
+
+.form-check-input {
+  background-color: transparent;
+  border: 2px solid white;
+}
+
+.form-check-input:checked {
+  background-color: transparent;
+  border-color: white;
+}
+
+.form-check-input:checked[type="checkbox"] {
+  background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M13.485 1.929l-7.07 7.071-3.536-3.536L1.465 6.88l4.95 4.95 8.485-8.485z'/%3e%3c/svg%3e");
+}
+
+.form-check-label {
+  color: white; /* ensure it’s visible on your dark card */
+  font-size: 14px;
+}
 /* Desktop view keeps row layout */
 @media (min-width: 992px) {
   .split-container {
@@ -381,12 +400,13 @@
   </label>
 </div>
 
-          <button type="submit"
+          <button type="button"
               class="btn btn-primary w-100 mt-3 mb-2"
                 id="signupBtn">
             <i class="bi bi-paw-fill text-primary me-1"></i>
             Create Account
           </button>
+          
         </form>
 
         <div class="d-flex align-items-center">
@@ -401,6 +421,47 @@
       </div>
     </div>
   </form>
+<!-- Terms & Privacy Modal -->
+<div class="modal fade" id="termsModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content border-0 shadow" style="background: rgba(255,255,255,0.15); backdrop-filter: blur(14px); border-radius: 1.5rem;">
+      
+      <!-- Header -->
+      <div class="modal-header" style="background: #081a30; color: white; border-bottom: none; border-radius: 1.5rem 1.5rem 0 0;">
+        <h5 class="modal-title">
+          <i class="bi bi-file-text-fill me-2"></i>
+          Terms & Privacy
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      
+      <!-- Body -->
+      <div class="modal-body" style="max-height: 400px; overflow-y: auto; color: white; font-size: 0.95rem;">
+        <h6>Terms of Service</h6></a>
+        <p>
+          By creating an account, you agree to TrackPawPH’s Terms of Service.
+          You will provide accurate information, respect privacy, and comply with our regulations.
+        </p>
+        <h6>Privacy Policy</h6>
+        <p>
+          TrackPawPH collects and processes your data to maintain pet records, provide notifications, and improve services.
+          We will not share your personal information without your consent.
+        </p>
+        <div class="form-check mt-3">
+          <input class="form-check-input" type="checkbox" id="agreeTermsModal" style="background-color: transparent; border: 2px solid white;">
+          <label class="form-check-label" for="agreeTermsModal" style="color: white; font-size: 14px;">
+            I agree to the Terms of Service and Privacy Policy
+          </label>
+        </div>
+      </div>
+      
+      <!-- Footer -->
+      <div class="modal-footer justify-content-center" style="border-top: none;">
+        <button type="button" class="btn btn-primary" id="confirmTermsBtn" disabled style="border-radius: 50px; padding: 8px 20px;">Confirm & Create Account</button>
+      </div>
+    </div>
+  </div>
+</div>
   <div class="modal fade" id="signupSuccessModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content border-0 shadow">
@@ -511,7 +572,6 @@
 <script>
 const password = document.getElementById("password");
 const confirmPassword = document.getElementById("confirm_password");
-const signupBtn = document.getElementById("signupBtn");
 const strengthBar = document.getElementById("passwordStrengthBar");
 const strengthText = document.getElementById("passwordStrengthText");
 const showPassword = document.getElementById("showPassword");
@@ -617,6 +677,29 @@ usernameInput.addEventListener("input", () => {
 // ===== Initial Check =====
 document.addEventListener("DOMContentLoaded", () => {
   updateSignupButton();
+});
+</script>
+<script>
+const signupBtn = document.getElementById("signupBtn");
+const termsModal = new bootstrap.Modal(document.getElementById("termsModal"));
+const agreeTermsModal = document.getElementById("agreeTermsModal");
+const confirmTermsBtn = document.getElementById("confirmTermsBtn");
+const signupForm = document.querySelector("form");
+
+// Show modal when "Create Account" is clicked
+signupBtn.addEventListener("click", () => {
+  termsModal.show();
+});
+
+// Enable confirm button only if checkbox is checked
+agreeTermsModal.addEventListener("change", () => {
+  confirmTermsBtn.disabled = !agreeTermsModal.checked;
+});
+
+// Submit form when confirmed
+confirmTermsBtn.addEventListener("click", () => {
+  termsModal.hide();
+  signupForm.submit(); // triggers backend to send verification email
 });
 </script>
 </body>
