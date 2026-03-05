@@ -665,25 +665,19 @@ def signup():
         password = request.form['password']
         confirm_password = request.form['confirm_password']
 
+        # ===== Password match check =====
         if password != confirm_password:
             flash('Passwords do not match.', 'error')
-            # Render the template directly, don't redirect
-            return render_template(
-                'signup.html',
-                form_data=form_data,
-                clear_passwords=True,   # flag to clear password fields
-            )
+            return render_template('signup.html', form_data=form_data, clear_passwords=True)
 
+        # ===== Password strength check =====
         if len(password) < 8 \
-        or not re.search(r"[A-Z]", password) \
-        or not re.search(r"[a-z]", password) \
-        or not re.search(r"[0-9]", password) \
-        or not re.search(r"[^A-Za-z0-9]", password):
-            flash(
-                "Password must be at least 8 characters and include uppercase, lowercase, number, and special character.",
-                "error"
-            )
-            return redirect(url_for("signup"))
+            or not re.search(r"[A-Z]", password) \
+            or not re.search(r"[a-z]", password) \
+            or not re.search(r"[0-9]", password) \
+            or not re.search(r"[^A-Za-z0-9]", password):
+            flash("Password must be at least 8 characters and include uppercase, lowercase, number, and special character.", "error")
+            return render_template('signup.html', form_data=form_data, clear_passwords=True)
         
         if form_data['username'] and User.query.filter_by(username=form_data['username']).first():
             flash('Username already taken.', 'error')
@@ -695,7 +689,6 @@ def signup():
             form_data['email'] = ''       # 👈 CLEAR ONLY EMAIL
             return render_template('signup.html', form_data=form_data)
         
-
         user = User(
             email=form_data['email'],
             name=form_data['name'],
@@ -716,13 +709,16 @@ def signup():
         # Use BASE_URL instead of url_for
         verify_link = f"{BASE_URL}/verify-email/{token}"
 
+        deadline_date = datetime.now() + timedelta(days=7)
+        deadline = deadline_date.strftime("%B %d, %Y")
+        
         html_content = render_template(
             'email_verification.html',
             brand_name='TrackPawPH',
-            logo_url=f"{BASE_URL}/static/images/logo.png",
+            logo_url=f"{BASE_URL}/static/images/logo1.png",
             user_name=user.name,
             verify_link=verify_link,
-            deadline='March 15, 2026',
+            deadline=deadline,
             terms_url=f"{BASE_URL}/terms",
             privacy_url=f"{BASE_URL}/privacy",
             help_url=f"{BASE_URL}/help",
@@ -740,7 +736,7 @@ def signup():
             from_email='TrackPawPH <no-reply@trackpawph.com>',
             to_emails=user.email,
             html_content=html_content,
-            subject="Verify Your Email Confirm Your Email for TrackPawPH"
+            subject="Verify Your Email for TrackPawPH"
         )
 
         try:
