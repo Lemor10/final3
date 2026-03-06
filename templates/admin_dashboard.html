@@ -8,7 +8,7 @@
     body { 
       background-color: #f4f6f8; 
       font-family: "Poppins", sans-serif; 
-      color: #495057;
+      color: #000000;
     }
     /* Cards */
     .card { 
@@ -123,6 +123,7 @@
   <i class="bi bi-shield-lock-fill me-2" style="font-size: 30px;"></i>
   Admin Dashboard
 </div>
+<hr>
   <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4"></div>
     <div class="card mb-4">
@@ -146,7 +147,7 @@
                 <td>{{ u.name }}</td>
                 <td>{{ u.role | capitalize }}</td>
                 <td>
-                  <div class="dropdown">
+                  <div class="drop">
                     <button class="btn btn-sm dropdown-toggle" type="button" id="ownerActionsDropdown{{ u.id }}" data-bs-toggle="dropdown" aria-expanded="false">
                       <i class="bi bi-three-dots-vertical"></i>
                     </button>
@@ -175,7 +176,8 @@
               {% endfor %}
             </tbody>
           </table>
-          <!-- Pagination -->
+        </div>
+                  <!-- Pagination -->
 <nav aria-label="Owner pagination">
   <ul class="pagination justify-content-center mt-3 mb-0">
     {% if pagination.has_prev %}
@@ -217,8 +219,6 @@
     {% endif %}
   </ul>
 </nav>
-        </div>
-        
       </div>
       
     </div>
@@ -283,8 +283,9 @@
               {% for d in u.dogs %}
               <tr>
                 <td>{{ d.name }}</td>
+                <td>{{ d.owner_name }}</td>
                 <td>{{ d.breed }}</td>
-                <td>{{ d.age }}</td>
+                <td>{{ d.age if d.age else 'N/A' }}</td>
                 <td>{{ d.gender }}</td>
                 <td>
                   {% if d.vaccinated == 'Vaccinated' %}
@@ -391,6 +392,7 @@
 
             <div class="col-8 col-md-8">
               <h5 class="fw-bold text-success mb-1"><i class="text-success bi bi-shield-check"></i> {{ d.name }}</h5>
+              <p class="text-muted small mb-1"><strong>Registered by:</strong> {{ d.registered_by_admin }}</p>
               <p class="text-muted small mb-1"><strong>Breed:</strong> {{ d.breed }}</p>
               <p class="text-muted small mb-1"><strong>Owner:</strong> {{ d.owner_name or "Stray" }}</p>
               <p class="text-muted small mb-1"><strong>Birthdate:</strong> {{ d.birthdate if d.birthdate else 'N/A' }}</p>
@@ -482,6 +484,7 @@
             
             <div class="col-8 col-md-8">
               <h5 class="fw-bold text-danger mb-1"><i class="text-danger bi bi-x-circle"></i> {{ d.name }}</h5>
+              <p class="text-muted small mb-1"><strong>Registered by:</strong> {{ d.registered_by_admin }}</p>
               <p class="text-muted small mb-1"><strong>Breed:</strong> {{ d.breed }}</p>
               <p class="text-muted small mb-1"><strong>Owner:</strong> {{ d.owner_name or "Stray" }}</p>
               <p class="text-muted small mb-1"><strong>Birthdate:</strong> {{ d.birthdate if d.birthdate else 'N/A' }}</p>
@@ -708,14 +711,13 @@
   </div>
 </div>
 {% endfor %}
-
   
   <div class="modal fade" id="registerStrayDogModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <form method="POST" action="{{ url_for('admin_register_dog') }}" enctype="multipart/form-data">
           <div class="modal-header bg-success text-white">
-            <h5 class="modal-title">Register Stray Dog</h5>
+            <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Register Dog</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
@@ -723,8 +725,18 @@
               <label>Dog Image</label>
               <input type="file" name="dog_image" class="form-control" accept="image/*">
             </div>
+            <div class="alert alert-warning py-2 mt-2 d-flex align-items-center" role="alert">
+              <i class="bi bi-exclamation-circle-fill me-2"></i>
+              <small class="mb-0">
+                Please upload a clear full-body photo of the dog.
+              </small>
+            </div>
             <div class="mb-3">
-              <label>Name</label>
+              <label>Owner's full name Name</label>
+              <input type="text" name="owner_name" class="form-control" placeholder="Ex. Juan Dela Cruz">
+            </div>
+            <div class="mb-3">
+              <label>Dog Name</label>
               <input type="text" name="name" class="form-control" required>
             </div>
             <div class="mb-3">

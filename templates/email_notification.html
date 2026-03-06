@@ -1,10 +1,10 @@
-<!-- templates/email_verification.html -->
+<!-- templates/email_notification.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Verify Your Email</title>
+<title>TrackPawPH Notification</title>
 
 <style>
 body {
@@ -73,6 +73,7 @@ a {
 h3 {
     color: #081a30;
 }
+
 ul {
     padding-left: 20px;
 }
@@ -86,7 +87,6 @@ ul {
 </head>
 
 <body>
-
 <div class="container">
 
     <!-- HEADER -->
@@ -96,52 +96,29 @@ ul {
 
     <!-- CONTENT -->
     <div class="content">
+        {% if custom_message %}
+            <p>{{ custom_message|safe }}</p>
+        {% endif %}
 
-        <p>Hello {{ user_name }},</p>
-
-        <p>
-        You registered an account at <strong>{{ brand_name }}</strong>.  
-        To activate your account and begin using the platform, please verify your email address by clicking the button below.
-        </p>
-
+        {% if action_link %}
         <p style="text-align:center;">
-            <a href="{{ verify_link }}" class="btn">Verify Email</a>
+            <a href="{{ action_link }}" class="btn">{{ action_text }}</a>
         </p>
+        {% endif %}
 
-        <p>
-        By verifying your email, you agree to our 
-        <a href="{{ terms_url }}">Terms of Service</a> and 
-        <a href="{{ privacy_url }}">Privacy Policy</a>.
-        </p>
-
-        <h3>Why Verify Your Email?</h3>
-        <ul>
-            <li>Secure your account from unauthorized access.</li>
-            <li>Receive important notifications about your pets’ registrations and vaccinations.</li>
-            <li>Activate your account immediately and access all features.</li>
-        </ul>
-
+        {% if additional_info %}
         <h3>Next Steps</h3>
-        <ol>
-            <li>Click the "Verify Email" button above.</li>
-            <li>Login to your account using your credentials.</li>
-            <li>Complete your pet profiles and explore TrackPawPH features.</li>
-        </ol>
-
-        <p>
-        If you do not verify your email before <strong>{{ deadline }}</strong>, your account registration may expire and you may need to register again.
-        </p>
-
-        <p>
-        If you did not create an account with {{ brand_name }}, please ignore this email.
-        </p>
-
+        <ul>
+            {% for step in additional_info %}
+                <li>{{ step }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
     </div>
 
     <!-- FOOTER -->
     <div class="footer">
-
-        <p>You received this email because an account was registered using this email address on {{ brand_name }}.</p>
+        <p>You received this email because an account or pet record is associated with this email on {{ brand_name }}.</p>
 
         <!-- SOCIAL ICONS -->
         <p class="social-icons">
@@ -155,10 +132,8 @@ ul {
         </p>
 
         <p>© {{ year }} {{ brand_name }}. All rights reserved.</p>
-
     </div>
 
 </div>
-
 </body>
 </html>

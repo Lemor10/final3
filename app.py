@@ -123,6 +123,7 @@ class Dog(db.Model):
     deleted_by_owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     archived_at = db.Column(db.DateTime)  # <-- ADD THIS
     name = db.Column(db.String(120), nullable=False)
+    registered_by_admin = db.Column(db.String(100))  # must exist
     breed = db.Column(db.String(120))
     #age = db.Column(db.Integer)
     birthdate = db.Column(db.Date)  # New
@@ -217,23 +218,21 @@ def generate_vaccination_notifications(user_id, dog):
         
         milestone = milestones[days_left]
 
-        # Prepare message
+        # Determine message
         if milestone == "overdue":
             title = "Vaccination Overdue"
-            message = ( f"Dear {dog.owner_name},\n\n"
-            f"Our records indicate that {dog.name}'s vaccination is overdue. "
-            f"We strongly recommend that you schedule a visit with your veterinarian "
-            f"as soon as possible to ensure {dog.name}'s continued health and wellbeing.\n\n"
-            f"Thank you for your attention."
-            )
+            message = (f"Dear {dog.owner_name},<br><br>"
+                    f"Our records indicate that <strong>{dog.name}</strong>'s vaccination is overdue. "
+                    f"Please schedule a visit with your veterinarian as soon as possible "
+                    f"to ensure {dog.name}'s continued health and wellbeing.<br><br>"
+                    f"Thank you for your attention.")
             notif_type = "overdue"
         else:
             title = "Vaccination Due Soon"
-            message = ( f"Dear {dog.owner_name},\n\n"
-            f"This is a friendly reminder that {dog.name} is due for vaccination in {days_left} day{'s' if days_left > 1 else ''}. "
-            f"Please schedule an appointment with your veterinarian to keep {dog.name} up-to-date with vaccinations.\n\n"
-            f"Thank you for ensuring your pet’s health."
-            )
+            message = (f"Dear {dog.owner_name},<br><br>"
+                    f"This is a friendly reminder that <strong>{dog.name}</strong> is due for vaccination in {days_left} day{'s' if days_left > 1 else ''}. "
+                    f"Please schedule an appointment with your veterinarian to keep {dog.name} up-to-date with vaccinations.<br><br>"
+                    f"Thank you for ensuring your pet’s health.")
             notif_type = "reminder"
 
         existing = Notification.query.filter_by(
@@ -263,84 +262,163 @@ def generate_vaccination_notifications(user_id, dog):
         db.session.add(notif)
         db.session.flush()
 
-        # Send email
+        # Send email using HTML template
         user = db.session.get(User, user_id)
         if user.email and not notif.email_sent:
-            send_notification_email(to=user.email, subject=title, body=message)
+            send_notification_email(
+                to=user.email,
+                subject=title,
+                user_name=dog.owner_name,
+                message_body=message
+            )
             notif.email_sent = True
 
         db.session.commit()
 
 def generate_admin_notifications(admin_user_id):
-        tz = pytz.timezone("Asia/Manila")
-        today = datetime.now(tz).date()
-        dogs = Dog.query.filter_by(owner_id=None).all()
+    """
+    Generate vaccination reminders for admin for stray/unassigned dogs.
+    Sends HTML emails using the email_notification.html template.
+    """
+    tz = pytz.timezone("Asia/Manila")
+    today = datetime.now(tz).date()
 
-        for dog in dogs:
-            if not dog.next_vaccination:
-                continue
+    # Get all stray/unassigned dogs
+    dogs = Dog.query.filter_by(owner_id=None).all()
 
-            # Owner-style milestones
-            days_left = (dog.next_vaccination - today).days
-            milestones = {7: "7_days", 3: "3_days", 1: "1_day", 0: "overdue"}
+    for dog in dogs:
+        if not dog.next_vaccination:
+            continue
 
-            if days_left not in milestones:
-                continue
+        days_left = (dog.next_vaccination - today).days
+        milestones = {7: "7_days", 3: "3_days", 1: "1_day", 0: "overdue"}
 
-            milestone = milestones[days_left]
+        if days_left not in milestones:
+            continue
 
-            existing = Notification.query.filter_by(
-                user_id=admin_user_id,
-                dog_id=dog.id,
-                milestone=milestone
-            ).first()
+        milestone = milestones[days_left]
 
-            if existing:
-                continue
+        # Check for existing notification for this milestone/type
+        notif_type = "reminder" if days_left > 0 else "overdue"
+        existing = Notification.query.filter_by(
+            user_id=admin_user_id,
+            dog_id=dog.id,
+            type=notif_type,
+            milestone=milestone
+        ).first()
+        if existing:
+            continue
 
-            if milestone == "overdue":
-                title = "Stray Dog Vaccination Overdue"
-                message = f"'{dog.name}' vaccination is overdue!"
-                notif_type = "overdue"
-            else:
-                title = "Stray Dog Vaccination Due Soon"
-                message = f"'{dog.name}' needs vaccination in {days_left} days!"
-                notif_type = "reminder"
+        # Determine title and message
+        if milestone == "overdue":
+            title = "Stray Dog Vaccination Overdue"
+            message = f"The vaccination for <strong>{dog.name}</strong> is overdue!, please notify the dog owner <strong>{dog.owner_name}</strong>"
+            additional_info = [
+                "Assign an owner if available.",
+                "Schedule the vaccination immediately."
+            ]
+        else:
+            title = "Stray Dog Vaccination Due Soon"
+            message = f"The stray dog <strong>{dog.name}</strong> needs vaccination in {days_left} day{'s' if days_left > 1 else ''}!, please notify the dog owner <strong>{dog.owner_name}</strong>"
+            additional_info = [
+                "Check if the dog has an owner.",
+                "Schedule a vaccination appointment."
+            ]
 
-            existing = Notification.query.filter_by(
-                    user_id=admin_user_id,
-                    dog_id=dog.id,
-                    type="stray_registered"
-                ).first()
-            if existing:
-                continue
+        # Create notification record
+        notif = Notification(
+            user_id=admin_user_id,
+            dog_id=dog.id,
+            title=title,
+            message=message,
+            type=notif_type,
+            milestone=milestone,
+            due_date=dog.next_vaccination,
+            email_sent=False
+        )
+        db.session.add(notif)
+        db.session.flush()
 
-            notif = Notification(
-                user_id=admin_user_id,
-                dog_id=dog.id,
-                title=title,
-                message=message,
-                type=notif_type,
-                milestone=milestone,
-                due_date=dog.next_vaccination,
-                email_sent=False
+        # Send email using the HTML template
+        admin_user = db.session.get(User, admin_user_id)
+        if admin_user.email:
+            send_notification_email(
+                to=admin_user.email,
+                subject=title,
+                user_name="Admin",
+                message_body=message,
+                action_link=f"{BASE_URL}/admin/dogs/{dog.id}",
+                action_text="View Dog Details",
+                additional_info=additional_info,
+                is_admin=True
             )
-            db.session.add(notif)
+            notif.email_sent = True
 
-        db.session.commit()
+    db.session.commit()
 
-def send_notification_email(to, subject, body):
+def send_notification_email(
+    to, subject, user_name, message_body, 
+    action_link=None, action_text=None, additional_info=None, is_admin=False
+):
+    """
+    Sends a styled email notification using the email_notification.html template.
+    
+    Parameters:
+        to (str): Recipient email
+        subject (str): Email subject
+        user_name (str): Recipient name
+        message_body (str): Main message content (HTML allowed)
+        action_link (str, optional): URL for the call-to-action button
+        action_text (str, optional): Text for the button
+        additional_info (list[str], optional): List of bullet points for next steps
+        is_admin (bool, optional): If True, indicates this is an admin notification
+    """
     if not to:
         return
 
-    message = Mail(
-        from_email= 'TrackPawPH <no-reply@trackpawph.com>',  # MUST be verified in SendGrid
-        to_emails=to,
-        subject=subject,
-        html_content=f"<p>{body}</p>"
+    # Branding & links
+    brand_name = "TrackPawPH"
+    logo_url = f"{BASE_URL}/static/images/logo1.png"
+    help_url = f"{BASE_URL}/help"
+    facebook_url = "https://facebook.com/trackpawph"
+    instagram_url = "https://instagram.com/trackpawph"
+    twitter_url = "https://twitter.com/trackpawph"
+    facebook_icon_url = f"{BASE_URL}/static/images/facebook.png"
+    instagram_icon_url = f"{BASE_URL}/static/images/instagram.png"
+    twitter_icon_url = f"{BASE_URL}/static/images/x.png"
+
+    # Render HTML template
+    html_content = render_template(
+        'email_notification.html',
+        brand_name=brand_name,
+        logo_url=logo_url,
+        user_name=user_name,
+        custom_message=message_body,
+        action_link=action_link,
+        action_text=action_text,
+        additional_info=additional_info,
+        year=datetime.now().year,
+        help_url=help_url,
+        facebook_url=facebook_url,
+        instagram_url=instagram_url,
+        twitter_url=twitter_url,
+        facebook_icon_url=facebook_icon_url,
+        instagram_icon_url=instagram_icon_url,
+        twitter_icon_url=twitter_icon_url,
+        is_admin=is_admin
     )
 
+    # Prepare SendGrid email
+    message = Mail(
+        from_email=f'{brand_name} <no-reply@trackpawph.com>',
+        to_emails=to,
+        html_content=html_content,
+        subject=subject
+    )
+
+    # Send email
     try:
+        sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
         response = sg.send(message)
         print(f"Email sent to {to} (Status {response.status_code})")
     except Exception as e:
@@ -1441,6 +1519,7 @@ def admin_register_dog():
         return redirect(url_for('admin_dashboard'))
 
     name = request.form['name']
+    owner_name = request.form['owner_name'] if request.form['owner_name'] else "Stray (Admin Registered)"
     breed = format_breed(request.form['breed'])
     birthdate_str = request.form.get("birthdate")
     birthdate = datetime.strptime(birthdate_str, "%Y-%m-%d").date() if birthdate_str else None
@@ -1489,7 +1568,8 @@ def admin_register_dog():
         breed=breed,
         birthdate=birthdate,
         gender=gender,
-        owner_name="Stray (Admin Registered)",
+        registered_by_admin=current_user.name,  # ✅ Mark as admin-registered
+        owner_name=owner_name,
         owner_id=None,
         vaccinated=vaccinated,
         qr_code=qr_filename,

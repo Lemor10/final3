@@ -179,7 +179,7 @@ Your Registered Dogs
                       N/A
                     {% endif %}
                   </p>
-                  <p class="text-muted small mb-1"><strong>Age:</strong> {{ dog.age }}</p>
+                  <p class="text-muted small mb-1"><strong>Age:</strong> {{ dog.age if dog.age else "N/A" }}</p>
                     <p class="text-muted small mb-1"><strong>Last Vaccinated:</strong>
                       {{ dog.last_vaccination if dog.last_vaccination else "N/A" }}
                     </p>
@@ -283,14 +283,13 @@ Your Registered Dogs
           <div class="text-start mb-2">
               <label class="form-label">Upload Dog Image</label>
               <input type="file" name="dog_image" class="form-control" accept="image/*">
-<div class="alert alert-warning py-2 mt-2 d-flex align-items-center" role="alert">
-  <i class="bi bi-exclamation-circle-fill me-2"></i>
-  <small class="mb-0">
-    Please upload a clear full-body photo of the dog.
-  </small>
-</div>
+            <div class="alert alert-warning py-2 mt-2 d-flex align-items-center" role="alert">
+              <i class="bi bi-exclamation-circle-fill me-2"></i>
+              <small class="mb-0">
+                Please upload a clear full-body photo of the dog.
+              </small>
+            </div>
           </div>
-
           <div class="mb-3">
             <input type="text" name="name" class="form-control" placeholder="Name" required>
           </div>
@@ -318,7 +317,7 @@ Your Registered Dogs
 
           <div class="mb-3">
             <label>Birthdate</label>
-            <input type="date" name="birthdate" class="form-control" required>
+            <input type="date" name="birthdate" class="form-control">
           </div>
 
           <div class="mb-3">

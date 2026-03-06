@@ -70,7 +70,7 @@ h3 {
               {% endif %}
           </span>
           <div>
-              <div class="fw-semibold">{{ notif.message }}</div>
+              <div class="fw-semibold">{{ notif.message | safe }}</div>
               <small class="text-muted">{{ notif.due_date.strftime('%b %d, %Y') }}</small>
           </div>
       </div>
