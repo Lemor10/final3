@@ -35,16 +35,14 @@
 </div>
 <hr>
 
-<div class="d-flex justify-content-end mb-4">
-  <button id="mark-all-read" class="btn btn-sm btn-primary">Mark All as Read</button>
-</div>
-
 <div id="notifications-container">
   {% if g.notifications %}
   <div class="list-group" id="notifications-list">
     {% for notif in g.notifications %}
     <li data-id="{{ notif.id }}"
         data-read="{{ 'true' if notif.is_read else 'false' }}"
+        data-dismissed="{{ 'true' if notif.dismissed else 'false' }}"
+        data-created-at="{{ notif.created_at.isoformat() }}"
         class="list-group-item list-group-item-action mb-2 p-3 shadow-sm rounded d-flex justify-content-between align-items-center notification-item">
         
         <div class="d-flex align-items-start gap-3">
@@ -80,42 +78,92 @@
 {% block scripts %}
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-
-  const notifications = document.querySelectorAll('.notification-item');
-  const notifDot = document.getElementById('notif-dot');
-
-  // Remove notification with fade
-  function removeNotification(li) {
-    li.classList.add("fade-out");
-    setTimeout(() => li.remove(), 400);
-  }
-
-  async function markAsRead(id, li) {
-    await fetch(`/notifications/read/${id}`, {
-        method: 'POST',
-        headers: { 'X-CSRFToken': '{{ csrf_token() if csrf_token else "" }}' }
+    document.querySelectorAll('.notification-item').forEach(li => {
+        li.dataset.read = "true";   // mark read in DOM
+        li.querySelector('.badge')?.remove(); // remove "New" badge
     });
-    li.querySelector('.badge')?.remove();
-    removeNotification(li);
-    // Update navbar dot
-    const unread = document.querySelectorAll('li[data-read="false"]').length;
+
+    if(notifDot) notifDot.classList.add('d-none'); // hide red dot
+});
+  const notifDot = document.getElementById('notif-dot');
+  const notificationsContainer = document.getElementById('notifications-container');
+
+  function updateNotifDot() {
+    const unread = document.querySelectorAll('.notification-item[data-read="false"]').length;
     if(notifDot) notifDot.classList.toggle('d-none', unread === 0);
   }
 
-  // Click individual notification
-  notifications.forEach(li => {
+  function removeNotification(li) {
+    li.classList.add("fade-out");
+    setTimeout(() => {
+      li.remove();
+      checkEmptyNotifications();
+      updateNotifDot();
+    }, 400);
+  }
+
+  function checkEmptyNotifications() {
+    const list = document.getElementById("notifications-list");
+    if (!list || list.children.length === 0) {
+      if(!document.getElementById("no-notifications")){
+        const alert = document.createElement("div");
+        alert.id = "no-notifications";
+        alert.className = "alert alert-info rounded shadow-sm mt-3";
+        alert.innerText = "No notifications at this time.";
+        notificationsContainer.appendChild(alert);
+      }
+      if(notifDot) notifDot.classList.add('d-none');
+    }
+  }
+
+  async function markAsRead(id, li) {
+    try {
+      await fetch(`/notifications/read/${id}`, { method: 'POST' });
+      li.dataset.read = "true";
+      li.querySelector('.badge')?.remove();
+      removeNotification(li);
+    } catch(err) {
+      console.error("Failed to mark notification as read:", err);
+    }
+  }
+
+  // click on notification
+  document.querySelectorAll('.notification-item').forEach(li => {
     li.addEventListener('click', () => markAsRead(li.dataset.id, li));
   });
 
-  // Mark all read
-  document.getElementById('mark-all-read').addEventListener('click', () => {
-    notifications.forEach(li => {
-      if(li.dataset.read === 'false'){
-        markAsRead(li.dataset.id, li);
-      }
+  // mark all as read
+  document.getElementById('mark-all-read')?.addEventListener('click', () => {
+    document.querySelectorAll('.notification-item[data-read="false"]').forEach(li => {
+      markAsRead(li.dataset.id, li);
     });
   });
 
-});
+  // auto cleanup old notifications every 10s
+setInterval(async () => {
+    try {
+        const res = await fetch("/notifications/cleanup", { method: "POST" });
+        const data = await res.json();
+        if (data.success) {
+            const now = new Date();
+            document.querySelectorAll("li.notification-item").forEach(li => {
+                const read = li.dataset.read === "true";
+                const dismissed = li.dataset.dismissed === "true";
+                const createdAt = new Date(li.dataset.createdAt);
+                const ageMinutes = (now - createdAt) / 60000;
+
+                if ((read && ageMinutes > 1) || (!read && ageMinutes > 2) || dismissed) {
+                    li.remove();
+                }
+            });
+            checkEmptyNotifications();
+            updateNotifDot();
+        }
+    } catch(err) {
+        console.error("Cleanup failed:", err);
+    }
+}, 10000); // every 10s
+  // update dot initially
+  updateNotifDot();
 </script>
 {% endblock %}

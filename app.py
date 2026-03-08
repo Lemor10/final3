@@ -581,23 +581,22 @@ def admin_notifications():
     if current_user.role != 'admin':
         abort(403)
 
-    generate_admin_notifications(current_user.id)
+    # mark all as read
+    Notification.query.filter_by(
+        user_id=current_user.id,
+        is_read=False,
+        dismissed=False
+    ).update({Notification.is_read: True}, synchronize_session=False)
+    db.session.commit()
 
     notifications = Notification.query.filter_by(
         user_id=current_user.id,
         dismissed=False
     ).order_by(Notification.created_at.desc()).all()
 
-    unread_count = Notification.query.filter_by(
-        user_id=current_user.id,
-        is_read=False,
-        dismissed=False
-    ).count()
-
     return render_template(
         'admin_notifications.html',
-        notifications=notifications,
-        unread_count=unread_count
+        notifications=notifications
     )
 
 @login_manager.user_loader
@@ -1586,6 +1585,8 @@ def admin_register_dog():
 
     db.session.add(new_dog)
     db.session.commit()
+
+    generate_admin_notifications(current_user.id)
 
     return redirect(url_for('admin_dashboard'))
 

@@ -226,5 +226,10 @@
         link.classList.add('active');
       });
     });
+    // Run on page load
+updateNotifDot();
+
+// Optional: poll every 10 seconds for live updates
+setInterval(updateNotifDot, 10000);
   }
 </script>
