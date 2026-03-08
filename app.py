@@ -52,7 +52,7 @@ os.makedirs(app.config['UPLOAD_FOLDER_PROFILE'], exist_ok=True)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'd1f4eb1ea051a0cf47ddb5be36e4d5e5f3073bb242b8ea7136bda03612b82c58')
 on_render = os.environ.get('RENDER') is not None 
 if on_render: app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') 
-else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://final3_qgjp_user:sDzcu1JYnbFS0jVJJ6wQSctYY2JbLgpk@dpg-d6c5g9p5pdvs73folaag-a.singapore-postgres.render.com/final3_qgjp' 
+else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:somepassword@localhost:5432/drs_local' 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
@@ -766,24 +766,18 @@ def signup():
             form_data['email'] = ''       # 👈 CLEAR ONLY EMAIL
             return render_template('signup.html', form_data=form_data)
         
-        user = User(
-            email=form_data['email'],
-            name=form_data['name'],
-            username=form_data['username'],
-            contact=form_data['contact'],
-            address=full_address,
-            role='owner'
-        )
-        user.set_password(password)
+        # Pack all signup data into a dictionary
+        signup_data = {
+            "email": form_data['email'],
+            "name": form_data['name'],
+            "username": form_data['username'],
+            "contact": form_data['contact'],
+            "address": full_address,
+            "password": password
+        }
 
-        db.session.add(user)
-        db.session.commit()
-
-        token = serializer.dumps(user.email, salt="email-verify")
-        user.verification_token = token
-        db.session.commit()
-
-        # Use BASE_URL instead of url_for
+        # Create token with all signup info
+        token = serializer.dumps(signup_data, salt="email-verify")
         verify_link = f"{BASE_URL}/verify-email/{token}"
 
         deadline_date = datetime.now() + timedelta(days=7)
@@ -793,7 +787,7 @@ def signup():
             'email_verification.html',
             brand_name='TrackPawPH',
             logo_url=f"{BASE_URL}/static/images/logo1.png",
-            user_name=user.name,
+            user_name=form_data['name'],
             verify_link=verify_link,
             deadline=deadline,
             terms_url=f"{BASE_URL}/terms",
@@ -811,7 +805,7 @@ def signup():
 
         message = Mail(
             from_email='TrackPawPH <no-reply@trackpawph.com>',
-            to_emails=user.email,
+            to_emails=form_data['email'],
             html_content=html_content,
             subject="Verify Your Email for TrackPawPH"
         )
@@ -826,9 +820,7 @@ def signup():
         except Exception as e:
             print("Verification email failed:", e)
 
-        flash("Verification email sent. Please check your inbox.", "info")
-        return redirect(url_for("check_email", email=user.email))
-
+        return redirect(url_for("check_email", email=form_data['email']))
     return render_template('signup.html')
 
 @app.route("/check-email")
@@ -856,7 +848,17 @@ def resend_verification():
         flash("Email already verified.", "success")
         return redirect(url_for("login"))
 
-    token = serializer.dumps(user.email, salt="email-verify")
+   # Resend verification route
+    token_data = {
+        "email": user.email,
+        "name": user.name,
+        "username": user.username,
+        "contact": user.contact,
+        "address": user.address
+        # optionally "password": user.password_hash if needed
+    }
+
+    token = serializer.dumps(token_data, salt="email-verify")
     user.verification_token = token
     db.session.commit()
 
@@ -888,19 +890,41 @@ def resend_verification():
 @app.route("/verify-email/<token>")
 def verify_email(token):
     try:
-        email = serializer.loads(token, salt="email-verify", max_age=3600)
-    except:
+        signup_data = serializer.loads(token, salt="email-verify", max_age=604800)  # 7 days
+    except Exception:
         flash("Verification link is invalid or expired.", "danger")
+        return redirect(url_for("signup"))
+
+    # Ensure signup_data is a dict
+    if isinstance(signup_data, str):
+        flash("Invalid verification data. Please request a new verification email.", "danger")
+        return redirect(url_for("signup"))
+
+    # Check if email/username is already used (race condition)
+    if User.query.filter_by(email=signup_data['email']).first():
+        flash("Email already registered.", "warning")
         return redirect(url_for("login"))
 
-    user = User.query.filter_by(email=email).first()
+    if User.query.filter_by(username=signup_data['username']).first():
+        flash("Username already taken.", "warning")
+        return redirect(url_for("login"))
 
-    if user:
-        user.email_verified = True
-        db.session.commit()
+    # Create user only after verification
+    user = User(
+        email=signup_data['email'],
+        name=signup_data['name'],
+        username=signup_data['username'],
+        contact=signup_data['contact'],
+        address=signup_data['address'],
+        role='owner',
+        email_verified=True  # Already verified
+    )
+    user.set_password(signup_data['password'])
 
-        return redirect(url_for("check_email", email=user.email, verified=1))
+    db.session.add(user)
+    db.session.commit()
 
+    flash("Your email is verified and account created! You can now log in.", "success")
     return redirect(url_for("login"))
 
 @app.route("/forgot-password", methods=["GET", "POST"])

@@ -151,7 +151,6 @@
     <div class="col-lg-8 col-12">
       <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
 <h4 class="fw-bold">
-<i class="bi bi-heart-fill text-danger"></i>
 Your Registered Dogs
 </h4>        <button class="btn btn-success btn-sm px-4" data-bs-toggle="modal" data-bs-target="#addDogModal"> <i class="bi bi-plus-circle"></i> Register Dog</button>
       </div>
@@ -236,11 +235,6 @@ Your Registered Dogs
 <div class="text-center py-5">
   <i class="bi bi-emoji-frown fs-1 text-muted"></i>
   <p class="mt-3 text-muted">You haven't registered any dogs yet.</p>
-  <button class="btn btn-success btn-sm"
-          data-bs-toggle="modal"
-          data-bs-target="#addDogModal">
-    Register Your First Dog
-  </button>
 </div>        </div>
         {% endfor %}
       </div>
@@ -410,7 +404,12 @@ Your Registered Dogs
             <img src="{{ url_for('static', filename='dog_images/' ~ dog.image) }}" class="img-fluid mt-2 rounded" style="max-height: 150px;">
             {% endif %}
           </div>
-
+  <div class="alert alert-warning py-2 mt-2 d-flex align-items-center" role="alert">
+              <i class="bi bi-exclamation-circle-fill me-2"></i>
+              <small class="mb-0">
+                Please upload a clear full-body photo of the dog.
+              </small>
+            </div>
           <div class="mb-3">
             <input type="text" name="name" class="form-control" value="{{ dog.name }}" required>
           </div>

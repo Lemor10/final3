@@ -392,7 +392,7 @@
 
             <div class="col-8 col-md-8">
               <h5 class="fw-bold text-success mb-1"><i class="text-success bi bi-shield-check"></i> {{ d.name }}</h5>
-              <p class="text-muted small mb-1"><strong>Registered by:</strong> {{ d.registered_by_admin }}</p>
+              <p class="text-muted small mb-1"><strong>Registered by:</strong> {{ d.registered_by_admin if d.registered_by_admin else 'Owner' }}</p>
               <p class="text-muted small mb-1"><strong>Breed:</strong> {{ d.breed }}</p>
               <p class="text-muted small mb-1"><strong>Owner:</strong> {{ d.owner_name or "Stray" }}</p>
               <p class="text-muted small mb-1"><strong>Birthdate:</strong> {{ d.birthdate if d.birthdate else 'N/A' }}</p>
@@ -484,7 +484,7 @@
             
             <div class="col-8 col-md-8">
               <h5 class="fw-bold text-danger mb-1"><i class="text-danger bi bi-x-circle"></i> {{ d.name }}</h5>
-              <p class="text-muted small mb-1"><strong>Registered by:</strong> {{ d.registered_by_admin }}</p>
+              <p class="text-muted small mb-1"><strong>Registered by:</strong> {{ d.registered_by_admin if d.registered_by_admin else 'Owner' }}</p>
               <p class="text-muted small mb-1"><strong>Breed:</strong> {{ d.breed }}</p>
               <p class="text-muted small mb-1"><strong>Owner:</strong> {{ d.owner_name or "Stray" }}</p>
               <p class="text-muted small mb-1"><strong>Birthdate:</strong> {{ d.birthdate if d.birthdate else 'N/A' }}</p>
@@ -653,8 +653,8 @@
           </div>
 
           <div class="mb-3">
-            <label>Age</label>
-            <input type="number" name="age" class="form-control" value="{{ d.age }}" required>
+            <label>Birthdate</label>
+            <input type="date" name="birthdate" class="form-control" value="{{ d.birthdate|default('', true) }}" required>
           </div>
 
           <div class="mb-3">
@@ -700,7 +700,45 @@
                   data-dog-id="{{ d.id }}"
                   value="{{ d.next_vaccination }}">
           </div>
+                      <div class="mb-3">
+            <label>Vaccinated Conducted At</label>
+            <input type="text"
+                  name="vaccination_location"
+                  class="form-control"
+                  id="registerVaccinationLocation"
+                  placeholder="In-house, Veterinary Clinic, Animal Hospital, DA Office, etc."
+                  title="Dog must be vaccinated">
+          </div>
+
+  <div class="mb-3">
+    <label>Vaccination Address:</label>
+    <input type="text"
+           name="vaccination_barangay"
+           class="form-control"
+           id="registerVaccinationBarangay"
+           title="Dog must be vaccinated" 
+           placeholder="Barangay">
+  </div>
+
+  <div class="mb-3">
+    <input type="text"
+      name="vaccination_municipality"
+      class="form-control"
+      id="registerVaccinationMunicipality"
+      title="Dog must be vaccinated" 
+      placeholder="Municipality">
+  </div>
+
+  <div class="mb-3">
+    <input type="text"
+      name="vaccination_province"
+      class="form-control"
+      id="registerVaccinationProvince"
+      title="Dog must be vaccinated"
+      placeholder="Province">
+  </div>
         </div>
+        
 
         <div class="modal-footer">
           <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -784,21 +822,21 @@
 
             <div class="mb-3">
               <label>Last Vaccination Date</label>
-              <input type="date" name="last_vaccination" id="registerLastVaccination" class="form-control">
+              <input type="date" name="last_vaccination" id="registerLastVaccination" class="form-control" disabled>
             </div>
 
             <div class="mb-3">
               <label>Next Vaccination Due</label>
-              <input type="date" name="next_vaccination" id="registerNextVaccination" class="form-control">
+              <input type="date" name="next_vaccination" id="registerNextVaccination" class="form-control" disabled>
             </div>
                       <div class="mb-3">
             <label>Vaccinated Conducted At</label>
             <input type="text"
                   name="vaccination_location"
                   class="form-control"
-                  id="registerVaccinationLocation"
+                  id="registerStrayVaccinationLocation"
                   placeholder="In-house, Veterinary Clinic, Animal Hospital, DA Office, etc."
-                  title="Dog must be vaccinated">
+                  title="Dog must be vaccinated" disabled>
           </div>
 
   <div class="mb-3">
@@ -806,27 +844,27 @@
     <input type="text"
            name="vaccination_barangay"
            class="form-control"
-           id="registerVaccinationBarangay"
+           id="registerStrayVaccinationBarangay"
            title="Dog must be vaccinated" 
-           placeholder="Barangay">
+           placeholder="Barangay" disabled>
   </div>
 
   <div class="mb-3">
     <input type="text"
       name="vaccination_municipality"
       class="form-control"
-      id="registerVaccinationMunicipality"
+      id="registerStrayVaccinationMunicipality"
       title="Dog must be vaccinated" 
-      placeholder="Municipality">
+      placeholder="Municipality" disabled>
   </div>
 
   <div class="mb-3">
     <input type="text"
       name="vaccination_province"
       class="form-control"
-      id="registerVaccinationProvince"
+      id="registerStrayVaccinationProvince"
       title="Dog must be vaccinated"
-      placeholder="Province">
+      placeholder="Province" disabled>
   </div>
 </div>
           <div class="modal-footer">
@@ -930,64 +968,96 @@ searchField.addEventListener('change', toggleBreedSuggestions);
 toggleBreedSuggestions(); // run on page load
 </script>
 <script>
-const registerStatus = document.getElementById('registerStatus');
-const registerLast = document.getElementById('registerLastVaccination');
-const registerNext = document.getElementById('registerNextVaccination');
-const registerLocation = document.getElementById('registerVaccinationLocation');
-const registerBarangay = document.getElementById('registerVaccinationBarangay');
-const registerMunicipality = document.getElementById('registerVaccinationMunicipality');
-const registerProvince = document.getElementById('registerVaccinationProvince');
+document.addEventListener("DOMContentLoaded", function () {
 
+  const registerStatus = document.getElementById('registerStatus');
+  const registerLast = document.getElementById('registerLastVaccination');
+  const registerNext = document.getElementById('registerNextVaccination');
+  const registerLocation = document.getElementById('registerStrayVaccinationLocation');
+  const registerBarangay = document.getElementById('registerStrayVaccinationBarangay');
+  const registerMunicipality = document.getElementById('registerStrayVaccinationMunicipality');
+  const registerProvince = document.getElementById('registerStrayVaccinationProvince');
 
-function toggleRegisterDates() {
-  if (registerStatus.value === 'Vaccinated') {
-    registerLast.disabled = false;
-    registerNext.disabled = false;
-    registerLocation.disabled = false;
-    registerBarangay.disabled = false;
-    registerMunicipality.disabled = false;
-    registerProvince.disabled = false;
-  } else {
-    registerLast.value = '';
-    registerNext.value = '';
-    registerLocation.value = '';
-    registerBarangay.value = '';
-    registerMunicipality.value = '';
-    registerProvince.value = '';
-    registerLast.disabled = true;
-    registerNext.disabled = true;
-    registerLocation.disabled = true;
-    registerBarangay.disabled = true;
-    registerMunicipality.disabled = true;
-    registerProvince.disabled = true;
-  }
-}
+  function toggleRegisterDates() {
 
-registerStatus.addEventListener('change', toggleRegisterDates);
+    if (registerStatus.value === 'Vaccinated') {
 
-// Initial state
-toggleRegisterDates();
-</script>
-<script>
-document.querySelectorAll('.edit-status').forEach(select => {
-  function toggleEditDates() {
-    const id = select.dataset.dogId;
-    const last = document.querySelector(`.edit-last[data-dog-id="${id}"]`);
-    const next = document.querySelector(`.edit-next[data-dog-id="${id}"]`);
+      registerLast.disabled = false;
+      registerNext.disabled = false;
+      registerLocation.disabled = false;
+      registerBarangay.disabled = false;
+      registerMunicipality.disabled = false;
+      registerProvince.disabled = false;
 
-    if (select.value === 'Vaccinated') {
-      last.disabled = false;
-      next.disabled = false;
     } else {
-      last.value = '';
-      next.value = '';
-      last.disabled = true;
-      next.disabled = true;
+
+      registerLast.value = '';
+      registerNext.value = '';
+      registerLocation.value = '';
+      registerBarangay.value = '';
+      registerMunicipality.value = '';
+      registerProvince.value = '';
+
+      registerLast.disabled = true;
+      registerNext.disabled = true;
+      registerLocation.disabled = true;
+      registerBarangay.disabled = true;
+      registerMunicipality.disabled = true;
+      registerProvince.disabled = true;
     }
   }
 
-  select.addEventListener('change', toggleEditDates);
-  toggleEditDates(); // Run once on modal load
+  registerStatus.addEventListener('change', toggleRegisterDates);
+
+  // Initial state when modal loads
+  toggleRegisterDates();
+
+});
+</script>
+<script>
+document.querySelectorAll('.edit-status').forEach(select => {
+
+  function toggleEditFields() {
+
+    const modal = select.closest('.modal');
+
+    const last = modal.querySelector('input[name="last_vaccination"]');
+    const next = modal.querySelector('input[name="next_vaccination"]');
+    const location = modal.querySelector('input[name="vaccination_location"]');
+    const barangay = modal.querySelector('input[name="vaccination_barangay"]');
+    const municipality = modal.querySelector('input[name="vaccination_municipality"]');
+    const province = modal.querySelector('input[name="vaccination_province"]');
+
+    if (select.value === 'Vaccinated') {
+
+      last.disabled = false;
+      next.disabled = false;
+      location.disabled = false;
+      barangay.disabled = false;
+      municipality.disabled = false;
+      province.disabled = false;
+
+    } else {
+
+      last.value = '';
+      next.value = '';
+      location.value = '';
+      barangay.value = '';
+      municipality.value = '';
+      province.value = '';
+
+      last.disabled = true;
+      next.disabled = true;
+      location.disabled = true;
+      barangay.disabled = true;
+      municipality.disabled = true;
+      province.disabled = true;
+    }
+  }
+
+  select.addEventListener('change', toggleEditFields);
+
+  toggleEditFields(); // run on modal load
 });
 </script>
 <script>

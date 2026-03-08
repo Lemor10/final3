@@ -54,7 +54,7 @@
           <tr>
             <!-- Dog Image -->
             <td>
-              <img src="{{ url_for('static', filename='dog_images/' ~ (d.image or 'default_dog.png')) }}"
+              <img src="{{ url_for('static', filename='dog_images/' ~ (d.image or 'logo.png')) }}"
                 alt="{{ d.name }}"
                 title="Click to view full size"
                 style="width: 70px; height: 70px; object-fit: cover; cursor: pointer;"
@@ -96,14 +96,6 @@
             </td>
 
             <td>
-                <!-- Restore Button -->
-  <button class="btn btn-success btn-sm me-1"
-          data-bs-toggle="modal"
-          data-bs-target="#restoreDogModal"
-          onclick="setRestoreDogForm('{{ url_for('admin_restore_dog', dog_id=d.id) }}', '{{ d.name }}')">
-    Restore
-  </button>
-
               <button class="btn btn-danger btn-sm"
                       data-bs-toggle="modal"
                       data-bs-target="#deleteDogModal"

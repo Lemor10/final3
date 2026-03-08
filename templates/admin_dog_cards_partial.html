@@ -4,7 +4,7 @@
             
             
             <div class="col-lg-4 col-12 dog-img-wrapper">
-                 <img src="{{ url_for('static', filename='dog_images/' ~ (d.image if d.image else 'default_dog.png')) }}"
+                 <img src="{{ url_for('static', filename='dog_images/' ~ (d.image if d.image else 'logo.png')) }}"
                   class="dog-img"
                   alt="{{ d.name }}"
                   style="cursor: pointer;"
@@ -13,9 +13,9 @@
 
             <div class="col-8 col-md-8">
               <h5 class="fw-bold text-success mb-1"><i class="text-success bi bi-shield-check"></i> {{ d.name }}</h5>
-              <p class="text-muted small mb-1"><strong>Registered by:</strong> {{ d.registered_by_admin }}</p>
+              <p class="text-muted small mb-1"><strong>Registered by:</strong> {{ d.registered_by_admin if d.registered_by_admin else 'Owner' }}</p>
               <p class="text-muted small mb-1"><strong>Breed:</strong> {{ d.breed }}</p>
-              <p class="text-muted small mb-1"><strong>Owner:</strong> {{ d.owner_name or "Stray" }}</p>
+              <p class="text-muted small mb-1"><strong>Owner:</strong> {{ d.owner_name if d.owner_name else 'Stray' }}</p>
               <p class="text-muted small mb-1"><strong>Birthdate:</strong> {{ d.birthdate if d.birthdate else 'N/A' }}</p>
               <p class="text-muted small mb-1"><strong>Age:</strong> {{ d.age if d.age else 'N/A' }}</p>
               <p class="text-muted small mb-1">
@@ -70,7 +70,7 @@
             
             
             <div class="col-lg-4 col-12 dog-img-wrapper">
-                 <img src="{{ url_for('static', filename='dog_images/' ~ (d.image if d.image else 'default_dog.png')) }}"
+                 <img src="{{ url_for('static', filename='dog_images/' ~ (d.image if d.image else 'logo.png')) }}"
                   class="dog-img"
                   alt="{{ d.name }}"
                   style="cursor: pointer;"
