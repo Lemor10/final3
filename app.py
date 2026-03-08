@@ -52,7 +52,7 @@ os.makedirs(app.config['UPLOAD_FOLDER_PROFILE'], exist_ok=True)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'd1f4eb1ea051a0cf47ddb5be36e4d5e5f3073bb242b8ea7136bda03612b82c58')
 on_render = os.environ.get('RENDER') is not None 
 if on_render: app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') 
-else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:somepassword@localhost:5432/drs_local' 
+else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://final3_qgjp_user:sDzcu1JYnbFS0jVJJ6wQSctYY2JbLgpk@dpg-d6c5g9p5pdvs73folaag-a.singapore-postgres.render.com/final3_qgjp' 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
