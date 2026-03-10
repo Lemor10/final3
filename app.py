@@ -29,12 +29,10 @@ from dotenv import load_dotenv
 import os
 import pytz
 from time import time
-import uuid
 
 load_dotenv()
 
 sg = SendGridAPIClient(os.getenv("SENDGRID_API_KEY"))
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 if os.environ.get("RENDER"):
     BASE_URL = os.environ.get("BASE_URL")
@@ -45,14 +43,11 @@ else:
 
 app = Flask(__name__)
 
-app.config['DOG_UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'data', 'dog_images')
+app.config['DOG_UPLOAD_FOLDER'] = os.path.join('static', 'dog_images')
 os.makedirs(app.config['DOG_UPLOAD_FOLDER'], exist_ok=True)
 
-app.config['UPLOAD_FOLDER_PROFILE'] = os.path.join(BASE_DIR, 'data', 'profile_images')
+app.config['UPLOAD_FOLDER_PROFILE'] = os.path.join('static', 'profile_images')
 os.makedirs(app.config['UPLOAD_FOLDER_PROFILE'], exist_ok=True)
-
-QR_FOLDER = os.path.join(BASE_DIR, 'data', 'qr_dogs')
-os.makedirs(QR_FOLDER, exist_ok=True)
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'd1f4eb1ea051a0cf47ddb5be36e4d5e5f3073bb242b8ea7136bda03612b82c58')
 on_render = os.environ.get('RENDER') is not None 
@@ -68,6 +63,9 @@ migrate = Migrate(app, db)
 login_manager = LoginManager()
 login_manager.login_view = 'login'
 login_manager.init_app(app)
+
+QR_FOLDER = os.path.join('static', 'qr_dogs')
+os.makedirs(QR_FOLDER, exist_ok=True)
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -528,25 +526,7 @@ def get_analysis_data(start_month=None, end_month=None):
         return f"Status: {response.status_code}"
     except Exception as e:
         return str(e)
-
-def save_file(file, folder):
-    """Save an uploaded file with a unique UUID prefix and return the filename."""
-    if not file or file.filename == '':
-        return None
-    filename = f"{uuid.uuid4()}_{secure_filename(file.filename)}"
-    file.save(os.path.join(folder, filename))
-    return filename
-
-def generate_qr_code(dog_uuid):
-    """Generate a QR code for a dog if it doesn't exist yet."""
-    qr_filename = f"{dog_uuid}.png"
-    qr_path = os.path.join(QR_FOLDER, qr_filename)
-    if not os.path.exists(qr_path):
-        qr_data = f"{BASE_URL}/dog/{dog_uuid}"
-        img = qrcode.make(qr_data)
-        img.save(qr_path)
-    return qr_filename
-
+    
 @app.route("/check-username")
 def check_username():
     username = request.args.get("username", "").strip().lower()
@@ -1106,11 +1086,12 @@ def owner_profile():
             flash("Profile updated successfully!", "success")
         elif 'profile_photo' in request.files:
             photo = request.files['profile_photo']
-            filename = save_file(photo, app.config['UPLOAD_FOLDER_PROFILE'])
-        if filename:
-            user.profile_photo = filename
-            db.session.commit()
-            flash("Profile photo updated successfully!", "success")
+            if photo.filename != '':
+                filename = secure_filename(photo.filename)
+                photo.save(os.path.join(app.config['UPLOAD_FOLDER_PROFILE'], filename))
+                user.profile_photo = filename
+                db.session.commit()
+                flash("Profile photo updated successfully!", "success")
 
         return redirect(url_for('owner_profile'))
 
@@ -1152,11 +1133,19 @@ def owner_add_dog():
 
     dog_uuid = str(uuid.uuid4())
 
-    # Save dog image
-    filename = save_file(image, app.config['DOG_UPLOAD_FOLDER']) if image else None
+    if image and image.filename != '':
+        filename = secure_filename(image.filename)
+        DOG_IMAGE_FOLDER = os.path.join('static', 'dog_images')
+        os.makedirs(DOG_IMAGE_FOLDER, exist_ok=True)
+        image.save(os.path.join(DOG_IMAGE_FOLDER, filename))
+    else:
+        filename = None
 
-    # Generate QR code
-    qr_filename = generate_qr_code(dog_uuid)
+    qr_data = url_for("dog_info", dog_uuid=dog_uuid, _external=True)
+    img = qrcode.make(qr_data)
+    qr_filename = f"{dog_uuid}.png"
+    os.makedirs(QR_FOLDER, exist_ok=True)
+    img.save(os.path.join(QR_FOLDER, qr_filename))
 
     new_dog = Dog(
         uuid=dog_uuid,
@@ -1247,8 +1236,10 @@ def owner_edit_dog(dog_id):
 
     if 'dog_image' in request.files:
         file = request.files['dog_image']
-        filename = save_file(file, app.config['DOG_UPLOAD_FOLDER'])
-        if filename:
+        if file.filename != '':
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(app.config['DOG_UPLOAD_FOLDER'], filename)
+            file.save(file_path)
             dog.image = filename
 
     db.session.commit()
@@ -1274,27 +1265,19 @@ def generate_qr(dog_uuid):
 
 @app.route('/qrcodes/<path:filename>')
 def qrcodes(filename):
-    if not os.path.exists(os.path.join(QR_FOLDER, filename)):
-        abort(404)
     return send_from_directory(QR_FOLDER, filename)
 
 @app.route('/download_qr/<string:dog_uuid>')
 def download_qr(dog_uuid):
-
     dog = Dog.query.filter_by(uuid=dog_uuid).first_or_404()
 
     if not dog.qr_code:
         abort(404, description="QR code not found")
 
-    file_path = os.path.join(QR_FOLDER, dog.qr_code)
+    file_path = os.path.join(app.root_path, 'static', 'qr_dogs', dog.qr_code)
 
-    # If file disappeared (server restart), regenerate it
     if not os.path.exists(file_path):
-
-        qr_data = f"{BASE_URL}/dog/{dog.uuid}"
-
-        img = qrcode.make(qr_data)
-        img.save(file_path)
+        abort(404, description="QR file not found on server")
 
     return send_file(file_path, as_attachment=True)
 
@@ -1589,14 +1572,18 @@ def admin_register_dog():
     vaccination_province = request.form.get("vaccination_province")
     vaccination_location = request.form.get("vaccination_location")
 
-    dog_uuid = str(uuid.uuid4())
-    
-    # Save dog image
     image_file = request.files.get("dog_image")
-    image_filename = save_file(image_file, app.config['DOG_UPLOAD_FOLDER'])
+    image_filename = None
+    if image_file and image_file.filename != "":
+        image_filename = secure_filename(image_file.filename)
+        save_path = os.path.join("static/dog_images", image_filename)
+        image_file.save(save_path)
 
-    # Generate QR code
-    qr_filename = generate_qr_code(dog_uuid)
+    dog_uuid = str(uuid.uuid4())
+    qr_data = url_for("dog_info", dog_uuid=dog_uuid, _external=True)
+    img = qrcode.make(qr_data)
+    qr_filename = f"{dog_uuid}.png"
+    img.save(os.path.join(QR_FOLDER, qr_filename))
 
     new_dog = Dog(
         uuid=dog_uuid,
