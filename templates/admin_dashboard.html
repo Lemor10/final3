@@ -439,15 +439,21 @@
                   style="height: 90px; width: 90px; cursor: pointer;"
                   onclick="openQrFullscreen(this.src)">
               {% endif %}
+              
+              <div class="mt-2">
+              {% if d.qr_code %}
+              <a href="{{ url_for('download_qr', dog_uuid=d.uuid) }}" class="btn btn-sm btn-success w-50 mb-2">Download QR</a>
+                  {% endif %}
+              </div>
 
               <div class="mt-2">
-                <button class="btn btn-primary btn-sm"
+                <button class="btn btn-primary btn-sm w-50"
                         data-bs-toggle="modal"
                         data-bs-target="#editDogModal{{ d.id }}">
                   Edit
                 </button>
               <button type="button" 
-                      class="btn btn-danger btn-sm" 
+                      class="btn btn-danger btn-sm w-50 mt-2" 
                       data-bs-toggle="modal" 
                       data-bs-target="#deleteDogModal" 
                       onclick="setDeleteDogForm('{{ url_for('admin_archive_dog', dog_id=d.id) }}')">
@@ -515,14 +521,21 @@
               {% endif %}
 
               <div class="mt-2">
-                <button class="btn btn-primary btn-sm"
+              {% if d.qr_code %}
+              <a href="{{ url_for('download_qr', dog_uuid=d.uuid) }}" class="btn btn-sm btn-success w-50 mb-2">Download QR</a>
+                  {% endif %}
+              </div>
+
+
+              <div class="mt-2">
+                <button class="btn btn-primary btn-sm w-50"
                         data-bs-toggle="modal"
                         data-bs-target="#editDogModal{{ d.id }}">
                   Edit
                 </button>
 
               <button type="button" 
-                      class="btn btn-danger btn-sm" 
+                      class="btn btn-danger btn-sm w-50 mt-2" 
                       data-bs-toggle="modal" 
                       data-bs-target="#deleteDogModal" 
                       onclick="setDeleteDogForm('{{ url_for('admin_archive_dog', dog_id=d.id) }}')">
