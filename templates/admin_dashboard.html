@@ -642,6 +642,16 @@
         </div>
 
         <div class="modal-body">
+                      <div class="mb-3">
+              <label>Dog Image</label>
+              <input type="file" name="dog_image" class="form-control" accept="image/*">
+            </div>
+            <div class="alert alert-warning py-2 mt-2 d-flex align-items-center" role="alert">
+              <i class="bi bi-exclamation-circle-fill me-2"></i>
+              <small class="mb-0">
+                Please upload a clear full-body photo of the dog.
+              </small>
+            </div>
           <div class="mb-3">
             <label>Name</label>
             <input type="text" name="name" class="form-control" value="{{ d.name }}" required>
