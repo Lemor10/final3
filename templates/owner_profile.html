@@ -75,6 +75,9 @@
   margin-bottom: 1rem;
 }
 
+    .btn-qr { background-color: #081a30; border: none; }
+    .btn-qr:hover { background-color: #040e19; }
+
 @media (min-width: 768px) {
   .dog-img {
     height: 100%;
@@ -110,7 +113,7 @@
   <h5 class="fw-bold mb-0">{{ current_user.name }}</h5>
   <small class="text-muted">@{{ current_user.username }}</small>
 </div>
-      <img src="{{ url_for('static', filename='profile_images/' ~ (current_user.profile_photo if current_user.profile_photo else 'default_profile.png')) }}"
+      <img src="{{ current_user.profile_photo if current_user.profile_photo else url_for('static', filename='profile_images/default_profile.png') }}"
            class="profile-photo"
            data-bs-toggle="modal"
            data-bs-target="#changePhotoModal"
@@ -161,7 +164,7 @@ Your Registered Dogs
           <div class="dog-card card border-0 shadow-sm overflow-hidden rounded-4">
             <div class="row g-0">
               <div class="col-md-4 col-12 dog-img-wrapper">
-                <img src="{{ url_for('static', filename='dog_images/' ~ (dog.image if dog.image else 'logo.png')) }}" class="dog-img" alt="{{ dog.name }}">
+                <img src="{{ dog.image if dog.image else url_for('static', filename='dog_images/logo.png') }}" class="dog-img" alt="{{ dog.name }}">
               </div>
               <div class="col-md-8 col-12">
                 <div class="card-body">
@@ -205,7 +208,7 @@ Your Registered Dogs
                   </p>
                     <p class="text-muted small mb-2"><strong>Vaccination Expiry:</strong> {{ dog.vaccination_expiry if dog.vaccination_expiry else "N/A" }}</p>
                   {% if dog.qr_code %}
-                  <a href="{{ url_for('download_qr', dog_uuid=dog.uuid) }}" class="btn btn-sm btn-primary w-50 mb-2">Download QR</a>
+                  <a href="{{ url_for('owner_download_qr', dog_uuid=dog.uuid) }}" class="btn btn-sm btn-qr w-50 mb-2 text-white"><i class="bi bi-download"></i> Download QR</a>
                   {% endif %}
                   <div class="row g-2 mt-2">
                     <div class="col-12 col-sm-6">

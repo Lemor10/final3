@@ -52,10 +52,13 @@
     }
 
     /* Dog Images */
-    .dog-img-wrapper { height: 100%; }
+    .dog-img-wrapper {
+      width: 100%;
+      height: 10%; 
+      }
     .dog-img {
       width: 100%;
-      height: 100%;
+      height: 10%;
       object-fit: cover;
       border-radius: 12px;
       padding: 8px;
@@ -81,6 +84,8 @@
     }
 
     /* Buttons */
+    .btn-qr { background-color: #081a30; border: none; }
+    .btn-qr:hover { background-color: #040e19; }
     .btn-primary { background-color: #0a58ca; border: none; }
     .btn-primary:hover { background-color: #084298; }
     .btn-success { background-color: #198754; border: none; }
@@ -346,11 +351,14 @@
         <!-- Search Field Dropdown -->
         <div class="col-auto">
             <select name="search_field" class="form-select">
-                <option value="name" selected>Name</option>
+              <option value="all" selected>All</option>
+                <option value="name">Name</option>
                 <option value="breed">Breed</option>
                 <option value="owner_name">Owner Name</option>
                 <option value="birthdate">Birthdate</option>
                 <option value="gender">Gender</option>
+                <option value="vaccination_location">Vaccinated at</option>
+                <option value="vaccination_add">Vaccination Address</option>
             </select>
         </div>
 
@@ -366,14 +374,14 @@
     </div>
 </form>
 
-<div class="card mb-4">
+<div class="card mb-4 p-3">
   <div class="card-body">
     <h5 class="card-title text-secondary mb-4"><i class="bi bi-card-list"></i> Registered Dogs</h5>
 
-    <div id="dogCardsContainer" class="row g-4">
+    <div id="dogCardsContainer" class="row d-flex justify-content-evenly gx-4">
 
       
-      <div class="col-md-6">
+      <div class="col-md-5">
         <h6 class="text-success fw-bold mb-3"><i class="bi bi-shield-check"></i> Vaccinated Dogs</h6>
 
         {% for d in dogs if d.vaccinated == 'Vaccinated' %}
@@ -382,7 +390,7 @@
             
             
             <div class="col-lg-4 col-12 dog-img-wrapper">
-                 <img src="{{ url_for('static', filename='dog_images/' ~ (d.image if d.image else 'logo.png')) }}"
+                 <img src="{{ d.image if d.image else url_for('static', filename='dog_images/logo.png') }}"
                   class="dog-img"
                   alt="{{ d.name }}"
                   style="cursor: pointer;"
@@ -439,29 +447,32 @@
                   style="height: 90px; width: 90px; cursor: pointer;"
                   onclick="openQrFullscreen(this.src)">
               {% endif %}
-              
-              <div class="mt-2">
-              {% if d.qr_code %}
-              <a href="{{ url_for('download_qr', dog_uuid=d.uuid) }}" class="btn btn-sm btn-success w-50 mb-2">Download QR</a>
-                  {% endif %}
-              </div>
 
               <div class="mt-2">
-                <button class="btn btn-primary btn-sm w-50"
+                {% if d.qr_code %}
+                    <a href="{{ url_for('download_qr', dog_uuid=d.uuid) }}" class="btn btn-sm btn-qr w-50 mb-2 text-white"><i class="bi bi-download"></i> Download QR</a>
+                {% endif %}
+              </div>
+              <div class="row g-2 mt-2">
+                    <div class="col-10 col-sm-6">
+                <button class="btn btn-outline-primary btn-sm w-100"
                         data-bs-toggle="modal"
                         data-bs-target="#editDogModal{{ d.id }}">
                   Edit
                 </button>
+              </div>
+            <div class="col-10 col-sm-6">
               <button type="button" 
-                      class="btn btn-danger btn-sm w-50 mt-2" 
+                      class="btn btn-danger btn-sm w-100" 
                       data-bs-toggle="modal" 
                       data-bs-target="#deleteDogModal" 
                       onclick="setDeleteDogForm('{{ url_for('admin_archive_dog', dog_id=d.id) }}')">
                 Delete
               </button>
               </div>
-            </div>
 
+              </div>
+            </div>
           </div>
         </div>
         {% else %}
@@ -471,7 +482,7 @@
 
 
       
-      <div class="col-md-6">
+      <div class="col-md-5">
         <h6 class="text-danger fw-bold mb-3"><i class="bi bi-x-circle"></i> Not Vaccinated Dogs</h6>
 
         {% for d in dogs if d.vaccinated == 'Not Vaccinated' %}
@@ -480,7 +491,7 @@
             
             
             <div class="col-lg-4 col-12 dog-img-wrapper">
-                 <img src="{{ url_for('static', filename='dog_images/' ~ (d.image if d.image else 'logo.png')) }}"
+                 <img src="{{ d.image if d.image else url_for('static', filename='dog_images/logo.png') }}"
                   class="dog-img"
                   alt="{{ d.name }}"
                   style="cursor: pointer;"
@@ -522,25 +533,27 @@
 
               <div class="mt-2">
               {% if d.qr_code %}
-              <a href="{{ url_for('download_qr', dog_uuid=d.uuid) }}" class="btn btn-sm btn-success w-50 mb-2">Download QR</a>
-                  {% endif %}
+                  <a href="{{ url_for('download_qr', dog_uuid=d.uuid) }}" class="btn btn-sm btn-qr w-50 mb-2 text-white">Download QR</a>
+              {% endif %}
               </div>
 
-
-              <div class="mt-2">
-                <button class="btn btn-primary btn-sm w-50"
+              <div class="row g-2 mt-2">
+                    <div class="col-10 col-sm-6">
+                <button class="btn btn-outline-primary btn-sm w-100"
                         data-bs-toggle="modal"
                         data-bs-target="#editDogModal{{ d.id }}">
                   Edit
                 </button>
-
+              </div>
+            <div class="col-10 col-sm-6">
               <button type="button" 
-                      class="btn btn-danger btn-sm w-50 mt-2" 
+                      class="btn btn-danger btn-sm w-100" 
                       data-bs-toggle="modal" 
                       data-bs-target="#deleteDogModal" 
                       onclick="setDeleteDogForm('{{ url_for('admin_archive_dog', dog_id=d.id) }}')">
                 Delete
               </button>
+              </div>
 
               </div>
             </div>
@@ -655,16 +668,6 @@
         </div>
 
         <div class="modal-body">
-                      <div class="mb-3">
-              <label>Dog Image</label>
-              <input type="file" name="dog_image" class="form-control" accept="image/*">
-            </div>
-            <div class="alert alert-warning py-2 mt-2 d-flex align-items-center" role="alert">
-              <i class="bi bi-exclamation-circle-fill me-2"></i>
-              <small class="mb-0">
-                Please upload a clear full-body photo of the dog.
-              </small>
-            </div>
           <div class="mb-3">
             <label>Name</label>
             <input type="text" name="name" class="form-control" value="{{ d.name }}" required>

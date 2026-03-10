@@ -29,6 +29,9 @@ from dotenv import load_dotenv
 import os
 import pytz
 from time import time
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 
 load_dotenv()
 
@@ -54,6 +57,12 @@ on_render = os.environ.get('RENDER') is not None
 if on_render: app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') 
 else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:somepassword@localhost:5432/drs_local' 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+cloudinary.config(
+    cloud_name=os.environ.get("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.environ.get("CLOUDINARY_API_KEY"),
+    api_secret=os.environ.get("CLOUDINARY_API_SECRET")
+)
 
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
@@ -1087,9 +1096,8 @@ def owner_profile():
         elif 'profile_photo' in request.files:
             photo = request.files['profile_photo']
             if photo.filename != '':
-                filename = secure_filename(photo.filename)
-                photo.save(os.path.join(app.config['UPLOAD_FOLDER_PROFILE'], filename))
-                user.profile_photo = filename
+                upload_result = cloudinary.uploader.upload(photo, folder="profile_images")
+                user.profile_photo = upload_result["secure_url"]
                 db.session.commit()
                 flash("Profile photo updated successfully!", "success")
 
@@ -1134,10 +1142,8 @@ def owner_add_dog():
     dog_uuid = str(uuid.uuid4())
 
     if image and image.filename != '':
-        filename = secure_filename(image.filename)
-        DOG_IMAGE_FOLDER = os.path.join('static', 'dog_images')
-        os.makedirs(DOG_IMAGE_FOLDER, exist_ok=True)
-        image.save(os.path.join(DOG_IMAGE_FOLDER, filename))
+        upload_result = cloudinary.uploader.upload(image, folder="dog_images")
+        filename = upload_result["secure_url"]
     else:
         filename = None
 
@@ -1237,14 +1243,42 @@ def owner_edit_dog(dog_id):
     if 'dog_image' in request.files:
         file = request.files['dog_image']
         if file.filename != '':
-            filename = secure_filename(file.filename)
-            file_path = os.path.join(app.config['DOG_UPLOAD_FOLDER'], filename)
-            file.save(file_path)
-            dog.image = filename
+            upload_result = cloudinary.uploader.upload(file, folder="dog_images")
+            dog.image = upload_result["secure_url"]
 
     db.session.commit()
     flash("Dog information updated successfully!", "success")
     return redirect(url_for('owner_profile'))
+
+@app.route('/admin/download_qr/<dog_uuid>')
+@login_required
+def download_qr(dog_uuid):
+
+    qr = qrcode.make(url_for("dog_info", dog_uuid=dog_uuid, _external=True))
+
+    buf = BytesIO()
+    qr.save(buf, format="PNG")
+    buf.seek(0)
+
+    return send_file(
+        buf,
+        mimetype="image/png",
+        as_attachment=True,
+        download_name=f"{dog_uuid}_qr.png"
+    )
+
+@app.route('/admin/qr/<dog_uuid>')
+@login_required
+def admin_qr(dog_uuid):
+    qr_data = url_for('dog_profile', dog_uuid=dog_uuid, _external=True)
+
+    qr = qrcode.make(qr_data)
+
+    img_io = BytesIO()
+    qr.save(img_io, 'PNG')
+    img_io.seek(0)
+
+    return send_file(img_io, mimetype='image/png')
 
 @app.route('/generate_qr/<dog_uuid>')
 def generate_qr(dog_uuid):
@@ -1267,19 +1301,22 @@ def generate_qr(dog_uuid):
 def qrcodes(filename):
     return send_from_directory(QR_FOLDER, filename)
 
-@app.route('/download_qr/<string:dog_uuid>')
-def download_qr(dog_uuid):
-    dog = Dog.query.filter_by(uuid=dog_uuid).first_or_404()
+@app.route('/owner/download_qr/<dog_uuid>')
+@login_required
+def owner_download_qr(dog_uuid):
 
-    if not dog.qr_code:
-        abort(404, description="QR code not found")
+    qr = qrcode.make(url_for("dog_info", dog_uuid=dog_uuid, _external=True))
 
-    file_path = os.path.join(app.root_path, 'static', 'qr_dogs', dog.qr_code)
+    buf = BytesIO()
+    qr.save(buf, format="PNG")
+    buf.seek(0)
 
-    if not os.path.exists(file_path):
-        abort(404, description="QR file not found on server")
-
-    return send_file(file_path, as_attachment=True)
+    return send_file(
+        buf,
+        mimetype="image/png",
+        as_attachment=True,
+        download_name=f"{dog_uuid}_qr.png"
+    )
 
 # ------------------ Admin Dashboard ------------------
 @app.route('/admin')
@@ -1501,7 +1538,7 @@ def admin_search_dogs():
     search_field = request.args.get("search_field", "name")
     filter_status = request.args.get("filter", "all")
 
-    dogs = Dog.query
+    dogs = Dog.query.filter(Dog.is_archived == False)
                 # Vaccination filter
     if filter_status in ["vaccinated", "not_vaccinated"]:
         status = "Vaccinated" if filter_status == "vaccinated" else "Not Vaccinated"
@@ -1527,6 +1564,19 @@ def admin_search_dogs():
                     dogs = dogs.filter(Dog.birthdate == birthdate)
                 except ValueError:
                     dogs = dogs.filter(False)
+
+            elif search_field == "vaccination_location":
+                dogs = dogs.filter(Dog.vaccination_location.ilike(f"%{query}%"))
+
+
+            elif search_field == "vaccination_add":
+                dogs = dogs.filter(
+                    func.concat(
+                        func.coalesce(Dog.vaccination_barangay, ''), ', ',
+                        func.coalesce(Dog.vaccination_municipality, ''), ', ',
+                        func.coalesce(Dog.vaccination_province, '')
+                    ).ilike(f"%{query}%")
+                )
 
         # ✅ FORCE ORIGINAL ORDER (IMPORTANT)
     dogs = dogs.order_by(Dog.created_at.desc()).all()
@@ -1574,10 +1624,10 @@ def admin_register_dog():
 
     image_file = request.files.get("dog_image")
     image_filename = None
+
     if image_file and image_file.filename != "":
-        image_filename = secure_filename(image_file.filename)
-        save_path = os.path.join("static/dog_images", image_filename)
-        image_file.save(save_path)
+        upload_result = cloudinary.uploader.upload(image_file, folder="dog_images")
+        image_filename = upload_result["secure_url"]
 
     dog_uuid = str(uuid.uuid4())
     qr_data = url_for("dog_info", dog_uuid=dog_uuid, _external=True)
