@@ -29,10 +29,12 @@ from dotenv import load_dotenv
 import os
 import pytz
 from time import time
+import uuid
 
 load_dotenv()
 
 sg = SendGridAPIClient(os.getenv("SENDGRID_API_KEY"))
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 if os.environ.get("RENDER"):
     BASE_URL = os.environ.get("BASE_URL")
@@ -43,11 +45,14 @@ else:
 
 app = Flask(__name__)
 
-app.config['DOG_UPLOAD_FOLDER'] = os.path.join('static', 'dog_images')
+app.config['DOG_UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'static', 'dog_images')
 os.makedirs(app.config['DOG_UPLOAD_FOLDER'], exist_ok=True)
 
-app.config['UPLOAD_FOLDER_PROFILE'] = os.path.join('static', 'profile_images')
+app.config['UPLOAD_FOLDER_PROFILE'] = os.path.join(BASE_DIR, 'static', 'profile_images')
 os.makedirs(app.config['UPLOAD_FOLDER_PROFILE'], exist_ok=True)
+
+QR_FOLDER = os.path.join(BASE_DIR, 'static', 'qr_dogs')
+os.makedirs(QR_FOLDER, exist_ok=True)
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'd1f4eb1ea051a0cf47ddb5be36e4d5e5f3073bb242b8ea7136bda03612b82c58')
 on_render = os.environ.get('RENDER') is not None 
@@ -63,9 +68,6 @@ migrate = Migrate(app, db)
 login_manager = LoginManager()
 login_manager.login_view = 'login'
 login_manager.init_app(app)
-
-QR_FOLDER = os.path.join('static', 'qr_dogs')
-os.makedirs(QR_FOLDER, exist_ok=True)
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -1134,14 +1136,14 @@ def owner_add_dog():
     dog_uuid = str(uuid.uuid4())
 
     if image and image.filename != '':
-        filename = secure_filename(image.filename)
-        DOG_IMAGE_FOLDER = os.path.join('static', 'dog_images')
+        filename = f"{uuid.uuid4()}_{secure_filename(image.filename)}"
+        DOG_IMAGE_FOLDER = os.path.join(app.root_path,'static', 'dog_images')
         os.makedirs(DOG_IMAGE_FOLDER, exist_ok=True)
         image.save(os.path.join(DOG_IMAGE_FOLDER, filename))
     else:
         filename = None
 
-    qr_data = url_for("dog_info", dog_uuid=dog_uuid, _external=True)
+    qr_data = f"{BASE_URL}/dog/{dog_uuid}"
     img = qrcode.make(qr_data)
     qr_filename = f"{dog_uuid}.png"
     os.makedirs(QR_FOLDER, exist_ok=True)
@@ -1237,7 +1239,7 @@ def owner_edit_dog(dog_id):
     if 'dog_image' in request.files:
         file = request.files['dog_image']
         if file.filename != '':
-            filename = secure_filename(file.filename)
+            filename = f"{uuid.uuid4()}_{secure_filename(file.filename)}"
             file_path = os.path.join(app.config['DOG_UPLOAD_FOLDER'], filename)
             file.save(file_path)
             dog.image = filename
@@ -1265,19 +1267,27 @@ def generate_qr(dog_uuid):
 
 @app.route('/qrcodes/<path:filename>')
 def qrcodes(filename):
+    if not os.path.exists(os.path.join(QR_FOLDER, filename)):
+        abort(404)
     return send_from_directory(QR_FOLDER, filename)
 
 @app.route('/download_qr/<string:dog_uuid>')
 def download_qr(dog_uuid):
+
     dog = Dog.query.filter_by(uuid=dog_uuid).first_or_404()
 
     if not dog.qr_code:
         abort(404, description="QR code not found")
 
-    file_path = os.path.join(app.root_path, 'static', 'qr_dogs', dog.qr_code)
+    file_path = os.path.join(QR_FOLDER, dog.qr_code)
 
+    # If file disappeared (server restart), regenerate it
     if not os.path.exists(file_path):
-        abort(404, description="QR file not found on server")
+
+        qr_data = f"{BASE_URL}/dog/{dog.uuid}"
+
+        img = qrcode.make(qr_data)
+        img.save(file_path)
 
     return send_file(file_path, as_attachment=True)
 
@@ -1576,7 +1586,7 @@ def admin_register_dog():
     image_filename = None
     if image_file and image_file.filename != "":
         image_filename = secure_filename(image_file.filename)
-        save_path = os.path.join("static/dog_images", image_filename)
+        save_path = os.path.join(app.config['DOG_UPLOAD_FOLDER'], image_filename)
         image_file.save(save_path)
 
     dog_uuid = str(uuid.uuid4())
