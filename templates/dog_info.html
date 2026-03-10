@@ -152,6 +152,26 @@ body{
   transform: translateY(-2px);
 }
 
+/* Logo styling */
+.site-logo {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  width: 140px;
+  height: auto;
+  max-width: 25%; /* responsive max width */
+  z-index: 2;
+  transition: all 0.3s ease;
+}
+
+/* Mobile adjustments */
+@media (max-width: 576px) {
+  .site-logo {
+    width: 100px; /* smaller logo on mobile */
+    top: 10px;
+    left: 10px;
+  }
+}
 /* Mobile responsiveness */
 @media(max-width:576px){
   .hero-card{
@@ -181,10 +201,9 @@ body{
 <div class="blob one"></div>
 <div class="blob two"></div>
 
-<div class="hero-card position-relative">
-  <img src="{{ url_for('static', filename='images/logo1.png') }}" 
-       alt="TrackPawPH Logo" 
-       style="width:140px; height:auto; position:absolute; top:15px; left:15px;">
+<img src="{{ url_for('static', filename='images/logo1.png') }}" 
+     alt="TrackPawPH Logo" 
+     class="site-logo">
 
 <div class="dog-header">
 <img src="{{ url_for('static', filename='dog_images/' ~ (dog.image if dog.image else 'logo.png')) }}" class="dog-img" alt="{{ dog.name }}">
