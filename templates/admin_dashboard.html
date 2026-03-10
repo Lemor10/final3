@@ -622,8 +622,9 @@
           <label class="form-label">Reason for archiving</label>
 
           <select name="archive_reason_select"
-                  id="archiveReasonSelect"
+                  id="archive_Reason_Select"
                   class="form-select"
+                  onchange="toggleCauseInput()"
                   required>
             <option value="" disabled selected>Select reason</option>
             <option value="Dog deceased">Dog deceased</option>
@@ -641,6 +642,22 @@
             placeholder="Enter custom reason..."
             style="display:none;">
           </textarea>
+
+          <textarea
+    name="archive_reason_other"
+    id="archiveReasonOther"
+    class="form-control mt-3"
+    rows="3"
+    placeholder="Enter custom reason..."
+    style="display:none;">
+</textarea>
+
+          <input type="text"
+                 name="archive_cause"
+                 id="archiveCauseInput"
+                 class="form-control mt-3"
+                 placeholder="Enter cause of death"
+                 style="display:none;">
         </div>
 
         <div class="modal-footer">
@@ -1087,18 +1104,28 @@ document.querySelectorAll('.edit-status').forEach(select => {
 });
 </script>
 <script>
-const reasonSelect = document.getElementById("archiveReasonSelect");
-const reasonOther = document.getElementById("archiveReasonOther");
+function toggleCauseInput() {
+  const select = document.getElementById('archive_Reason_Select');
+  const otherInput = document.getElementById('archiveReasonOther');
+  const causeInput = document.getElementById('archiveCauseInput');
 
-reasonSelect.addEventListener("change", function () {
-  if (this.value === "Other") {
-    reasonOther.style.display = "block";
-    reasonOther.required = true;
+  // Show "Other" textarea only if "Other" is selected
+  if (select.value === 'Other') {
+    otherInput.style.display = 'block';
+    otherInput.required = true;
   } else {
-    reasonOther.style.display = "none";
-    reasonOther.required = false;
-    reasonOther.value = "";
+    otherInput.style.display = 'none';
+    otherInput.required = false;
   }
-});
+
+  // Show "Cause of death" input only if "Dog deceased" is selected
+  if (select.value === 'Dog deceased') {
+    causeInput.style.display = 'block';
+    causeInput.required = true;
+  } else {
+    causeInput.style.display = 'none';
+    causeInput.required = false;
+  }
+}
 </script>
 {% endblock %}

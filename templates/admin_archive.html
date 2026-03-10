@@ -36,25 +36,24 @@
     <div class="card-body table-responsive">
       <table class="table table-hover align-middle">
         <thead class="table-light">
-          <tr>
-            <th>Image</th>
-            <th>Name</th>
-            <th>Breed</th>
-            <th>Age</th>
-            <th>Gender</th>
-            <th>Owner</th>
-            <th>Archived By</th>
-            <th>Reason / Cause</th>
-            <th>Archived At</th>
-            <th>Actions</th>
-          </tr>
+<th>Image</th>
+<th>Name</th>
+<th>Breed</th>
+<th>Age</th>
+<th>Gender</th>
+<th>Owner</th>
+<th>Archived By</th>
+<th>Owner Reason / Cause</th>
+<th>Admin Reason / Cause</th>
+<th>Archived At</th>
+<th>Actions</th>
         </thead>
         <tbody>
           {% for d in archived_dogs %}
           <tr>
             <!-- Dog Image -->
             <td>
-              <img src="{{ url_for('static', filename='dog_images/' ~ (d.image or 'logo.png')) }}"
+              <img src="{{ d.image if d.image else url_for('static', filename='dog_images/logo.png') }}"
                 alt="{{ d.name }}"
                 title="Click to view full size"
                 style="width: 70px; height: 70px; object-fit: cover; cursor: pointer;"
@@ -73,20 +72,30 @@
                   N/A
                 {% endif %}
             </td>
-            <td>{{ d.owner_name or 'Stray' }}</td>
-            <td>
-              {% if d.deleted_by_owner_id %}
-                <span class="badge bg-warning text-dark">Owner Deleted</span>
-              {% else %}
-                <span class="badge bg-danger">Admin Archived</span>
-              {% endif %}
-            </td>
-
-            <td>
-              {{ d.deleted_reason or 'N/A' }}
-              {% if d.deleted_cause %} / {{ d.deleted_cause }}{% endif %}
-            </td>
-
+<td>{{ d.owner_name or 'Stray' }}</td>
+<td>
+  {% if d.deleted_by_owner_id %}
+    Owner Deleted
+  {% else %}
+    Admin Archived
+  {% endif %}
+</td>
+<td>
+  {% if d.deleted_by_owner_id %}
+    {{ d.deleted_reason or 'N/A' }}
+    {% if d.deleted_cause %} / {{ d.deleted_cause }}{% endif %}
+  {% else %}
+    N/A
+  {% endif %}
+</td>
+<td>
+  {% if d.admin_archive_reason %}
+    {{ d.admin_archive_reason }}
+    {% if d.admin_archive_cause %} / {{ d.admin_archive_cause }}{% endif %}
+  {% else %}
+    N/A
+  {% endif %}
+</td>
             <td>
               {% if d.archived_at %}
                 {{ d.archived_at.strftime('%b %d, %Y') }}

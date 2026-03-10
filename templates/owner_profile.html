@@ -404,7 +404,7 @@ Your Registered Dogs
             <label class="form-label fw-bold">Upload Dog Image (optional)</label>
             <input type="file" name="dog_image" class="form-control" accept="image/*">
             {% if dog.image %}
-            <img src="{{ url_for('static', filename='dog_images/' ~ dog.image) }}" class="img-fluid mt-2 rounded" style="max-height: 150px;">
+            <img src="{{ dog.image }}" class="img-fluid mt-2 rounded" style="max-height: 150px;">
             {% endif %}
           </div>
   <div class="alert alert-warning py-2 mt-2 d-flex align-items-center" role="alert">

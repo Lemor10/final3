@@ -59,9 +59,9 @@ else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:somepasswor
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 cloudinary.config(
-    cloud_name=os.environ.get("CLOUDINARY_CLOUD_NAME"),
-    api_key=os.environ.get("CLOUDINARY_API_KEY"),
-    api_secret=os.environ.get("CLOUDINARY_API_SECRET")
+    cloud_name=os.environ.get("CLOUDINARY_CLOUD_NAME","di6rvl2bn" ),
+    api_key=os.environ.get("CLOUDINARY_API_KEY", "853726869791867"),
+    api_secret=os.environ.get("CLOUDINARY_API_SECRET", "5pUZ2F0dZbHMOrjBX82OzoFZKZE")
 )
 
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
@@ -131,6 +131,9 @@ class Dog(db.Model):
     deleted_at = db.Column(db.DateTime)
     deleted_by_owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     archived_at = db.Column(db.DateTime)  # <-- ADD THIS
+    # New fields for admin
+    admin_archive_reason = db.Column(db.String(255))
+    admin_archive_cause = db.Column(db.String(255))
     name = db.Column(db.String(120), nullable=False)
     registered_by_admin = db.Column(db.String(100))  # must exist
     breed = db.Column(db.String(120))
@@ -1692,15 +1695,24 @@ def admin_archive_dog(dog_id):
 
     selected_reason = request.form.get("archive_reason_select")
     other_reason = request.form.get("archive_reason_other")
+    cause_of_death = request.form.get("archive_cause")  # Admin input
 
+    # Determine final reason
     if selected_reason == "Other":
         final_reason = other_reason
     else:
         final_reason = selected_reason
 
+    # Update dog as archived
     dog.is_archived = True
     dog.archived_at = datetime.utcnow()
-    dog.archive_reason = final_reason
+
+    # Store admin reason and cause
+    dog.admin_archive_reason = final_reason
+    if final_reason.lower() == "deceased":
+        dog.admin_archive_cause = cause_of_death
+    else:
+        dog.admin_archive_cause = None  # clear if not deceased
 
     db.session.commit()
 
@@ -1712,29 +1724,36 @@ def admin_archive():
     if current_user.role != 'admin':
         abort(403)
 
-    # Archived owners
+    # Get archived owners and dogs
     archived_owners = User.query.filter_by(is_archived=True).order_by(User.archived_at.desc()).all()
-
-    # Archived dogs
     archived_dogs = Dog.query.filter_by(is_archived=True).order_by(Dog.archived_at.desc()).all()
 
-    # Prepare extra info for template
     for dog in archived_dogs:
-        # Owner info for display
-        if dog.owner_id:
-            dog.owner_name = dog.owner.name if dog.owner else "Unknown"
-        else:
-            dog.owner_name = "Stray"
+        # Owner info
+        dog.owner_name = dog.owner.name if dog.owner else "Stray"
 
         # Who archived
         if dog.deleted_by_owner_id:
             dog.archived_by = "Owner Deleted"
+            dog.reason = dog.deleted_reason or "N/A"
+            dog.cause = dog.deleted_cause or ""
         else:
             dog.archived_by = "Admin Archived"
+            dog.reason = dog.admin_archive_reason or "N/A"
+            dog.cause = dog.admin_archive_cause or ""
 
-        # Reason / Cause display
-        dog.deleted_reason = dog.deleted_reason or "N/A"
-        dog.deleted_cause = dog.deleted_cause or ""
+        # Optional: add display-friendly fields
+        dog.display_fields = {
+            "Name": dog.name,
+            "Birthdate": dog.birthdate.strftime("%Y-%m-%d") if dog.birthdate else "N/A",
+            "Breed": dog.breed or "N/A",
+            "Vaccination Status": dog.vaccinated or "N/A",
+            "Owner": dog.owner_name,
+            "Archived By": dog.archived_by,
+            "Reason": dog.reason,
+            "Cause": dog.cause,
+            "Archived At": dog.archived_at.strftime("%b %d, %Y") if dog.archived_at else "N/A"
+        }
 
     return render_template(
         'admin_archive.html',
