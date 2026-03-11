@@ -208,8 +208,7 @@ body{
 
 
 <div class="dog-header">
-<img src="{{ url_for('static', filename='dog_images/' ~ (dog.image if dog.image else 'logo.png')) }}" class="dog-img" alt="{{ dog.name }}">
-
+<img src="{{ dog.image if dog.image else url_for('static', filename='dog_images/logo.png') }}" class="dog-img" alt="{{ dog.name }}">
 <h2 class="fw-semibold">
 {{ dog.name }}
 {% if dog.vaccinated == 'Vaccinated' %}
