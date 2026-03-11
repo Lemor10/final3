@@ -207,9 +207,11 @@ Your Registered Dogs
                     {% endif %}
                   </p>
                     <p class="text-muted small mb-2"><strong>Vaccination Expiry:</strong> {{ dog.vaccination_expiry if dog.vaccination_expiry else "N/A" }}</p>
-                  {% if dog.qr_code %}
-                  <a href="{{ url_for('owner_download_qr', dog_uuid=dog.uuid) }}" class="btn btn-sm btn-qr w-50 mb-2 text-white"><i class="bi bi-download"></i> Download QR</a>
-                  {% endif %}
+{% if dog.qr_code %}
+  <a href="{{ url_for('owner_download_qr', dog_uuid=dog.uuid) }}" class="btn btn-sm btn-qr w-50 mb-2 text-white">
+    <i class="bi bi-download"></i> Download QR
+  </a>
+{% endif %}
                   <div class="row g-2 mt-2">
                     <div class="col-12 col-sm-6">
                       <button class="btn btn-outline-primary btn-sm w-100"

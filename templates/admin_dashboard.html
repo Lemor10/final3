@@ -442,7 +442,7 @@
               </p>
               <p class="text-muted small mb-2"><strong>Vaccination Expiry:</strong> {{ d.vaccination_expiry if d.vaccination_expiry else "N/A" }}</p>
               {% if d.qr_code %}
-              <img src="{{ url_for('qrcodes', filename=d.qr_code) }}" alt="{{ d.name}} QR"
+              <img src="{{ d.qr_code }}" alt="{{ d.name}} QR"
                   class="border rounded p-1 mb-2 qr-clickable"
                   style="height: 90px; width: 90px; cursor: pointer;"
                   onclick="openQrFullscreen(this.src)">
@@ -525,7 +525,7 @@
               <p class="text-muted small mb-2"><strong>Vaccination Expiry:</strong> {{ d.vaccination_expiry if d.vaccination_expiry else "N/A" }}</p>
 
               {% if d.qr_code %}
-                <img src="{{ url_for('qrcodes', filename=d.qr_code) }}" alt="{{ d.name}} QR"
+                <img src="{{ d.qr_code }}" alt="{{ d.name}} QR"
                     class="rounded p-1 mb-2 qr-clickable"
                     style="height: 90px; width: 90px; cursor: pointer;"
                     onclick="openQrFullscreen(this.src)">
@@ -639,18 +639,9 @@
             id="archiveReasonOther"
             class="form-control mt-3"
             rows="3"
-            placeholder="Enter custom reason..."
+            placeholder="Enter reason..."
             style="display:none;">
           </textarea>
-
-          <textarea
-    name="archive_reason_other"
-    id="archiveReasonOther"
-    class="form-control mt-3"
-    rows="3"
-    placeholder="Enter custom reason..."
-    style="display:none;">
-</textarea>
 
           <input type="text"
                  name="archive_cause"

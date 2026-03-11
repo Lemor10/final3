@@ -1152,9 +1152,19 @@ def owner_add_dog():
 
     qr_data = url_for("dog_info", dog_uuid=dog_uuid, _external=True)
     img = qrcode.make(qr_data)
-    qr_filename = f"{dog_uuid}.png"
-    os.makedirs(QR_FOLDER, exist_ok=True)
-    img.save(os.path.join(QR_FOLDER, qr_filename))
+
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    buffer.seek(0)
+
+    upload_result = cloudinary.uploader.upload(
+        buffer,
+        folder="qr_codes",
+        public_id=dog_uuid,
+        overwrite=True
+    )
+
+    qr_url = upload_result["secure_url"]
 
     new_dog = Dog(
         uuid=dog_uuid,
@@ -1165,7 +1175,7 @@ def owner_add_dog():
         vaccinated=vaccinated,
         owner_id=current_user.id,
         owner_name=current_user.name,
-        qr_code=qr_filename,
+        qr_code=qr_url,
         image=filename,
         last_vaccination=last_vac_date,
         next_vaccination=next_vac_date,
@@ -1635,8 +1645,19 @@ def admin_register_dog():
     dog_uuid = str(uuid.uuid4())
     qr_data = url_for("dog_info", dog_uuid=dog_uuid, _external=True)
     img = qrcode.make(qr_data)
-    qr_filename = f"{dog_uuid}.png"
-    img.save(os.path.join(QR_FOLDER, qr_filename))
+
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    buffer.seek(0)
+
+    upload_result = cloudinary.uploader.upload(
+        buffer,
+        folder="qr_codes",
+        public_id=dog_uuid,
+        overwrite=True
+    )
+
+    qr_url = upload_result["secure_url"]
 
     new_dog = Dog(
         uuid=dog_uuid,
@@ -1648,7 +1669,7 @@ def admin_register_dog():
         owner_name=owner_name,
         owner_id=None,
         vaccinated=vaccinated,
-        qr_code=qr_filename,
+        qr_code=qr_url,
         image=image_filename,
         last_vaccination=last_vac_date,
         next_vaccination=next_vac_date,
