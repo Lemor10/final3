@@ -668,40 +668,23 @@ with app.app_context():
     db.session.commit()
 
 with app.app_context():
-    # Fetch all owners
     owners = User.query.filter_by(role='owner').all()
-
     for owner in owners:
-        # Example: reconstruct address from barangay, municipality, province
+        if not owner.barangay:
+            owner.barangay = "NA"
+        if not owner.municipality:
+            owner.municipality = "NA"
+        if not owner.province:
+            owner.province = "NA"
         owner.address = f"{owner.barangay}, {owner.municipality}, {owner.province}"
-        print(f"Updated owner {owner.name} address to: {owner.address}")
 
-        # Update all their dogs with owner info
-        for dog in owner.dogs:  # assuming you have relationship: User.dogs
+        for dog in owner.dogs:
             dog.owner_barangay = owner.barangay
             dog.owner_municipality = owner.municipality
             dog.owner_province = owner.province
             dog.owner_address = owner.address
-            print(f"  Updated dog {dog.name} with owner address: {dog.owner_address}")
-
     db.session.commit()
-    print("✅ All owners and their dogs updated with latest address")
-
-with app.app_context():  # <-- push app context
-    # Update all dogs with their owner's current address
-    dogs = Dog.query.filter(Dog.owner_id.isnot(None)).all()
-
-    for dog in dogs:
-        user = User.query.get(dog.owner_id)
-        if user:
-            dog.owner_barangay = user.barangay
-            dog.owner_municipality = user.municipality
-            dog.owner_province = user.province
-            dog.owner_address = user.address  # if your Dog model has this
-            print(f"Updated dog {dog.name} with owner address: {dog.owner_address}")
-
-    db.session.commit()
-    print("✅ Updated all dogs with owner address")
+    
 @app.before_request
 def handle_notifications():
     if not current_user.is_authenticated:
