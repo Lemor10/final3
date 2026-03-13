@@ -689,7 +689,7 @@ with app.app_context():
             dog.owner_address = owner.address
 
     db.session.commit()
-    
+
 @app.before_request
 def handle_notifications():
     if not current_user.is_authenticated:
@@ -1133,21 +1133,30 @@ def owner_profile():
         if 'name' in request.form:
             user.name = request.form.get('name')
             user.contact = request.form.get('contact')
-            user.address = request.form.get('address')
+
+            user.barangay = request.form.get('barangay')
+            user.municipality = request.form.get('municipality')
+            user.province = request.form.get('province')
+
+            # rebuild address
+            user.address = f"{user.barangay}, {user.municipality}, {user.province}"
+
+            # update all dogs automatically
+            dogs = Dog.query.filter_by(owner_id=user.id).all()
+
+            for dog in dogs:
+                dog.owner_barangay = user.barangay
+                dog.owner_municipality = user.municipality
+                dog.owner_province = user.province
+                dog.owner_address = user.address
+
             db.session.commit()
-            flash("Profile updated successfully!", "success")
-        elif 'profile_photo' in request.files:
-            photo = request.files['profile_photo']
-            if photo.filename != '':
-                upload_result = cloudinary.uploader.upload(photo, folder="profile_images")
-                user.profile_photo = upload_result["secure_url"]
-                db.session.commit()
-                flash("Profile photo updated successfully!", "success")
+
+            flash("Profile and dog addresses updated!", "success")
 
         return redirect(url_for('owner_profile'))
 
     return render_template('owner_profile.html', dogs=dogs)
-from dateutil.relativedelta import relativedelta
 
 @app.route('/owner_add_dog', methods=['POST'])
 @login_required

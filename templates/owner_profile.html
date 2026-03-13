@@ -137,10 +137,33 @@
       <label>Contact Number</label>
       <input type="text" name="contact" class="form-control profile-input" value="{{ current_user.contact }}" readonly>
     </div>
-    <div class="mb-3">
-      <label>Owner Address</label>
-      <input type="text" name="address" class="form-control profile-input" value="{{ current_user.address if current_user.address else 'N/A' }}" readonly>
-    </div>
+<div class="mb-3">
+  <label>Barangay</label>
+  <input type="text"
+         name="barangay"
+         class="form-control profile-input"
+         value="{{ current_user.barangay or '' }}"
+         readonly>
+</div>
+
+<div class="mb-3">
+  <label>Municipality / City</label>
+  <input type="text"
+         name="municipality"
+         class="form-control profile-input"
+         value="{{ current_user.municipality or '' }}"
+         readonly>
+</div>
+
+<div class="mb-3">
+  <label>Province</label>
+  <input type="text"
+         name="province"
+         class="form-control profile-input"
+         value="{{ current_user.province or '' }}"
+         readonly>
+</div>
+
     <button type="button" id="editBtn" class="btn btn-outline-primary w-100 mt-3">Edit Profile</button>
     <div id="saveCancelBtns" class="mt-3 d-none">
       <button type="submit" class="btn btn-success w-100 mb-2">Save Changes</button>
