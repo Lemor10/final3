@@ -21,7 +21,7 @@ from openpyxl import Workbook
 from docx import Document
 from docx.shared import Inches
 import matplotlib
-matplotlib.use("Agg")  # VERY IMPORTANT
+matplotlib.use("Agg") 
 import matplotlib.pyplot as plt
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
@@ -130,24 +130,26 @@ class Dog(db.Model):
     deleted_cause = db.Column(db.String(150))
     deleted_at = db.Column(db.DateTime)
     deleted_by_owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    archived_at = db.Column(db.DateTime)  # <-- ADD THIS
-    # New fields for admin
+    archived_at = db.Column(db.DateTime)  
     admin_archive_reason = db.Column(db.String(255))
     admin_archive_cause = db.Column(db.String(255))
     name = db.Column(db.String(120), nullable=False)
-    registered_by_admin = db.Column(db.String(100))  # must exist
+    registered_by_admin = db.Column(db.String(100)) 
     breed = db.Column(db.String(120))
     #age = db.Column(db.Integer)
-    birthdate = db.Column(db.Date)  # New
-    gender = db.Column(db.String(10))   # ✅ ADD THIS
+    birthdate = db.Column(db.Date)  
+    gender = db.Column(db.String(10))   
     owner_name = db.Column(db.String(150))
+    owner_barangay = db.Column(db.String(120))      # NEW
+    owner_municipality = db.Column(db.String(120))  # NEW
+    owner_province = db.Column(db.String(120))      # NEW
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     qr_code = db.Column(db.String(200))
     vaccinated = db.Column(db.String(50), nullable=False, default="Not Vaccinated")
     image = db.Column(db.String(200))  
     last_vaccination = db.Column(db.Date)
     next_vaccination = db.Column(db.Date)
-    vaccination_expiry = db.Column(db.Date)  # ✅ NEW
+    vaccination_expiry = db.Column(db.Date)  
     vaccination_barangay = db.Column(db.String(100))
     vaccination_municipality = db.Column(db.String(100))
     vaccination_province = db.Column(db.String(100))
@@ -199,11 +201,11 @@ class Notification(db.Model):
     title = db.Column(db.String(150), nullable=False)
     message = db.Column(db.Text, nullable=False)
     type = db.Column(db.String(50), nullable=False)
-    milestone = db.Column(db.String(20))  # NEW: "7_days", "3_days", "1_day", "overdue"
+    milestone = db.Column(db.String(20))
     due_date = db.Column(db.Date)
     is_read = db.Column(db.Boolean, default=False)
     dismissed = db.Column(db.Boolean, default=False)
-    email_sent = db.Column(db.Boolean, default=False)  # ✅ ADD THIS
+    email_sent = db.Column(db.Boolean, default=False)  
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
@@ -250,7 +252,7 @@ def generate_vaccination_notifications(user_id, dog):
         existing = Notification.query.filter_by(
             user_id=user_id,
             dog_id=dog.id,
-            type=notif_type,    # ⚡ MUST include type
+            type=notif_type,   
             milestone=milestone
         ).first()
 
@@ -388,7 +390,6 @@ def send_notification_email(
     if not to:
         return
 
-    # Branding & links
     brand_name = "TrackPawPH"
     logo_url = f"{BASE_URL}/static/images/logo1.png"
     help_url = f"{BASE_URL}/help"
@@ -399,7 +400,6 @@ def send_notification_email(
     instagram_icon_url = f"{BASE_URL}/static/images/instagram.png"
     twitter_icon_url = f"{BASE_URL}/static/images/x.png"
 
-    # Render HTML template
     html_content = render_template(
         'email_notification.html',
         brand_name=brand_name,
@@ -441,7 +441,7 @@ def run_daily_notifications(user):
     today = datetime.now(tz).date()
 
     if user.last_notification_run == today:
-        return  # ❌ already ran today
+        return
 
     if user.role == "owner":
         generate_vaccination_notifications(user.id)
@@ -458,7 +458,6 @@ def calculate_vaccination_expiry(last_vaccination):
     return last_vaccination + timedelta(days=365)
 
 def get_analysis_data(start_month=None, end_month=None):
-
     query = Dog.query.filter(Dog.is_archived == False)
 
     if start_month and end_month:
@@ -466,44 +465,26 @@ def get_analysis_data(start_month=None, end_month=None):
         end_date = datetime.strptime(end_month + "-01", "%Y-%m-%d")
         end_day = 28 if end_date.month == 2 else 30
         end_date = datetime(end_date.year, end_date.month, end_day, 23, 59, 59)
-
-        query = query.filter(
-            Dog.created_at >= start_date,
-            Dog.created_at <= end_date
-        )
+        query = query.filter(Dog.created_at >= start_date, Dog.created_at <= end_date)
 
     dogs = query.all()
 
     # ---------------- DEATH ANALYTICS ----------------
-    death_query = Dog.query.filter(
-        Dog.deleted_by_owner_id.isnot(None),
-        Dog.deleted_reason == "Death"
-    )
-
+    death_query = Dog.query.filter(Dog.deleted_by_owner_id.isnot(None), Dog.deleted_reason == "Death")
     if start_month and end_month:
-        death_query = death_query.filter(
-            Dog.archived_at >= start_date,
-            Dog.archived_at <= end_date
-        )
-
+        death_query = death_query.filter(Dog.archived_at >= start_date, Dog.archived_at <= end_date)
     archived_dogs = death_query.all()
     total_deaths = len(archived_dogs)
-
-    death_causes_list = [
-        d.deleted_cause if d.deleted_cause else "Unknown"
-        for d in archived_dogs
-    ]
-
+    death_causes_list = [d.deleted_cause if d.deleted_cause else "Unknown" for d in archived_dogs]
     death_causes = list(set(death_causes_list))
     death_counts = [death_causes_list.count(c) for c in death_causes]
 
+    # ---------------- BASIC DOG ANALYTICS ----------------
     total_owners = len(set(d.owner_id for d in dogs))
     total_dogs = len(dogs)
-
     breeds_list = [d.breed.capitalize() if d.breed else "Unknown" for d in dogs]
     breeds = list(set(breeds_list))
     breed_numbers = [breeds_list.count(b) for b in breeds]
-
     vaccinated_count = sum(1 for d in dogs if d.vaccinated == "Vaccinated")
     unvaccinated_count = sum(1 for d in dogs if d.vaccinated == "Not Vaccinated")
 
@@ -511,12 +492,35 @@ def get_analysis_data(start_month=None, end_month=None):
     for d in dogs:
         m = d.created_at.strftime("%b %Y")
         month_counts_dict[m] = month_counts_dict.get(m, 0) + 1
-
-    months = sorted(
-        month_counts_dict.keys(),
-        key=lambda x: datetime.strptime(x, "%b %Y")
-    )
+    months = sorted(month_counts_dict.keys(), key=lambda x: datetime.strptime(x, "%b %Y"))
     month_counts = [month_counts_dict[m] for m in months]
+
+    # ---------------- BARANGAY ANALYTICS ----------------
+    barangay_counts = {}
+    vaccinated_barangay_counts = {}
+    unvaccinated_barangay_counts = {}
+
+    for d in dogs:
+        # Priority: Dog.owner_barangay -> Owner's barangay -> "Unknown"
+        if d.owner_barangay:
+            barangay = d.owner_barangay
+        elif d.owner and d.owner.barangay:
+            barangay = d.owner.barangay
+        else:
+            barangay = "Unknown"
+
+        # Total dogs per barangay
+        barangay_counts[barangay] = barangay_counts.get(barangay, 0) + 1
+        # Vaccinated
+        if d.vaccinated == "Vaccinated":
+            vaccinated_barangay_counts[barangay] = vaccinated_barangay_counts.get(barangay, 0) + 1
+        else:
+            unvaccinated_barangay_counts[barangay] = unvaccinated_barangay_counts.get(barangay, 0) + 1
+
+    # Sort and take top 5 barangays
+    top_barangays = sorted(barangay_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+    top_vaccinated_barangays = sorted(vaccinated_barangay_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+    top_unvaccinated_barangays = sorted(unvaccinated_barangay_counts.items(), key=lambda x: x[1], reverse=True)[:5]
 
     return {
         "total_owners": total_owners,
@@ -529,16 +533,13 @@ def get_analysis_data(start_month=None, end_month=None):
         "month_counts": month_counts,
         "total_deaths": total_deaths,
         "death_causes": death_causes,
-        "death_counts": death_counts
+        "death_counts": death_counts,
+        # New barangay analytics
+        "top_barangays": top_barangays,
+        "top_vaccinated_barangays": top_vaccinated_barangays,
+        "top_unvaccinated_barangays": top_unvaccinated_barangays
     }
 
-    try:
-        sg = SendGridAPIClient(os.getenv("SENDGRID_API_KEY"))
-        response = sg.send(message)
-        return f"Status: {response.status_code}"
-    except Exception as e:
-        return str(e)
-    
 @app.route("/check-username")
 def check_username():
     username = request.args.get("username", "").strip().lower()
@@ -577,6 +578,9 @@ def notification_count():
 @app.route('/owner/notifications')
 @login_required
 def owner_notifications():
+    if current_user.role not in ['owner', 'admin']:
+        abort(403)
+        return render_template('owner_dashboard.html', dogs=dogs, stray_count=stray_count)
     Notification.query.filter_by(
         user_id=current_user.id,
         is_read=False,
@@ -663,6 +667,41 @@ with app.app_context():
         .update({User.created_at: datetime.utcnow()})
     db.session.commit()
 
+with app.app_context():
+    # Fetch all owners
+    owners = User.query.filter_by(role='owner').all()
+
+    for owner in owners:
+        # Example: reconstruct address from barangay, municipality, province
+        owner.address = f"{owner.barangay}, {owner.municipality}, {owner.province}"
+        print(f"Updated owner {owner.name} address to: {owner.address}")
+
+        # Update all their dogs with owner info
+        for dog in owner.dogs:  # assuming you have relationship: User.dogs
+            dog.owner_barangay = owner.barangay
+            dog.owner_municipality = owner.municipality
+            dog.owner_province = owner.province
+            dog.owner_address = owner.address
+            print(f"  Updated dog {dog.name} with owner address: {dog.owner_address}")
+
+    db.session.commit()
+    print("✅ All owners and their dogs updated with latest address")
+
+with app.app_context():  # <-- push app context
+    # Update all dogs with their owner's current address
+    dogs = Dog.query.filter(Dog.owner_id.isnot(None)).all()
+
+    for dog in dogs:
+        user = User.query.get(dog.owner_id)
+        if user:
+            dog.owner_barangay = user.barangay
+            dog.owner_municipality = user.municipality
+            dog.owner_province = user.province
+            dog.owner_address = user.address  # if your Dog model has this
+            print(f"Updated dog {dog.name} with owner address: {dog.owner_address}")
+
+    db.session.commit()
+    print("✅ Updated all dogs with owner address")
 @app.before_request
 def handle_notifications():
     if not current_user.is_authenticated:
@@ -716,6 +755,9 @@ def index():
 
 @app.route('/scan')
 def scan_qr():
+    if current_user.role not in ['owner', 'admin']:
+        abort(403)
+        return render_template('owner_dashboard.html', dogs=dogs, stray_count=stray_count)
     return render_template('scan.html')
 
 @app.route('/dog/<string:dog_uuid>')
@@ -785,6 +827,9 @@ def signup():
             "username": form_data['username'],
             "contact": form_data['contact'],
             "address": full_address,
+            "barangay": barangay,
+            "municipality": municipality,
+            "province": province,
             "password": password
         }
 
@@ -927,6 +972,9 @@ def verify_email(token):
         name=signup_data['name'],
         username=signup_data['username'],
         contact=signup_data['contact'],
+        barangay=signup_data.get('barangay'),
+        municipality=signup_data.get('municipality'),
+        province=signup_data.get('province'),
         address=signup_data['address'],
         role='owner',
         email_verified=True  # Already verified
@@ -937,7 +985,7 @@ def verify_email(token):
     db.session.commit()
 
     flash("Your email is verified and account created! You can now log in.", "success")
-    return redirect(url_for("login"))
+    return redirect(url_for("check_email", email=signup_data['email'], verified=True))
 
 @app.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
@@ -1089,6 +1137,10 @@ def owner_profile():
     user = current_user
     dogs = Dog.query.filter_by(owner_id=user.id, is_archived=False).all()
 
+    if current_user.role not in ['owner', 'admin']:
+        abort(403)
+        return render_template('owner_dashboard.html', dogs=dogs, stray_count=stray_count)
+
     if request.method == 'POST':
         if 'name' in request.form:
             user.name = request.form.get('name')
@@ -1112,6 +1164,7 @@ from dateutil.relativedelta import relativedelta
 @app.route('/owner_add_dog', methods=['POST'])
 @login_required
 def owner_add_dog():
+    print("Current User Address:", current_user.barangay, current_user.municipality, current_user.province)
     name = request.form['name']
     breed = format_breed(request.form['breed'])
     birthdate_str = request.form.get("birthdate")
@@ -1175,6 +1228,9 @@ def owner_add_dog():
         vaccinated=vaccinated,
         owner_id=current_user.id,
         owner_name=current_user.name,
+        owner_barangay=current_user.barangay,          # ✅ add this
+        owner_municipality=current_user.municipality,  # ✅ add this
+        owner_province=current_user.province,          # ✅ add this
         qr_code=qr_url,
         image=filename,
         last_vaccination=last_vac_date,
@@ -1568,6 +1624,15 @@ def admin_search_dogs():
             elif search_field == "owner_name":
                 dogs = dogs.filter(Dog.owner_name.ilike(f"%{query}%"))
 
+            elif search_field == "owner_barangay":
+                dogs = dogs.filter(
+                    Dog.registered_by_admin != None,  # only walk-in registrations
+                    func.concat(
+                        func.coalesce(Dog.owner_barangay, ''), ', ',
+                        func.coalesce(Dog.owner_municipality, ''), ', ',
+                        func.coalesce(Dog.owner_province, '')
+                    ).ilike(f"%{query}%"))
+                                    
             elif search_field == "gender":
                 dogs = dogs.filter(func.lower(Dog.gender) == query.lower())
 
@@ -1605,7 +1670,10 @@ def admin_register_dog():
         return redirect(url_for('admin_dashboard'))
 
     name = request.form['name']
-    owner_name = request.form['owner_name'] if request.form['owner_name'] else "Stray (Admin Registered)"
+    owner_name = request.form['owner_name'] if request.form['owner_name'] else "(Admin Registered)"
+    owner_barangay = request.form.get("owner_barangay")
+    owner_municipality = request.form.get("owner_municipality")
+    owner_province = request.form.get("owner_province")
     breed = format_breed(request.form['breed'])
     birthdate_str = request.form.get("birthdate")
     birthdate = datetime.strptime(birthdate_str, "%Y-%m-%d").date() if birthdate_str else None
@@ -1667,6 +1735,9 @@ def admin_register_dog():
         gender=gender,
         registered_by_admin=current_user.name,  # ✅ Mark as admin-registered
         owner_name=owner_name,
+        owner_barangay=owner_barangay,
+        owner_municipality=owner_municipality,
+        owner_province=owner_province,
         owner_id=None,
         vaccinated=vaccinated,
         qr_code=qr_url,
@@ -1790,12 +1861,13 @@ def admin_permanent_delete_dog(dog_id):
 
     dog = Dog.query.get_or_404(dog_id)
 
-    # 🧹 Delete QR file permanently
     if dog.qr_code:
+        # Extract public ID from URL
+        public_id = dog.qr_code.split('/')[-1].split('.')[0]  # e.g., '757f0bfb-4e71-4d51-8384-969bf6cbfae4'
         try:
-            os.remove(os.path.join(QR_FOLDER, dog.qr_code))
-        except FileNotFoundError:
-            pass
+            cloudinary.uploader.destroy(f"qr_codes/{public_id}")
+        except Exception as e:
+            print("Cloudinary deletion error:", e)
 
     db.session.delete(dog)
     db.session.commit()

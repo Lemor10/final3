@@ -15,7 +15,22 @@
               <h5 class="fw-bold text-success mb-1"><i class="text-success bi bi-shield-check"></i> {{ d.name }}</h5>
               <p class="text-muted small mb-1"><strong>Registered by:</strong> {{ d.registered_by_admin if d.registered_by_admin else 'Owner' }}</p>
               <p class="text-muted small mb-1"><strong>Breed:</strong> {{ d.breed }}</p>
-              <p class="text-muted small mb-1"><strong>Owner:</strong> {{ d.owner_name if d.owner_name else 'Stray' }}</p>
+              <p class="text-muted small mb-1">
+              <strong>Owner:</strong> {{ d.owner_name if d.owner_name else 'Stray' }}
+              </p>
+
+              {% if d.registered_by_admin and d.owner_barangay %}
+              <p class="text-muted small mb-1">
+              <strong>Owner Address:</strong>
+              {% if d.owner_barangay %}
+              {{ d.owner_barangay }},
+              {{ d.owner_municipality }},
+              {{ d.owner_province }}
+              {% else %}
+              N/A
+              {% endif %}
+              </p>
+              {% endif %}
               <p class="text-muted small mb-1"><strong>Birthdate:</strong> {{ d.birthdate if d.birthdate else 'N/A' }}</p>
               <p class="text-muted small mb-1"><strong>Age:</strong> {{ d.age if d.age else 'N/A' }}</p>
                                               <p class="text-muted mb-1 small">

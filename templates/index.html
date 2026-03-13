@@ -264,12 +264,15 @@ footer {
         </div>
       {% else %}
         {% if current_user.role == 'admin' %}
-          <a href="{{ url_for('admin_dashboard') }}" class="btn btn-light text-primary mt-2">
-            Go to Admin Dashboard
+                <h3>Welcome back {{ current_user.name }}</h3>
+
+          <a href="{{ url_for('admin_dashboard') }}" class="btn btn-light text-white mt-2">
+            Go back Dashboard <i class="bi bi-arrow-right ms-2"></i>
           </a>
         {% else %}
-          <a href="{{ url_for('owner_dashboard') }}" class="btn btn-light text-primary mt-2">
-            Go to Owner Dashboard
+        <h3>Welcome back {{ current_user.name }}</h3>
+          <a href="{{ url_for('owner_dashboard') }}" class="btn btn-light text-white mt-2">
+            Go back Dashboard <i class="bi bi-arrow-right ms-2"></i>
           </a>
         {% endif %}
       {% endif %}

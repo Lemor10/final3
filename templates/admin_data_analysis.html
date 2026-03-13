@@ -114,6 +114,24 @@
         <p class="no-data d-none">No data available for this date range.</p>
     </div>
 
+    <div class="chart-container mx-auto" style="max-width: 700px;">
+    <h5 class="text-center summary-header">Top Barangays by Total Dogs</h5>
+    <canvas id="topBarangayChart"></canvas>
+    <p class="no-data d-none">No data available for this date range.</p>
+</div>
+
+<div class="chart-container mx-auto" style="max-width: 700px;">
+    <h5 class="text-center summary-header">Top Barangays by Vaccinated Dogs</h5>
+    <canvas id="topVaccinatedBarangayChart"></canvas>
+    <p class="no-data d-none">No data available for this date range.</p>
+</div>
+
+<div class="chart-container mx-auto" style="max-width: 700px;">
+    <h5 class="text-center summary-header">Top Barangays by Unvaccinated Dogs</h5>
+    <canvas id="topUnvaccinatedBarangayChart"></canvas>
+    <p class="no-data d-none">No data available for this date range.</p>
+</div>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -216,6 +234,65 @@ if (data.death_counts.length > 0) {
        document.querySelector('#deathChart').style.display = 'none';
         document.querySelector('#deathChart').nextElementSibling?.classList.remove('d-none');
     }
+
+    let topBarangayChart, topVaccinatedBarangayChart, topUnvaccinatedBarangayChart;
+
+if (data.top_barangays.length > 0) {
+    if (topBarangayChart) topBarangayChart.destroy();
+    topBarangayChart = new Chart(document.getElementById('topBarangayChart'), {
+        type: 'bar',
+        data: {
+            labels: data.top_barangays.map(b => b[0]),
+            datasets: [{
+                label: 'Number of Dogs',
+                data: data.top_barangays.map(b => b[1]),
+                backgroundColor: '#6f42c1'
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: true }
+    });
+} else {
+    document.getElementById('topBarangayChart').style.display = 'none';
+    document.getElementById('topBarangayChart').nextElementSibling.classList.remove('d-none');
+}
+
+if (data.top_vaccinated_barangays.length > 0) {
+    if (topVaccinatedBarangayChart) topVaccinatedBarangayChart.destroy();
+    topVaccinatedBarangayChart = new Chart(document.getElementById('topVaccinatedBarangayChart'), {
+        type: 'bar',
+        data: {
+            labels: data.top_vaccinated_barangays.map(b => b[0]),
+            datasets: [{
+                label: 'Vaccinated Dogs',
+                data: data.top_vaccinated_barangays.map(b => b[1]),
+                backgroundColor: '#198754'
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: true }
+    });
+} else {
+    document.getElementById('topVaccinatedBarangayChart').style.display = 'none';
+    document.getElementById('topVaccinatedBarangayChart').nextElementSibling.classList.remove('d-none');
+}
+
+if (data.top_unvaccinated_barangays.length > 0) {
+    if (topUnvaccinatedBarangayChart) topUnvaccinatedBarangayChart.destroy();
+    topUnvaccinatedBarangayChart = new Chart(document.getElementById('topUnvaccinatedBarangayChart'), {
+        type: 'bar',
+        data: {
+            labels: data.top_unvaccinated_barangays.map(b => b[0]),
+            datasets: [{
+                label: 'Unvaccinated Dogs',
+                data: data.top_unvaccinated_barangays.map(b => b[1]),
+                backgroundColor: '#dc3545'
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: true }
+    });
+} else {
+    document.getElementById('topUnvaccinatedBarangayChart').style.display = 'none';
+    document.getElementById('topUnvaccinatedBarangayChart').nextElementSibling.classList.remove('d-none');
+}
 }
 
 window.addEventListener('DOMContentLoaded', () => {

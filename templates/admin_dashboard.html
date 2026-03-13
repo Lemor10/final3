@@ -327,7 +327,7 @@
     <div class="row g-2 mb-3">
 
           <div class="col-auto">
-        <input id="dogSearchInput" name="q" type="text" class="form-control" placeholder="Search by name, breed, owner..." list="breedSuggestions">
+        <input id="dogSearchInput" name="q" type="text" class="form-control" placeholder="Search by name, breed, owner, or walk-in address..." list="breedSuggestions">
 <datalist id="breedSuggestions">
   <option value="Aspin">
   <option value="Beagle">
@@ -355,6 +355,7 @@
                 <option value="name">Name</option>
                 <option value="breed">Breed</option>
                 <option value="owner_name">Owner Name</option>
+                <option value="owner_barangay">Owner Address(for walk-in)</option>
                 <option value="birthdate">Birthdate</option>
                 <option value="gender">Gender</option>
                 <option value="vaccination_location">Vaccinated at</option>
@@ -403,6 +404,17 @@
               <p class="text-muted small mb-1"><strong>Registered by:</strong> {{ d.registered_by_admin if d.registered_by_admin else 'Owner' }}</p>
               <p class="text-muted small mb-1"><strong>Breed:</strong> {{ d.breed }}</p>
               <p class="text-muted small mb-1"><strong>Owner:</strong> {{ d.owner_name or "Stray" }}</p>
+              <p class="text-muted small mb-1">
+<p class="text-muted small mb-1">
+  <strong>Owner Address:</strong>
+{% if d.owner_barangay or d.owner_municipality or d.owner_province %}
+  {{ d.owner_barangay }}, {{ d.owner_municipality }}, {{ d.owner_province }}
+{% elif d.owner %}
+  {{ d.owner.barangay }}, {{ d.owner.municipality }}, {{ d.owner.province }}
+{% else %}
+  N/A
+{% endif %}
+</p>
               <p class="text-muted small mb-1"><strong>Birthdate:</strong> {{ d.birthdate if d.birthdate else 'N/A' }}</p>
               <p class="text-muted small mb-1"><strong>Age:</strong> {{ d.age if d.age else 'N/A' }}</p>
                                 <p class="text-muted mb-1 small">
@@ -504,6 +516,16 @@
               <p class="text-muted small mb-1"><strong>Registered by:</strong> {{ d.registered_by_admin if d.registered_by_admin else 'Owner' }}</p>
               <p class="text-muted small mb-1"><strong>Breed:</strong> {{ d.breed }}</p>
               <p class="text-muted small mb-1"><strong>Owner:</strong> {{ d.owner_name or "Stray" }}</p>
+              <p class="text-muted small mb-1">
+              <strong>Owner Address:</strong>
+              {% if d.owner_barangay %}
+              {{ d.owner_barangay }},
+              {{ d.owner_municipality }},
+              {{ d.owner_province }}
+              {% else %}
+              N/A
+              {% endif %}
+              </p>
               <p class="text-muted small mb-1"><strong>Birthdate:</strong> {{ d.birthdate if d.birthdate else 'N/A' }}</p>
               <p class="text-muted small mb-1"><strong>Age:</strong> {{ d.age if d.age else 'N/A' }}</p>
               <p class="text-muted small mb-1">
@@ -806,6 +828,26 @@
             <div class="mb-3">
               <label>Owner's full name Name</label>
               <input type="text" name="owner_name" class="form-control" placeholder="Ex. Juan Dela Cruz">
+            </div>
+            <div class="mb-3">
+              <label>Owner Address</label>
+              <input type="text"
+                    name="owner_barangay"
+                    class="form-control mb-2"
+                    placeholder="Barangay"
+                    required>
+
+              <input type="text"
+                    name="owner_municipality"
+                    class="form-control mb-2"
+                    placeholder="Municipality / City"
+                    required>
+
+              <input type="text"
+                    name="owner_province"
+                    class="form-control"
+                    placeholder="Province"
+                    required>
             </div>
             <div class="mb-3">
               <label>Dog Name</label>
