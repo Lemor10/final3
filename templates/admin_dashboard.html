@@ -163,6 +163,18 @@
                         </a>
                       </li>
                       <li>
+                        <a class="dropdown-item"
+                          href="#"
+                          data-bs-toggle="modal"
+                          data-bs-target="#editOwnerModal{{ u.id }}">
+                          <i class="bi bi-pencil-square me-2"></i> Edit
+                        </a>
+                      </li>
+                      <a class="dropdown-item"
+   href="{{ url_for('login_as_owner', user_id=u.id) }}">
+   <i class="bi bi-person-check"></i> Login as Owner
+</a>
+                      <li>
                         <a 
                           class="dropdown-item text-danger" 
                           href="#" 
@@ -609,6 +621,58 @@
     </div>
   </div>
 </div>
+{% for u in users %}
+<div class="modal fade" id="editOwnerModal{{ u.id }}" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+
+      <form method="POST" action="{{ url_for('admin_edit_owner', owner_id=u.id) }}">
+
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">Edit Owner</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+
+          <div class="mb-3">
+            <label>Name</label>
+            <input type="text" name="name" class="form-control" value="{{ u.name }}" required>
+          </div>
+
+          <div class="mb-3">
+            <label>Contact</label>
+            <input type="text" name="contact" class="form-control" value="{{ u.contact }}">
+          </div>
+
+          <div class="mb-3">
+            <label>Barangay</label>
+            <input type="text" name="barangay" class="form-control" value="{{ u.barangay }}">
+          </div>
+
+          <div class="mb-3">
+            <label>Municipality</label>
+            <input type="text" name="municipality" class="form-control" value="{{ u.municipality }}">
+          </div>
+
+          <div class="mb-3">
+            <label>Province</label>
+            <input type="text" name="province" class="form-control" value="{{ u.province }}">
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-primary">Save Changes</button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+</div>
+{% endfor %}
 
 <div class="modal fade" id="deleteOwnerModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
