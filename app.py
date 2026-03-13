@@ -669,13 +669,17 @@ with app.app_context():
 
 with app.app_context():
     owners = User.query.filter_by(role='owner').all()
+
     for owner in owners:
-        if not owner.barangay:
-            owner.barangay = "NA"
-        if not owner.municipality:
-            owner.municipality = "NA"
-        if not owner.province:
-            owner.province = "NA"
+        if owner.address:
+            parts = [p.strip() for p in owner.address.split(",")]
+
+            if len(parts) >= 3:
+                owner.barangay = parts[0]
+                owner.municipality = parts[1]
+                owner.province = parts[2]
+
+        # rebuild address
         owner.address = f"{owner.barangay}, {owner.municipality}, {owner.province}"
 
         for dog in owner.dogs:
@@ -683,6 +687,7 @@ with app.app_context():
             dog.owner_municipality = owner.municipality
             dog.owner_province = owner.province
             dog.owner_address = owner.address
+
     db.session.commit()
     
 @app.before_request
