@@ -1107,6 +1107,7 @@ def owner_profile():
         return render_template('owner_dashboard.html', dogs=dogs, stray_count=stray_count)
 
     if request.method == 'POST':
+
         if 'name' in request.form:
             user.name = request.form.get('name')
             user.contact = request.form.get('contact')
@@ -1128,6 +1129,20 @@ def owner_profile():
                 dog.owner_address = user.address
 
             db.session.commit()
+
+                    # Update profile photo
+        elif 'profile_photo' in request.files:
+
+            photo = request.files['profile_photo']
+
+            if photo.filename != '':
+                upload_result = cloudinary.uploader.upload(photo, folder="profile_images")
+                user.profile_photo = upload_result["secure_url"]
+
+                db.session.commit()
+
+                flash("Profile photo updated successfully!", "success")
+
 
             flash("Profile and dog addresses updated!", "success")
 
