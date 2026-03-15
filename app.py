@@ -144,6 +144,8 @@ class Dog(db.Model):
     owner_municipality = db.Column(db.String(120))  # NEW
     owner_province = db.Column(db.String(120))      # NEW
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    owner_email = db.Column(db.String(150))
+    owner_mobile = db.Column(db.String(20))
     qr_code = db.Column(db.String(200))
     vaccinated = db.Column(db.String(50), nullable=False, default="Not Vaccinated")
     image = db.Column(db.String(200))  
@@ -325,18 +327,42 @@ def generate_admin_notifications(admin_user_id):
 
         # Determine title and message
         if milestone == "overdue":
-            title = "Stray Dog Vaccination Overdue"
-            message = f"The vaccination for <strong>{dog.name}</strong> is overdue!, please notify the dog owner <strong>{dog.owner_name}</strong>"
+            title = "Important: Your Dog's Vaccination is Overdue"
+
+            message = (
+                f"Hello <strong>{dog.owner_name}</strong>,<br><br>"
+                f"Our records show that the vaccination for your dog "
+                f"<strong>{dog.name}</strong> is now <strong>overdue</strong>.<br><br>"
+                f"To ensure the safety and health of your pet and the community, "
+                f"please visit the Municipal Veterinary Office as soon as possible "
+                f"to update your dog's vaccination.<br><br>"
+                f"Thank you for helping keep our community safe."
+            )
+
             additional_info = [
-                "Assign an owner if available.",
-                "Schedule the vaccination immediately."
+                f"Dog Name: {dog.name}",
+                "Status: Vaccination Overdue",
+                "Please visit the Municipal Veterinary Office as soon as possible."
             ]
+
         else:
-            title = "Stray Dog Vaccination Due Soon"
-            message = f"The stray dog <strong>{dog.name}</strong> needs vaccination in {days_left} day{'s' if days_left > 1 else ''}!, please notify the dog owner <strong>{dog.owner_name}</strong>"
+            title = "Reminder: Your Dog's Vaccination is Due Soon"
+
+            message = (
+                f"Hello <strong>{dog.owner_name}</strong>,<br><br>"
+                f"This is a friendly reminder that your dog "
+                f"<strong>{dog.name}</strong> is scheduled for vaccination "
+                f"in <strong>{days_left} day{'s' if days_left > 1 else ''}</strong>.<br><br>"
+                f"Please visit the Municipal Veterinary Office to complete "
+                f"your dog's vaccination on time.<br><br>"
+                f"Keeping your dog vaccinated helps protect your pet "
+                f"and the entire community."
+            )
+
             additional_info = [
-                "Check if the dog has an owner.",
-                "Schedule a vaccination appointment."
+                f"Dog Name: {dog.name}",
+                f"Days Remaining: {days_left}",
+                "Please prepare your dog for the scheduled vaccination."
             ]
 
         # Create notification record
@@ -352,21 +378,17 @@ def generate_admin_notifications(admin_user_id):
         )
         db.session.add(notif)
         db.session.flush()
-
-        # Send email using the HTML template
-        admin_user = db.session.get(User, admin_user_id)
-        if admin_user.email:
+       
+        # Send notification only to dog owner
+        if dog.owner_email and dog.owner_email.strip():
             send_notification_email(
-                to=admin_user.email,
+                to=dog.owner_email,
                 subject=title,
-                user_name="Admin",
-                message_body=message,
-                action_link=f"{BASE_URL}/admin/dogs/{dog.id}",
-                action_text="View Dog Details",
-                additional_info=additional_info,
-                is_admin=True
+                user_name=dog.owner_name,
+                message_body=message
             )
-            notif.email_sent = True
+
+        notif.email_sent = True
 
     db.session.commit()
 
@@ -1409,6 +1431,18 @@ def admin_dashboard():
     return render_template('admin_dashboard.html', users=users, dogs=dogs, pagination=users_pagination
 )
 
+@app.route("/admin/check-email")
+def admin_check_email():
+
+    email = request.args.get("email")
+
+    user_exists = User.query.filter_by(email=email).first()
+    dog_exists = Dog.query.filter_by(owner_email=email).first()
+
+    exists = user_exists or dog_exists
+
+    return jsonify({"exists": bool(exists)})
+
 @app.route('/admin/login_as_owner/<int:user_id>')
 @login_required
 def login_as_owner(user_id):
@@ -1707,6 +1741,8 @@ def admin_register_dog():
 
     name = request.form['name']
     owner_name = request.form['owner_name'] if request.form['owner_name'] else "(Admin Registered)"
+    owner_email = request.form.get("owner_email")
+    owner_mobile = request.form.get("owner_mobile")
     owner_barangay = request.form.get("owner_barangay")
     owner_municipality = request.form.get("owner_municipality")
     owner_province = request.form.get("owner_province")
@@ -1771,6 +1807,8 @@ def admin_register_dog():
         gender=gender,
         registered_by_admin=current_user.name,  # ✅ Mark as admin-registered
         owner_name=owner_name,
+        owner_email=owner_email,
+        owner_mobile=owner_mobile,
         owner_barangay=owner_barangay,
         owner_municipality=owner_municipality,
         owner_province=owner_province,

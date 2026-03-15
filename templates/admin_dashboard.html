@@ -893,6 +893,25 @@
               <label>Owner's full name Name</label>
               <input type="text" name="owner_name" class="form-control" placeholder="Ex. Juan Dela Cruz">
             </div>
+<div class="mb-3">
+  <label>Owner Email</label>
+  <input type="email"
+         name="owner_email"
+         id="ownerEmailInput"
+         class="form-control"
+         placeholder="example@email.com"
+         required>
+  <div id="emailWarning" class="text-danger small mt-1 d-none">
+  <i class="bi bi-exclamation-circle-fill me-2"></i> This email is already registered. Please use another email.
+  </div>
+</div>
+<div class="mb-3">
+  <label>Mobile Number</label>
+  <input type="text"
+         name="owner_mobile"
+         class="form-control"
+         placeholder="09XXXXXXXXX">
+</div>
             <div class="mb-3">
               <label>Owner Address</label>
               <input type="text"
@@ -1224,5 +1243,57 @@ function toggleCauseInput() {
     causeInput.required = false;
   }
 }
+document.getElementById("ownerEmailInput").addEventListener("blur", function(){
+
+  const email = this.value;
+
+  if(!email) return;
+
+  fetch(`{{ url_for('admin_check_email') }}?email=${email}`)
+    .then(res => res.json())
+    .then(data => {
+
+      if(data.exists){
+
+        const modal = new bootstrap.Modal(
+          document.getElementById("emailExistsModal")
+        );
+
+        modal.show();
+
+        document.getElementById("ownerEmailInput").value = "";
+      }
+
+    });
+
+});
+</script>
+<script>
+const emailInput = document.getElementById("ownerEmailInput");
+const emailWarning = document.getElementById("emailWarning");
+
+emailInput.addEventListener("blur", function() {
+    const email = emailInput.value.trim();
+    if (!email) return;
+
+    fetch(`{{ url_for('admin_check_email') }}?email=${email}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.exists) {
+                emailWarning.classList.remove("d-none"); // show warning
+                emailInput.classList.add("is-invalid"); // optional red border
+            } else {
+                emailWarning.classList.add("d-none"); // hide warning
+                emailInput.classList.remove("is-invalid");
+            }
+        })
+        .catch(err => console.error(err));
+});
+document.querySelector('#registerStrayDogModal form').addEventListener('submit', function(e) {
+    if (!emailInput.value || !emailWarning.classList.contains("d-none")) {
+        e.preventDefault();
+        emailInput.focus();
+    }
+});
 </script>
 {% endblock %}
