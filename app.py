@@ -1356,8 +1356,8 @@ def admin_dashboard():
         .filter(
             not_(
                 and_(
-                    Dog.is_stray.cast(db.Boolean) == True,
-                    Dog.registered_by_admin.cast(db.Boolean) == True
+                    Dog.is_stray == True,
+                    Dog.registered_by_admin == 'Administrator'
                 )
             )
         )
