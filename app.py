@@ -1352,8 +1352,9 @@ def admin_dashboard():
 
     dogs = (
         Dog.query
+        .join(User, Dog.owner_id == User.id)
         .filter(Dog.is_archived == False, Dog.is_stray == False)
-        .order_by(func.lower(Dog.name))    # ✅ ALPHABETICAL
+        .order_by(func.lower(Dog.name))
         .all()
     )
 
@@ -1520,9 +1521,7 @@ def admin_edit_owner(owner_id):
 @app.route('/admin/data-analysis')
 @login_required
 def admin_data_analysis():
-    print("ALL DOGS:", Dog.query.count())
-    print("NOT ARCHIVED:", Dog.query.filter_by(is_archived=False).count())
-    print("ARCHIVED:", Dog.query.filter_by(is_archived=True).count())
+
     if current_user.role != 'admin':
         abort(403)
 
