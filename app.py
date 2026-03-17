@@ -1352,9 +1352,8 @@ def admin_dashboard():
 
     dogs = (
         Dog.query
-        .join(User, Dog.owner_id == User.id)
-        .filter(Dog.is_archived == False, Dog.is_stray == False)
-        .order_by(func.lower(Dog.name))
+        .filter(Dog.is_archived == False)
+        .order_by(func.lower(Dog.name))    # ✅ ALPHABETICAL
         .all()
     )
 
