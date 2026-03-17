@@ -1353,6 +1353,7 @@ def admin_dashboard():
     dogs = (
         Dog.query
         .filter(Dog.is_archived == False)
+        .filter(Dog.is_stray == False)
         .order_by(func.lower(Dog.name))    # ✅ ALPHABETICAL
         .all()
     )

@@ -287,6 +287,7 @@
           <table class="table table-bordered table-hover align-middle">
             <thead class="table-light sticky-top">
               <tr>
+                <th>Date Registerted</th>
                 <th>Name</th>
                 <th>Breed</th>
                 <th>Age</th>
@@ -299,6 +300,11 @@
             <tbody>
               {% for d in u.dogs %}
               <tr>
+
+
+                <td>
+          {{ d.created_at.strftime('%B %d, %Y') if d.created_at else 'N/A' }}
+</td>
                 <td>{{ d.name }}</td>
                 <td>{{ d.owner_name }}</td>
                 <td>{{ d.breed }}</td>
