@@ -50,7 +50,7 @@
             
             
             <div class="col-lg-4 col-12 dog-img-wrapper">
-                 <img src="{{ url_for('static', filename='dog_images/' ~ (d.image if d.image else 'logo.png')) }}"
+              <img src="{{ d.image if d.image else url_for('static', filename='dog_images/logo.png') }}"
                   class="dog-img"
                   alt="{{ d.name }}"
                   style="cursor: pointer;"
@@ -116,10 +116,10 @@
               </p>
               <p class="text-muted small mb-2"><strong>Vaccination Expiry:</strong> {{ d.vaccination_expiry if d.vaccination_expiry else "N/A" }}</p>
               {% if d.qr_code %}
-              <img src="{{ url_for('qrcodes', filename=d.qr_code) }}" alt="{{ d.name}} QR"
-                  class="border rounded p-1 mb-2 qr-clickable"
-                  style="height: 90px; width: 90px; cursor: pointer;"
-                  onclick="openQrFullscreen(this.src)">
+                <img src="{{ d.qr_code }}" alt="{{ d.name}} QR"
+                    class="rounded p-1 mb-2 qr-clickable"
+                    style="height: 90px; width: 90px; cursor: pointer;"
+                    onclick="openQrFullscreen(this.src)">
               {% endif %}
 
               <div class="mt-2">
@@ -149,7 +149,7 @@
             
             
             <div class="col-lg-4 col-12 dog-img-wrapper">
-                 <img src="{{ url_for('static', filename='dog_images/' ~ (d.image if d.image else 'logo.png')) }}"
+              <img src="{{ d.image if d.image else url_for('static', filename='dog_images/logo.png') }}"
                   class="dog-img"
                   alt="{{ d.name }}"
                   style="cursor: pointer;"
@@ -183,7 +183,7 @@
               <p class="text-muted small mb-2"><strong>Vaccination Expiry:</strong> {{ d.vaccination_expiry if d.vaccination_expiry else "N/A" }}</p>
 
               {% if d.qr_code %}
-                <img src="{{ url_for('qrcodes', filename=d.qr_code) }}" alt="{{ d.name}} QR"
+                <img src="{{ d.qr_code }}" alt="{{ d.name}} QR"
                     class="rounded p-1 mb-2 qr-clickable"
                     style="height: 90px; width: 90px; cursor: pointer;"
                     onclick="openQrFullscreen(this.src)">

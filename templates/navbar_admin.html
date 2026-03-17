@@ -99,7 +99,7 @@
 }
 /* Logo styling */
 .navbar-logo {
-  height: 40px;       /* adjust as needed */
+  height: 50px;       /* adjust as needed */
   width: auto;
 }
 
@@ -114,7 +114,7 @@
        alt="Logo" 
        class="navbar-logo">
       {% if request.endpoint == 'admin_dashboard' %}
-      
+      {% elif request.endpoint == 'stray_dogs' %}
       {% elif request.endpoint == 'admin_data_analysis' %}
 
       {% elif request.endpoint == 'admin_notifications' %}
@@ -139,6 +139,14 @@
              <span class="nav-title">Dashboard</span>
           </a>
         </li>
+
+        <li class="nav-item" title="Stray Dogs">
+  <a class="nav-link {% if request.endpoint=='stray_dogs' %}active{% endif %}" 
+     href="{{ url_for('stray_dogs') }}">
+    <i class="bi bi-heart-fill me-1"></i>
+    <span class="nav-title">Stray Dogs</span>
+  </a>
+</li>
 
         <li class="nav-item" title="Data Analysis">
           <a class="nav-link {% if request.endpoint=='admin_data_analysis' %}active{% endif %}" 
