@@ -1353,7 +1353,7 @@ def admin_dashboard():
     dogs = (
         Dog.query
         .filter(Dog.is_archived == False)
-        .filter(~((Dog.is_stray == True) & (Dog.registered_by_admin != None)))  # hide admin-registered strays
+        .filter(Dog.is_stray == False)
         .order_by(func.lower(Dog.name))
         .all()
     )
