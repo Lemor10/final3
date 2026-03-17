@@ -13,7 +13,7 @@ import qrcode, io, csv, uuid
 from io import BytesIO
 from flask import g
 import re
-from sqlalchemy import func, and_, not_
+from sqlalchemy import func, or_
 from itsdangerous import URLSafeTimedSerializer
 from flask import render_template_string
 from dateutil.relativedelta import relativedelta
@@ -1352,16 +1352,9 @@ def admin_dashboard():
 
     dogs = (
         Dog.query
+        .filter(Dog.is_stray == False)
         .filter(Dog.is_archived == False)
-        .filter(
-            not_(
-                and_(
-                    Dog.is_stray == True,
-                    Dog.registered_by_admin == 'Administrator'
-                )
-            )
-        )
-        .order_by(func.lower(Dog.name))
+        .order_by(func.lower(Dog.name))    # ✅ ALPHABETICAL
         .all()
     )
 
