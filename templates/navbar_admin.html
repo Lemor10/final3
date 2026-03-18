@@ -115,7 +115,7 @@
        class="navbar-logo">
       {% if request.endpoint == 'admin_dashboard' %}
       {% elif request.endpoint == 'stray_dogs' %}
-      {% elif request.endpoint == 'admin_data_analysis' %}
+      {% elif request.endpoint == 'admin_data_analytics' %}
 
       {% elif request.endpoint == 'admin_notifications' %}
       {% elif request.endpoint == 'admin_archive' %}
@@ -152,7 +152,7 @@
           <a class="nav-link {% if request.endpoint=='admin_data_analysis' %}active{% endif %}" 
              href="{{ url_for('admin_data_analysis') }}">
              <i class="bi bi-bar-chart-fill me-1"></i>
-             <span class="nav-title">Data Analysis</span>
+             <span class="nav-title">Data Analytics</span>
           </a>
         </li>
 

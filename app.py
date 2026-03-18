@@ -32,6 +32,7 @@ from time import time
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
+from docx.shared import Inches
 
 load_dotenv()
 
@@ -418,18 +419,47 @@ def get_analysis_data(start_month=None, end_month=None):
     dogs = query.all()
 
     # ---------------- DEATH ANALYTICS ----------------
-    death_query = Dog.query.filter(Dog.deleted_by_owner_id.isnot(None), Dog.deleted_reason == "Death")
+    death_query = Dog.query.filter(
+        or_(
+            # Owner deleted deaths
+            (Dog.deleted_by_owner_id.isnot(None) & (Dog.deleted_reason == "Death")),
+
+            # Admin archived deaths
+            (Dog.admin_archive_reason.ilike("deceased"))
+        )
+    )    
+
     if start_month and end_month:
         death_query = death_query.filter(Dog.archived_at >= start_date, Dog.archived_at <= end_date)
     archived_dogs = death_query.all()
     total_deaths = len(archived_dogs)
-    death_causes_list = [d.deleted_cause if d.deleted_cause else "Unknown" for d in archived_dogs]
+
+    death_causes_list = []
+    for d in archived_dogs:
+        if d.deleted_reason == "Death":
+            cause = d.deleted_cause
+        elif d.admin_archive_reason and d.admin_archive_reason.lower() == "deceased":
+            cause = d.admin_archive_cause
+        else:
+            cause = None
+
+        death_causes_list.append(cause if cause else "Unknown")
+        
     death_causes = list(set(death_causes_list))
     death_counts = [death_causes_list.count(c) for c in death_causes]
 
     # ---------------- BASIC DOG ANALYTICS ----------------
     total_owners = len(set(d.owner_id for d in dogs))
     total_dogs = len(dogs)
+
+    total_stray_dogs = sum(
+        1 for d in dogs if (
+            d.is_stray is True or 
+            (d.owner_id is None and not d.owner_barangay)
+        )
+    ) 
+
+    owned_dogs = total_dogs - total_stray_dogs
     breeds_list = [d.breed.capitalize() if d.breed else "Unknown" for d in dogs]
     breeds = list(set(breeds_list))
     breed_numbers = [breeds_list.count(b) for b in breeds]
@@ -449,6 +479,10 @@ def get_analysis_data(start_month=None, end_month=None):
     unvaccinated_barangay_counts = {}
 
     for d in dogs:
+
+        if d.is_stray or (d.owner_id is None and not d.owner_barangay):
+            continue
+
         # Priority: Dog.owner_barangay -> Owner's barangay -> "Unknown"
         if d.owner_barangay:
             barangay = d.owner_barangay
@@ -473,6 +507,8 @@ def get_analysis_data(start_month=None, end_month=None):
     return {
         "total_owners": total_owners,
         "total_dogs": total_dogs,
+        "total_stray_dogs": total_stray_dogs,
+        "owned_dogs": owned_dogs,
         "breeds": breeds,
         "breed_numbers": breed_numbers,
         "vaccinated_count": vaccinated_count,
@@ -1530,77 +1566,9 @@ def admin_data_analysis():
 
     data = get_analysis_data(start_month, end_month)
 
-    query = Dog.query.filter(Dog.is_archived == False)
-    if start_month and end_month:
-        start_date = datetime.strptime(start_month + "-01", "%Y-%m-%d")
-        end_date = datetime.strptime(end_month + "-01", "%Y-%m-%d")
-        end_day = 28 if end_date.month == 2 else 30
-        end_date = datetime(end_date.year, end_date.month, end_day, 23, 59, 59)
-        query = query.filter(Dog.created_at >= start_date,
-                             Dog.created_at <= end_date)
-
-    dogs = query.all()
-
-        # ---------------- DEATH ANALYTICS ----------------
-    death_query = Dog.query.filter(
-        (Dog.deleted_by_owner_id.isnot(None) & (Dog.deleted_reason == "Death")) |
-        (Dog.admin_archive_reason.ilike("deceased"))  # include admin archived deaths          # reason = death
-    )
-
-    if start_month and end_month:
-        death_query = death_query.filter(
-            Dog.archived_at >= start_date,
-            Dog.archived_at <= end_date
-        )
-
-    archived_dogs = death_query.all()
-
-    total_deaths = len(archived_dogs)
-
-  # Collect causes of death from both owner-deleted and admin-archived dogs
-    death_causes_list = [
-        d.deleted_cause if d.deleted_cause else
-        d.admin_archive_cause if d.admin_archive_cause else "Unknown"
-        for d in archived_dogs
-    ]
-
-    death_causes = list(set(death_causes_list))
-    death_counts = [death_causes_list.count(c) for c in death_causes]
-
-    total_owners = len(set(d.owner_id for d in dogs))
-    total_dogs = len(dogs)
-
-    breeds_list = [d.breed.capitalize() if d.breed else "Unknown" for d in dogs]
-    breeds = list(set(breeds_list))
-    breed_numbers = [breeds_list.count(b) for b in breeds]
-
-    vaccinated_count = sum(1 for d in dogs if d.vaccinated == "Vaccinated")
-    unvaccinated_count = sum(1 for d in dogs if d.vaccinated == "Not Vaccinated")
-
-    month_counts_dict = {}
-    for d in dogs:
-        m = d.created_at.strftime("%b %Y")
-        month_counts_dict[m] = month_counts_dict.get(m, 0) + 1
-    months = sorted(month_counts_dict.keys(), key=lambda x: datetime.strptime(x, "%b %Y"))
-    month_counts = [month_counts_dict[m] for m in months]
-
-    data = {
-        "total_owners": total_owners,
-        "total_dogs": total_dogs,
-        "total_deaths": total_deaths,
-        "breeds": breeds,
-        "breed_numbers": breed_numbers,
-        "vaccinated_count": vaccinated_count,
-        "unvaccinated_count": unvaccinated_count,
-        "months": months,
-        "month_counts": month_counts,
-        "death_causes": death_causes,
-        "death_counts": death_counts
-    }
-
     if request.args.get("ajax"):
         return jsonify(data)
-    
+
     return render_template(
         'admin_data_analysis.html',
         **data,
@@ -1623,35 +1591,42 @@ def download_data_analysis():
     downloaded_at = datetime.utcnow()
     formatted_date = downloaded_at.strftime("%B %d, %Y")
 
-    # Create Word document
     document = Document()
-    document.add_heading("Dog Registration Data Analysis Report", level=1)
-    document.add_paragraph(f"Data Analysis Report as of {formatted_date}")
+
+    # Add a logo at the top (adjust path to your logo file)
+    logo_path = os.path.join("static", "images", "logo1.png")  # e.g., static/images/logo.png
+    try:
+        document.add_picture(logo_path, width=Inches(1.5))  # adjust size as needed
+    except Exception as e:
+        print(f"Logo could not be added: {e}")
+
+    # Create Word document
+    document.add_heading("TraCK Paw PH Data Analysis Report", level=1)
+    document.add_paragraph(f"Data Analytics Report as of {formatted_date}")
     document.add_paragraph("")  # spacing
 
+    # Summary
     document.add_paragraph(f"Total Owners: {data['total_owners']}")
     document.add_paragraph(f"Total Dogs: {data['total_dogs']}")
+    document.add_paragraph(f"Owned Dogs: {data['owned_dogs']}")
+    document.add_paragraph(f"Total Stray Dogs: {data['total_stray_dogs']}")
     document.add_paragraph(f"Total Deaths: {data['total_deaths']}")
 
-    document.add_heading("Dogs per Breed", level=2)
-
     # ---------- BREED CHART ----------
+    document.add_heading("Dogs per Breed", level=2)
     plt.figure()
     plt.bar(data["breeds"], data["breed_numbers"])
     plt.xticks(rotation=45)
     plt.title("Dogs per Breed")
     plt.tight_layout()
-
     breed_chart = io.BytesIO()
     plt.savefig(breed_chart, format="png")
     plt.close()
     breed_chart.seek(0)
-
     document.add_picture(breed_chart, width=Inches(5))
 
     # ---------- VACCINATION CHART ----------
     document.add_heading("Vaccination Status", level=2)
-
     plt.figure()
     plt.pie(
         [data["vaccinated_count"], data["unvaccinated_count"]],
@@ -1659,46 +1634,106 @@ def download_data_analysis():
         autopct="%1.1f%%"
     )
     plt.title("Vaccination Distribution")
-
     vac_chart = io.BytesIO()
     plt.savefig(vac_chart, format="png")
     plt.close()
     vac_chart.seek(0)
-
     document.add_picture(vac_chart, width=Inches(4))
+
+    # ---------- OWNED VS STRAY ----------
+    document.add_heading("Owned vs Stray Dogs", level=2)
+    plt.figure()
+    plt.pie(
+        [data["owned_dogs"], data["total_stray_dogs"]],
+        labels=["Owned Dogs", "Stray Dogs"],
+        autopct="%1.1f%%",
+        colors=['#0d6efd', '#ffc107']
+    )
+    plt.title("Owned vs Stray Dogs")
+    own_stray_chart = io.BytesIO()
+    plt.savefig(own_stray_chart, format="png")
+    plt.close()
+    own_stray_chart.seek(0)
+    document.add_picture(own_stray_chart, width=Inches(4))
 
     # ---------- MONTHLY REGISTRATION ----------
     document.add_heading("Monthly Registrations", level=2)
-
     plt.figure()
     plt.plot(data["months"], data["month_counts"], marker='o')
     plt.xticks(rotation=45)
     plt.title("Monthly Registrations")
     plt.tight_layout()
-
     month_chart = io.BytesIO()
     plt.savefig(month_chart, format="png")
     plt.close()
     month_chart.seek(0)
-
     document.add_picture(month_chart, width=Inches(5))
 
     # ---------- DEATH CAUSE ----------
     document.add_heading("Cause of Death", level=2)
-
     if data["death_causes"]:
         plt.figure()
         plt.bar(data["death_causes"], data["death_counts"])
         plt.xticks(rotation=45)
         plt.title("Cause of Death")
         plt.tight_layout()
-
         death_chart = io.BytesIO()
         plt.savefig(death_chart, format="png")
         plt.close()
         death_chart.seek(0)
-
         document.add_picture(death_chart, width=Inches(5))
+
+    # ---------- TOP BARANGAYS ----------
+    document.add_heading("Top Barangays by Total Dogs", level=2)
+    if data["top_barangays"]:
+        plt.figure()
+        plt.bar(
+            [b[0] for b in data["top_barangays"]],
+            [b[1] for b in data["top_barangays"]],
+            color="#6f42c1"
+        )
+        plt.xticks(rotation=45)
+        plt.title("Top Barangays by Total Dogs")
+        plt.tight_layout()
+        barangay_chart = io.BytesIO()
+        plt.savefig(barangay_chart, format="png")
+        plt.close()
+        barangay_chart.seek(0)
+        document.add_picture(barangay_chart, width=Inches(5))
+
+    document.add_heading("Top Barangays by Vaccinated Dogs", level=2)
+    if data["top_vaccinated_barangays"]:
+        plt.figure()
+        plt.bar(
+            [b[0] for b in data["top_vaccinated_barangays"]],
+            [b[1] for b in data["top_vaccinated_barangays"]],
+            color="#198754"
+        )
+        plt.xticks(rotation=45)
+        plt.title("Top Barangays by Vaccinated Dogs")
+        plt.tight_layout()
+        vac_barangay_chart = io.BytesIO()
+        plt.savefig(vac_barangay_chart, format="png")
+        plt.close()
+        vac_barangay_chart.seek(0)
+        document.add_picture(vac_barangay_chart, width=Inches(5))
+
+    document.add_heading("Top Barangays by Unvaccinated Dogs", level=2)
+    if data["top_unvaccinated_barangays"]:
+        plt.figure()
+        plt.bar(
+            [b[0] for b in data["top_unvaccinated_barangays"]],
+            [b[1] for b in data["top_unvaccinated_barangays"]],
+            color="#dc3545"
+        )
+        plt.xticks(rotation=45)
+        plt.title("Top Barangays by Unvaccinated Dogs")
+        plt.tight_layout()
+        unvac_barangay_chart = io.BytesIO()
+        plt.savefig(unvac_barangay_chart, format="png")
+        plt.close()
+        unvac_barangay_chart.seek(0)
+        document.add_picture(unvac_barangay_chart, width=Inches(5))
 
     # Save file
     file_stream = io.BytesIO()
