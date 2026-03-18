@@ -1473,10 +1473,12 @@ def add_stray_dog():
     db.session.add(new_dog)
     db.session.commit()
 
-    flash("Stray dog registered successfully!", "success")
     return redirect(url_for('stray_dogs'))
 
 # Edit stray dog info
+from dateutil.relativedelta import relativedelta
+from datetime import datetime
+
 @app.route('/admin/edit_stray/<int:dog_id>', methods=['POST'])
 @login_required
 def admin_edit_stray(dog_id):
@@ -1484,16 +1486,38 @@ def admin_edit_stray(dog_id):
         abort(403)
 
     dog = Dog.query.get_or_404(dog_id)
+
     dog.name = request.form['name']
     dog.breed = request.form['breed']
-    dog.location_found = request.form.get('location_found')  # specific to strays
-    dog.vaccinated = request.form.get('status', dog.vaccinated)
-    dog.last_vaccination = request.form.get('last_vaccination') or None
-    dog.next_vaccination = request.form.get('next_vaccination') or None
+    dog.location_found = request.form.get('location_found')
+
+    # ✅ FIX 1: correct field name
+    dog.vaccinated = request.form.get('vaccinated')
+
+    # ✅ FIX 2: convert dates properly
+    last_vaccination = request.form.get('last_vaccination')
+    next_vaccination = request.form.get('next_vaccination')
+
+    last_vac_date = datetime.strptime(last_vaccination, "%Y-%m-%d").date() if last_vaccination else None
+    next_vac_date = datetime.strptime(next_vaccination, "%Y-%m-%d").date() if next_vaccination else None
+
+    dog.last_vaccination = last_vac_date
+    dog.next_vaccination = next_vac_date
+
+    # ✅ FIX 3: recalculate expiry
+    if dog.vaccinated == "Vaccinated" and last_vac_date:
+        dog.vaccination_expiry = last_vac_date + relativedelta(years=3)
+
+        # optional: auto next vaccination if empty
+        if not next_vac_date:
+            dog.next_vaccination = last_vac_date + relativedelta(years=1)
+    else:
+        dog.vaccination_expiry = None
 
     db.session.commit()
+
     flash("Stray dog information updated successfully!", "success")
-    return redirect(url_for('admin_stray_dogs'))
+    return redirect(url_for('stray_dogs'))
 
 @app.route("/admin/check-email")
 def admin_check_email():
@@ -1922,11 +1946,44 @@ def admin_edit_dog(dog_id):
     dog.name = request.form['name']
     dog.breed = request.form['breed']
     dog.vaccinated = request.form['status']
-    dog.last_vaccination = request.form.get('last_vaccination') or None
-    dog.next_vaccination = request.form.get('next_vaccination') or None
+
+    # ✅ Convert dates FIRST
+    last_vaccination = request.form.get("last_vaccination")
+    next_vaccination = request.form.get("next_vaccination")
+
+    last_vac_date = datetime.strptime(last_vaccination, "%Y-%m-%d").date() if last_vaccination else None
+    next_vac_date = datetime.strptime(next_vaccination, "%Y-%m-%d").date() if next_vaccination else None
+
+    dog.last_vaccination = last_vac_date
+    dog.next_vaccination = next_vac_date
+
+    # ✅ Vaccination details
+    if dog.vaccinated == "Vaccinated":
+        dog.vaccination_location = request.form.get('vaccination_location')
+        dog.vaccination_barangay = request.form.get('vaccination_barangay')
+        dog.vaccination_municipality = request.form.get('vaccination_municipality')
+        dog.vaccination_province = request.form.get('vaccination_province')
+
+        # ✅ Calculate expiry
+        if last_vac_date:
+            dog.vaccination_expiry = last_vac_date + relativedelta(years=3)
+
+        # ✅ Auto next vaccination if empty
+        if not next_vac_date and last_vac_date:
+            dog.next_vaccination = last_vac_date + relativedelta(years=1)
+
+    else:
+        # ❌ Clear everything if not vaccinated
+        dog.vaccination_location = None
+        dog.vaccination_barangay = None
+        dog.vaccination_municipality = None
+        dog.vaccination_province = None
+        dog.last_vaccination = None
+        dog.next_vaccination = None
+        dog.vaccination_expiry = None
+
     db.session.commit()
 
-    flash("Dog information updated successfully!", "success")
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/archive-dog/<int:dog_id>', methods=['POST'])

@@ -434,24 +434,6 @@
 </p>
               <p class="text-muted small mb-1"><strong>Birthdate:</strong> {{ d.birthdate if d.birthdate else 'N/A' }}</p>
               <p class="text-muted small mb-1"><strong>Age:</strong> {{ d.age if d.age else 'N/A' }}</p>
-                                <p class="text-muted mb-1 small">
-                    <strong>Vaccination Address:</strong>
-                    {% if d.vaccination_barangay %}
-                      {{ d.vaccination_barangay }},
-                      {{ d.vaccination_municipality }},
-                      {{ d.vaccination_province }}
-                    {% else %}
-                      N/A
-                    {% endif %}
-                  </p>
-                  <p class="text-muted mb-1 small">
-                    <strong>Vaccination Conducted At:</strong>
-                    {% if d.vaccination_location %}
-                      {{ d.vaccination_location }}
-                    {% else %}
-                      N/A
-                    {% endif %}
-                  </p>
               <p class="text-muted small mb-1">
                 <strong>Gender:</strong>
                 {% if d.gender == 'Male' %}
@@ -462,6 +444,24 @@
                   N/A
                 {% endif %}
               </p>
+                  <p class="text-muted mb-1 small">
+                    <strong>Vaccination Conducted At:</strong>
+                    {% if d.vaccination_location %}
+                      {{ d.vaccination_location }}
+                    {% else %}
+                      N/A
+                    {% endif %}
+                  </p>
+                  <p class="text-muted mb-1 small">
+                    <strong>Vaccination Address:</strong>
+                    {% if d.vaccination_barangay %}
+                      {{ d.vaccination_barangay }},
+                      {{ d.vaccination_municipality }},
+                      {{ d.vaccination_province }}
+                    {% else %}
+                      N/A
+                    {% endif %}
+                  </p>
               <p class="text-muted small mb-1"><strong>Last Vaccinated:</strong> 
                 {{ d.last_vaccination if d.last_vaccination else "N/A" }}
               </p>
@@ -555,9 +555,26 @@
                   N/A
                 {% endif %}
               </p>
+                                <p class="text-muted mb-1 small">
+                    <strong>Vaccination Conducted At:</strong>
+                    {% if d.vaccination_location %}
+                      {{ d.vaccination_location }}
+                    {% else %}
+                      N/A
+                    {% endif %}
+                  </p>
+                  <p class="text-muted mb-1 small">
+                    <strong>Vaccination Address:</strong>
+                    {% if d.vaccination_barangay %}
+                      {{ d.vaccination_barangay }},
+                      {{ d.vaccination_municipality }},
+                      {{ d.vaccination_province }}
+                    {% else %}
+                      N/A
+                    {% endif %}
+                  </p>
               <p class="text-muted small mb-1"><strong>Last Vaccinated:</strong> 
-                {{ d.last_vaccinated if d.last_vaccinated else "N/A" }}
-              </p>
+                {{ d.last_vaccination if d.last_vaccination else "N/A" }}              </p>
               <p class="text-muted small mb-2"><strong>Next Vaccination:</strong> 
                 {{ d.next_vaccination if d.next_vaccination else "N/A" }}
               </p>
