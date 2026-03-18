@@ -1350,7 +1350,13 @@ def admin_dashboard():
 
     users = users_pagination.items
 
-    dogs = Dog.query.filter_by(is_stray=False, is_archived=False).order_by(func.lower(Dog.name)).all()
+    dogs = (
+        Dog.query
+        .filter(Dog.is_archived == False)
+        .filter(func.coalesce(Dog.is_stray, False) == False)
+        .order_by(func.lower(Dog.name))
+        .all()
+    )
 
     return render_template('admin_dashboard.html', users=users, dogs=dogs, pagination=users_pagination
 )
