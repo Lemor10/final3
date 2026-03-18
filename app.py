@@ -1961,7 +1961,7 @@ def admin_archive_dog(dog_id):
 
     db.session.commit()
 
-    return redirect(url_for('admin_dashboard'))
+    return redirect(request.referrer or url_for('admin_dashboard'))
 
 @app.route('/admin/archive')
 @login_required
