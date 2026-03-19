@@ -988,6 +988,9 @@ def forgot_password():
             reset_link=reset_link,
             brand_name="TrackPawPH",
             logo_url=f"{BASE_URL}/static/images/logo1.png",
+            facebook_icon_url=f"{BASE_URL}/static/images/facebook.png",
+            instagram_icon_url=f"{BASE_URL}/static/images/instagram.png",
+            twitter_icon_url=f"{BASE_URL}/static/images/x.png",
             year=datetime.now().year
         )
 
