@@ -449,7 +449,7 @@ def get_analysis_data(start_month=None, end_month=None):
     death_counts = [death_causes_list.count(c) for c in death_causes]
 
     # ---------------- BASIC DOG ANALYTICS ----------------
-    total_owners = len(set(d.owner_id for d in dogs))
+    total_owners = len({d.owner_id for d in dogs if d.owner_id is not None})
     total_dogs = len(dogs)
 
     total_stray_dogs = sum(
