@@ -17,7 +17,7 @@
       align-items: center;
       justify-content: center;
       font-family: "Poppins", sans-serif;
-      color: rgb(0, 0, 0);
+      color: rgb(255, 255, 255);
     }
 
     .blob {
@@ -83,6 +83,30 @@
 .form-check-label {
   color: white; /* ensure it’s visible on your dark card */
   font-size: 14px;
+}
+
+.feedback-text {
+  font-weight: 650;
+  -webkit-text-stroke: 0.2px rgb(121, 121, 121);
+  text-shadow: 
+    0 0 2px rgba(198, 198, 198, 0.9),
+    0 0 2px rgba(200, 200, 200, 0.7);
+}
+
+.username-feedback {
+  font-weight: 500;
+  -webkit-text-stroke: 0.2px rgb(119, 119, 119);
+  text-shadow: 0 0 1px rgba(255, 255, 255, 0.8);
+
+  /* 👇 THIS FIXES YOUR PROBLEM */
+  color: inherit !important;
+}
+.text-success.username-feedback {
+  color: #00ff88 !important;
+}
+
+.text-danger.username-feedback {
+  color: #ff4d4d !important;
 }
 /* Desktop view keeps row layout */
 @media (min-width: 992px) {
@@ -258,9 +282,10 @@
       transform: scale(1.02);
     }
 
-    .form-check-label {
-      color: rgba(255, 255, 255, 0);
-    }
+  .form-check-label {
+    color: rgba(255, 255, 255, 0.85);
+  }
+  
   </style>
 </head>
   <div class="blob one"></div>
@@ -335,7 +360,7 @@
                   <label>Username</label>
           </div>
           <div class="mb-3">
-            <small id="usernameFeedback" class="text-muted" style="font-size: 12px;">
+            <small id="usernameFeedback" class="text-muted" style="font-size: 13px;">
              Letters, numbers, underscore
             </small>
           </div>
@@ -352,9 +377,9 @@
             <label>Contact Number</label>
           </div>
             <div class="mb-3">
-            <strong id="addressFeedback" class="text-muted" style="font-size: 12.50px;">
+            <small id="addressFeedback" class="text-muted" style="font-size: 13.50px;">
              Owners Address:
-            </strong>
+            </small>
             </div>
           <div class="mb-4 form-floating-custom">
             <input type="text" class="form-control" name="barangay" value="{{ form_data.barangay if form_data else '' }}" placeholder="" required>
@@ -388,7 +413,7 @@
 <div class="mb-2 form-floating-custom">
   <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder=""  value="{% if not clear_passwords and form_data %}{{ form_data.confirm_password | default('') }}{% endif %}" required>
   <label>Confirm Password</label>
-  <div class="invalid-feedback text-danger">
+  <div class="invalid-feedback text-danger feedback-text" style="font-size: 13.50px;">
     Passwords do not match.
   </div>
 </div>
@@ -635,6 +660,7 @@ function validatePasswords() {
 // ===== Check Username Availability =====
 async function checkUsername() {
   const username = usernameInput.value.trim();
+
   if (username.length < 4) {
     usernameFeedback.textContent = "Minimum 4 characters";
     usernameFeedback.className = "text-muted";
@@ -643,17 +669,24 @@ async function checkUsername() {
     return;
   }
 
+  // 👇 ADD THIS
+  usernameFeedback.textContent = "Checking...";
+  usernameFeedback.className = "text-muted";
+
   try {
     const res = await fetch(`/check-username?username=${encodeURIComponent(username)}`);
     const data = await res.json();
+
     usernameFeedback.textContent = data.message;
-    usernameFeedback.className = data.available ? "text-success" : "text-danger";
+    usernameFeedback.className = (data.available ? "text-success" : "text-danger") + " username-feedback";
     usernameValid = data.available;
+
   } catch {
     usernameFeedback.textContent = "Error checking username";
     usernameFeedback.className = "text-danger";
     usernameValid = false;
   }
+
   updateSignupButton();
 }
 
@@ -698,8 +731,29 @@ agreeTermsModal.addEventListener("change", () => {
 
 // Submit form when confirmed
 confirmTermsBtn.addEventListener("click", () => {
+
+  const passwordsMatch = validatePasswords();
+  const strongPassword = checkPasswordStrength();
+
+  if (!usernameValid) {
+    usernameFeedback.textContent = "Please choose a valid username";
+    usernameFeedback.className = "text-danger";
+    return;
+  }
+
+  if (!passwordsMatch) {
+    confirmPassword.classList.add("is-invalid");
+    return;
+  }
+
+  if (!strongPassword) {
+    strengthText.textContent = "Password is too weak";
+    return;
+  }
+
+  // ✅ All good → submit
   termsModal.hide();
-  signupForm.submit(); // triggers backend to send verification email
+  signupForm.submit();
 });
 </script>
 </body>
