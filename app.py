@@ -762,6 +762,11 @@ def signup():
         password = request.form['password']
         confirm_password = request.form['confirm_password']
 
+        missing_fields = [k for k, v in form_data.items() if not v]
+        if missing_fields:
+            flash("Must fill all information", "error")
+            return render_template('signup.html', form_data=form_data, clear_passwords=True)
+
         # ===== Password match check =====
         if password != confirm_password:
             flash('Passwords do not match.', 'error')
@@ -842,7 +847,7 @@ def signup():
 
         except Exception as e:
             print("Verification email failed:", e)
-
+        
         return redirect(url_for("check_email", email=form_data['email']))
     return render_template('signup.html')
 
