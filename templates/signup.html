@@ -731,26 +731,6 @@ agreeTermsModal.addEventListener("change", () => {
 
 // Submit form when confirmed
 confirmTermsBtn.addEventListener("click", () => {
-
-  const passwordsMatch = validatePasswords();
-  const strongPassword = checkPasswordStrength();
-
-  if (!usernameValid) {
-    usernameFeedback.textContent = "Please choose a valid username";
-    usernameFeedback.className = "text-danger";
-    return;
-  }
-
-  if (!passwordsMatch) {
-    confirmPassword.classList.add("is-invalid");
-    return;
-  }
-
-  if (!strongPassword) {
-    strengthText.textContent = "Password is too weak";
-    return;
-  }
-
   // ✅ All good → submit
   termsModal.hide();
   signupForm.submit();

@@ -449,17 +449,23 @@ def get_analysis_data(start_month=None, end_month=None):
     death_counts = [death_causes_list.count(c) for c in death_causes]
 
     # ---------------- BASIC DOG ANALYTICS ----------------
-    # ALL registered owners (from User table)
-    registered_users_count = User.query.filter_by(role='owner').count()
+    # Get all registered owners from Dog table (owner_id not None)
+    # 1️⃣ Registered owners from Dog table
+    registered_owner_ids = {d.owner_id for d in dogs if d.owner_id is not None}
 
-    # Walk-in owners (from Dog table)
+    # 2️⃣ Exclude admins
+    admin_user_ids = {u.id for u in User.query.filter_by(role='admin').all()}
+    real_registered_owner_ids = registered_owner_ids - admin_user_ids
+
+    # 3️⃣ Walk-in owners (owner_id is None), ignoring "(Admin Registered)"
     walkin_owner_names = {
         d.owner_name.strip().lower()
-        for d in Dog.query.all()
+        for d in dogs
         if d.owner_id is None and d.owner_name and d.owner_name != "(Admin Registered)"
     }
 
-    total_owners = registered_users_count + len(walkin_owner_names)
+    # 4️⃣ Total owners = registered + walk-in
+    total_owners = len(real_registered_owner_ids) + len(walkin_owner_names)
     total_dogs = len(dogs)
 
     total_stray_dogs = sum(
