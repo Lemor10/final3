@@ -283,7 +283,7 @@ Gender
 
 {% if dog.owner %}
 <div class="owner-card">
-<img src="{{ current_user.profile_photo if current_user.profile_photo else url_for('static', filename='profile_images/default_profile.png') }}"
+<img src="{{ dog.owner.profile_photo if dog.owner.profile_photo else url_for('static', filename='profile_images/default_profile.png') }}"
  class="owner-photo">
 <div class="flex-grow-1">
 <div class="fw-semibold"><i class="bi bi-person-circle me-1"></i>{{ dog.owner.name }}</div>
