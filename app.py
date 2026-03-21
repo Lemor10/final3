@@ -1161,6 +1161,27 @@ def owner_profile():
 
     return render_template('owner_profile.html', dogs=dogs)
 
+@app.route('/owner/delete-profile-photo', methods=['POST'])
+@login_required
+def owner_delete_profile_photo():
+    user = current_user
+
+    if user.profile_photo:
+        import os
+        try:
+            # Remove file from storage
+            file_path = os.path.join('static', user.profile_photo.replace('/static/', ''))
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        except Exception as e:
+            print("Error deleting file:", e)
+
+        # Reset to default
+        user.profile_photo = None
+        db.session.commit()
+
+    return '', 204
+
 @app.route('/owner_add_dog', methods=['POST'])
 @login_required
 def owner_add_dog():
@@ -1957,6 +1978,9 @@ def admin_register_dog():
     db.session.add(new_dog)
     db.session.commit()
 
+    existing_user = User.query.filter_by(email=owner_email).first()
+    if existing_user:
+        flash("Email already registered. Please use a different email.", "danger")
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/edit_dog/<int:dog_id>', methods=['POST'])

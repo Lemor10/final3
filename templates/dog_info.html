@@ -254,7 +254,25 @@ Gender
 </div>
 {% endif %}
 </div>
-
+                    <p class="info-row">
+                    <strong>Vaccination Address:</strong>
+                    {% if dog.vaccination_barangay %}
+                      {{ dog.vaccination_barangay }},
+                      {{ dog.vaccination_municipality }},
+                      {{ dog.vaccination_province }}
+                    {% else %}
+                      N/A
+                    {% endif %}
+                  </p>
+                  <p class="info-row">
+                    <strong>Vaccination Conducted At:</strong>
+                    {% if dog.vaccination_location %}
+                      {{ dog.vaccination_location }}
+                    {% else %}
+                      N/A
+                    {% endif %}
+                  </p>
+                    <p class="info-row"><strong>Vaccination Expiry:</strong> {{ dog.vaccination_expiry if dog.vaccination_expiry else "N/A" }}</p>
 <h5 class="section-title">
 <i class="bi bi-person-badge me-2"></i>Owner Information
 </h5>
@@ -281,8 +299,11 @@ Gender
 {% endif %}
 
 <div class="text-center">
-<a href="{{ url_for('scan_qr') }}" class="btn btn-light back-btn px-4"><i class="bi bi-arrow-left-circle me-1"></i> Back to Scanner</a>
-</div>
+{% if current_user.is_authenticated %}
+<a href="{{ url_for('scan_qr') }}" class="btn btn-light back-btn px-4">
+{% else %}
+<a href="{{ url_for('login') }}" class="btn btn-light back-btn px-4">
+{% endif %}</div>
 
 </div>
 

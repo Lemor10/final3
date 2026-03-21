@@ -112,22 +112,14 @@
 .table-responsive {
     position: static;
 }
-#loadingOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 11000; /* 🔥 higher than Bootstrap modal */
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.dog-card {
+  position: relative;
 }
-.loading-box {
-  background: #081a3000;
-  padding: 25px 35px;
-  border-radius: 12px;
+
+.dog-actions {
+  position: absolute;
+  top: 10px;
+  right: 10px;
 }
     /* Responsive */
     @media (max-width: 1440px) {
@@ -424,6 +416,25 @@
 
         {% for d in dogs if d.vaccinated == 'Vaccinated' %}
         <div class="dog-card p-3 bg-white shadow-sm rounded mb-3">
+                    <div class="dog-action d-flex justify-content-end">
+  <div class="dropdown">
+    <button class="btn btn-sm dropdown-toggle" type="button"
+            data-bs-toggle="dropdown">
+      <i class="bi bi-three-dots-vertical"></i>
+    </button>
+
+    <ul class="dropdown-menu dropdown-menu-end">
+      <li>
+        <a class="dropdown-item"
+           href="#"
+           data-bs-toggle="modal"
+           data-bs-target="#ownerModal{{ d.id }}">
+          <i class="bi bi-person"></i> View Owner
+        </a>
+      </li>
+    </ul>
+  </div>
+</div>
           <div class="row g-3 align-items-center">
             
             
@@ -449,7 +460,7 @@
 {% elif d.owner %}
   {{ d.owner.barangay }}, {{ d.owner.municipality }}, {{ d.owner.province }}
 {% else %}
-  N/A
+  <i class="bi bi-shield-x text-muted"></i> N/A
 {% endif %}
 </p>
               <p class="text-muted small mb-1"><strong>Birthdate:</strong> {{ d.birthdate if d.birthdate else 'N/A' }}</p>
@@ -536,6 +547,26 @@
 
         {% for d in dogs if d.vaccinated == 'Not Vaccinated' %}
         <div class="dog-card p-3 bg-white shadow-sm rounded mb-3">
+
+          <div class="dog-action d-flex justify-content-end">
+  <div class="dropdown">
+    <button class="btn btn-sm dropdown-toggle" type="button"
+            data-bs-toggle="dropdown">
+      <i class="bi bi-three-dots-vertical"></i>
+    </button>
+
+    <ul class="dropdown-menu dropdown-menu-end">
+      <li>
+        <a class="dropdown-item"
+           href="#"
+           data-bs-toggle="modal"
+           data-bs-target="#ownerModal{{ d.id }}">
+          <i class="bi bi-person"></i> View Owner
+        </a>
+      </li>
+    </ul>
+  </div>
+</div>
           <div class="row g-3 align-items-center">
             
             
@@ -644,6 +675,46 @@
     </div>
   </div>
 </div>
+{% for d in dogs %}
+<div class="modal fade" id="ownerModal{{ d.id }}" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">
+          <i class="bi bi-person-circle"></i> Owner Details
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <p><strong>Name:</strong> {{ d.owner_name or 'Stray' }}</p>
+
+        <p><strong>Address:</strong>
+          {% if d.owner_barangay or d.owner_municipality or d.owner_province %}
+            {{ d.owner_barangay }}, {{ d.owner_municipality }}, {{ d.owner_province }}
+          {% elif d.owner %}
+            {{ d.owner.barangay }}, {{ d.owner.municipality }}, {{ d.owner.province }}
+          {% else %}
+            N/A
+          {% endif %}
+        </p>
+
+        {% if d.owner and d.owner.email %}
+        <p><strong>Email:</strong> {{ d.owner.email }}</p>
+        {% endif %}
+
+        {% if d.owner and d.owner.contact %}
+        <p><strong>Contact:</strong> {{ d.owner.contact }}</p>
+        {% endif %}
+
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endfor %}
 <div class="modal fade" id="qrFullscreenModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-fullscreen">
     <div class="modal-content qr-modal-bg">
@@ -1072,13 +1143,6 @@
     </div>
   </div>
 </div>
-<div id="loadingOverlay" class="d-none">
-  <div class="loading-box text-center">
-    <div class="spinner-border text-light mb-3"></div>
-    <p class="text-white mb-0">Processing, please wait...</p>
-  </div>
-</div>
-
 <script>
 function previewAdminImage(event){
   const reader = new FileReader();
@@ -1360,20 +1424,5 @@ document.querySelector('#registerStrayDogModal form').addEventListener('submit',
         emailInput.focus();
     }
 });
-</script>
-<script>
-  // Show overlay
-  function showLoading() {
-    document.getElementById('loadingOverlay').classList.remove('d-none');
-  }
-
-  // Attach to all forms that should show the overlay
-  document.querySelectorAll('form').forEach(form => {
-    form.addEventListener('submit', function() {
-      // Only show overlay if the form is actually being submitted normally
-      // (not just validation errors)
-      showLoading();
-    });
-  });
 </script>
 {% endblock %}

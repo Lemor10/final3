@@ -95,6 +95,10 @@
   padding: 25px 35px;
   border-radius: 12px;
 }
+
+#profilePreview {
+  transition: all 0.3s ease;
+}
 @media (min-width: 768px) {
   .dog-img {
     height: 100%;
@@ -286,7 +290,36 @@ Your Registered Dogs
     </div>
   </div>
 </div>
+<div class="modal fade" id="deleteProfilePhotoModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
 
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">
+          <i class="bi bi-exclamation-triangle"></i> Confirm Delete
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body text-center">
+        <p class="mb-0">
+          Are you sure you want to remove your profile picture?
+        </p>
+        <small class="text-muted">
+          This will reset your profile to the default image.
+        </small>
+      </div>
+
+      <div class="modal-footer justify-content-center">
+
+        <button class="btn btn-danger w-50" onclick="confirmDeleteProfilePhoto()">
+          Yes, Remove
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
 <div class="modal fade" id="changePhotoModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -296,13 +329,32 @@ Your Registered Dogs
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <label>Select New Profile Picture</label>
-          <input type="file" name="profile_photo" class="form-control" accept="image/*" required>
+<div class="text-center mb-3">
+  <img id="profilePreview"
+       src="{{ current_user.profile_photo if current_user.profile_photo else url_for('static', filename='profile_images/default_profile.png') }}"
+       class="img-fluid rounded-circle shadow-sm"
+       style="width:120px; height:120px; object-fit:cover;">
+</div>
+
+<label>Select New Profile Picture</label>
+<input type="file"
+       name="profile_photo"
+       class="form-control"
+       accept="image/*"
+       required
+       onchange="previewProfileImage(event)">
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary">Update</button>
-        </div>
+        <div class="modal-footer justify-content-center">
+          {% if current_user.profile_photo %}
+    <button type="button"
+            class="btn btn-danger btn-sm"
+            data-bs-toggle="modal"
+            data-bs-target="#deleteProfilePhotoModal">
+      <i class="bi bi-trash"></i> Remove Profile Picture
+    </button>
+  {% endif %}
+          <button type="submit" class="btn btn-primary btn-sm">Update</button>
+
       </form>
     </div>
   </div>
@@ -754,5 +806,40 @@ document.addEventListener("DOMContentLoaded", function () {
 
 });
 </script>
+<script>
+function previewProfileImage(event) {
+  const file = event.target.files[0];
+  const preview = document.getElementById('profilePreview');
 
+  if (!file) return;
+
+  // Validate image
+  if (!file.type.startsWith('image/')) {
+    alert("Please select a valid image.");
+    event.target.value = "";
+    return;
+  }
+
+  // Show preview
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    preview.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+</script>
+<script>
+function confirmDeleteProfilePhoto() {
+  fetch("{{ url_for('owner_delete_profile_photo') }}", {
+    method: "POST"
+  })
+  .then(res => {
+    if (res.ok) {
+      location.reload();
+    } else {
+      alert("Failed to delete profile picture.");
+    }
+  });
+}
+</script>
 {% endblock %}
