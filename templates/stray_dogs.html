@@ -274,7 +274,7 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
 
-      <form method="POST" action="{{ url_for('admin_edit_stray', dog_id=d.id) }}">
+      <form method="POST" action="{{ url_for('admin_edit_stray', dog_id=d.id) }}" enctype="multipart/form-data" >
 
         <div class="modal-header bg-primary text-white">
           <h5 class="modal-title">Edit Stray Dog</h5>
@@ -282,6 +282,27 @@
         </div>
 
         <div class="modal-body">
+<div class="mb-3 text-center">
+  <label class="form-label">Upload Dog Image (optional)</label>
+
+  <input type="file" name="dog_image" 
+         class="form-control" 
+         accept="image/*"
+         onchange="previewEditImage(event, {{ d.id }})">
+                    <div class="alert alert-warning py-2 mt-2">
+            <i class="bi bi-exclamation-circle-fill me-2"></i><small>Please upload a clear full-body photo of the dog.</small>
+          </div>
+  {% if d.image %}
+  <img src="{{ d.image }}" 
+       id="editPreview{{ d.id }}" 
+       class="img-fluid mt-2 rounded" 
+       style="max-height: 150px;">
+  {% else %}
+  <img id="editPreview{{ d.id }}" 
+       class="img-fluid mt-2 rounded d-none" 
+       style="max-height: 150px;">
+  {% endif %}
+</div>
 
           <div class="mb-3">
             <label>Name</label>
@@ -508,6 +529,17 @@
     </div>
   </div>
 </div>
+<script>
+function previewEditImage(event, dogId) {
+    const input = event.target;
+    const preview = document.getElementById('editPreview' + dogId);
+
+    if (input.files && input.files[0]) {
+        preview.src = URL.createObjectURL(input.files[0]);
+        preview.classList.remove('d-none');
+    }
+}
+</script>
 <script>
   const reasonSelect = document.getElementById('archive_reason_select');
   const otherDiv = document.getElementById('archive_reason_other_div');

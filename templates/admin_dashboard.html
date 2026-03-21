@@ -112,7 +112,23 @@
 .table-responsive {
     position: static;
 }
-
+#loadingOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 11000; /* 🔥 higher than Bootstrap modal */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.loading-box {
+  background: #081a3000;
+  padding: 25px 35px;
+  border-radius: 12px;
+}
     /* Responsive */
     @media (max-width: 1440px) {
       .dog-img { width: 100%; height: 100%; }
@@ -130,6 +146,10 @@
 </div>
 <hr>
   <div class="container">
+    <div id="loadingSpinner" class="text-center my-4 d-none">
+  <div class="spinner-border text-primary" role="status"></div>
+  <p class="mt-2 text-muted">Loading dogs...</p>
+</div>
     <div class="d-flex justify-content-between align-items-center mb-4"></div>
     <div class="card mb-4">
       <div class="card-body">
@@ -883,8 +903,7 @@
         
 
         <div class="modal-footer">
-          <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          <button class="btn btn-primary">Update</button>
+          <button type="submit" class="btn btn-primary w-100">Update</button>
         </div>
       </form>
     </div>
@@ -1053,6 +1072,13 @@
     </div>
   </div>
 </div>
+<div id="loadingOverlay" class="d-none">
+  <div class="loading-box text-center">
+    <div class="spinner-border text-light mb-3"></div>
+    <p class="text-white mb-0">Processing, please wait...</p>
+  </div>
+</div>
+
 <script>
 function previewAdminImage(event){
   const reader = new FileReader();
@@ -1094,6 +1120,7 @@ const filterSelect = document.getElementById('dogFilterSelect');
 const dogCardsContainer = document.getElementById('dogCardsContainer');
 const searchFieldSelect = document.querySelector('select[name="search_field"]');
 const searchField = document.querySelector('select[name="search_field"]');
+const loadingSpinner = document.getElementById('loadingSpinner');
 
 let searchTimeout = null;
 
@@ -1101,32 +1128,40 @@ function updateDogCards() {
     const query = searchInput.value.trim();
     const filter = filterSelect.value;
 
-    // ✅ FULL RESET CONDITION
     if (filter === 'all' && query === '') {
         window.location.href = "{{ url_for('admin_dashboard') }}";
         return;
     }
 
-    // Debounce
     if (searchTimeout) clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-const searchField = document.querySelector('select[name="search_field"]').value;
 
-const params = new URLSearchParams({
-    q: query,
-    filter: filter,
-    search_field: searchField
-});
+    searchTimeout = setTimeout(() => {
+        const searchField = document.querySelector('select[name="search_field"]').value;
+
+        const params = new URLSearchParams({
+            q: query,
+            filter: filter,
+            search_field: searchField
+        });
+
+        // ✅ SHOW LOADER
+        loadingSpinner.classList.remove('d-none');
+        dogCardsContainer.style.opacity = "0.5";
 
         fetch(`/admin/search-dogs?${params.toString()}`)
             .then(res => res.text())
             .then(html => {
                 dogCardsContainer.innerHTML = html;
             })
-            .catch(err => console.error('Error fetching dogs:', err));
+            .catch(err => console.error('Error fetching dogs:', err))
+            .finally(() => {
+                // ✅ HIDE LOADER
+                loadingSpinner.classList.add('d-none');
+                dogCardsContainer.style.opacity = "1";
+            });
+
     }, 300);
 }
-
 searchInput.addEventListener('input', updateDogCards);
 filterSelect.addEventListener('change', updateDogCards);
 
@@ -1325,5 +1360,20 @@ document.querySelector('#registerStrayDogModal form').addEventListener('submit',
         emailInput.focus();
     }
 });
+</script>
+<script>
+  // Show overlay
+  function showLoading() {
+    document.getElementById('loadingOverlay').classList.remove('d-none');
+  }
+
+  // Attach to all forms that should show the overlay
+  document.querySelectorAll('form').forEach(form => {
+    form.addEventListener('submit', function() {
+      // Only show overlay if the form is actually being submitted normally
+      // (not just validation errors)
+      showLoading();
+    });
+  });
 </script>
 {% endblock %}
