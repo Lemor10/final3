@@ -69,12 +69,9 @@ body{
 }
 
 .dog-img{
-  width:180px;
-  height:180px;
-  object-fit:cover;
+  width:50%;
+  height:50%px;
   border-radius:18px;
-  border:3px solid rgba(255,255,255,0.5);
-  box-shadow:0 8px 25px rgba(0,0,0,0.3);
   margin-bottom:15px;
 }
 
@@ -240,39 +237,46 @@ Gender
 <strong>{{ dog.gender }}</strong>
 </div>
 
-{% if dog.last_vaccination %}
-<div class="info-row">
-<span><i class="bi bi-calendar-check me-1"></i> Last Vaccination</span>
-<strong>{{ dog.last_vaccination.strftime('%b %d, %Y') }}</strong>
-</div>
-{% endif %}
+  <!-- Last Vaccination -->
+  <div class="info-row">
+    <span><i class="bi bi-calendar-check me-1"></i> Last Vaccination</span>
+    <strong>
+      {{ dog.last_vaccination.strftime('%b %d, %Y') if dog.last_vaccination else 'N/A' }}
+    </strong>
+  </div>
 
-{% if dog.next_vaccination %}
-<div class="info-row">
-<span><i class="bi bi-calendar-event me-1"></i> Next Due</span>
-<strong>{{ dog.next_vaccination.strftime('%b %d, %Y') }}</strong>
+  <!-- Next Vaccination -->
+  <div class="info-row">
+    <span><i class="bi bi-calendar-event me-1"></i> Next Due</span>
+    <strong>
+      {{ dog.next_vaccination.strftime('%b %d, %Y') if dog.next_vaccination else 'N/A' }}
+    </strong>
+  </div>
+
+  <!-- Vaccination Address -->
+  <div class="info-row">
+    <span><i class="bi bi-geo-alt me-1"></i> Vaccination Address:</span>
+    <strong>
+      {% if dog.vaccination_barangay and dog.vaccination_municipality and dog.vaccination_province %}
+        {{ dog.vaccination_barangay }}, {{ dog.vaccination_municipality }}, {{ dog.vaccination_province }}
+      {% else %}
+        N/A
+      {% endif %}
+    </strong>
+  </div>
+
+  <!-- Vaccination Conducted At -->
+  <div class="info-row">
+    <span><i class="bi bi-building me-1"></i> Vaccination Conducted At:</span>
+    <strong>{{ dog.vaccination_location if dog.vaccination_location else 'N/A' }}</strong>
+  </div>
+
+  <!-- Vaccination Expiry -->
+  <div class="info-row">
+    <span><i class="bi bi-hourglass-bottom me-1"></i> Vaccination Expiry:</span>
+    <strong>{{ dog.vaccination_expiry if dog.vaccination_expiry else 'N/A' }}</strong>
+  </div>
 </div>
-{% endif %}
-</div>
-                    <p class="info-row">
-                    <strong>Vaccination Address:</strong>
-                    {% if dog.vaccination_barangay %}
-                      {{ dog.vaccination_barangay }},
-                      {{ dog.vaccination_municipality }},
-                      {{ dog.vaccination_province }}
-                    {% else %}
-                      N/A
-                    {% endif %}
-                  </p>
-                  <p class="info-row">
-                    <strong>Vaccination Conducted At:</strong>
-                    {% if dog.vaccination_location %}
-                      {{ dog.vaccination_location }}
-                    {% else %}
-                      N/A
-                    {% endif %}
-                  </p>
-                    <p class="info-row"><strong>Vaccination Expiry:</strong> {{ dog.vaccination_expiry if dog.vaccination_expiry else "N/A" }}</p>
 <h5 class="section-title">
 <i class="bi bi-person-badge me-2"></i>Owner Information
 </h5>
@@ -303,7 +307,9 @@ Gender
 <a href="{{ url_for('scan_qr') }}" class="btn btn-light back-btn px-4">
 {% else %}
 <a href="{{ url_for('login') }}" class="btn btn-light back-btn px-4">
-{% endif %}</div>
+{% endif %}<i class="bi bi-arrow-left-circle me-1 w-50"></i> Back to Scanner</a>
+</div>
+
 
 </div>
 
