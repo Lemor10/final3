@@ -43,9 +43,33 @@
   margin-bottom: 0.25rem;
   font-size: 0.85rem;
 }
+.dog-actions {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
 </style>
  {% for d in dogs if d.vaccinated == 'Vaccinated' %}
         <div class="dog-card p-3 bg-white shadow-sm rounded mb-3">
+                              <div class="dog-action d-flex justify-content-end">
+  <div class="dropdown">
+    <button class="btn btn-sm dropdown-toggle" type="button"
+            data-bs-toggle="dropdown">
+      <i class="bi bi-three-dots-vertical"></i>
+    </button>
+
+    <ul class="dropdown-menu dropdown-menu-end">
+      <li>
+        <a class="dropdown-item"
+           href="#"
+           data-bs-toggle="modal"
+           data-bs-target="#ownerModal{{ d.id }}">
+          <i class="bi bi-person"></i> View Owner
+        </a>
+      </li>
+    </ul>
+  </div>
+</div>
           <div class="row g-3 align-items-center">
             
             
@@ -60,12 +84,9 @@
             <div class="col-8 col-md-8">
               <h5 class="fw-bold text-success mb-1"><i class="text-success bi bi-shield-check"></i> {{ d.name }}</h5>
               <p class="text-muted small mb-1"><strong>Registered by:</strong> {{ d.registered_by_admin if d.registered_by_admin else 'Owner' }}</p>
-              <p class="text-muted small mb-1"><strong>Breed:</strong> {{ d.breed }}</p>
               <p class="text-muted small mb-1">
               <strong>Owner:</strong> {{ d.owner_name if d.owner_name else 'Stray' }}
               </p>
-
-              {% if d.registered_by_admin and d.owner_barangay %}
               <p class="text-muted small mb-1">
               <strong>Owner Address:</strong>
               {% if d.owner_barangay %}
@@ -76,9 +97,22 @@
               N/A
               {% endif %}
               </p>
-              {% endif %}
-              <p class="text-muted small mb-1"><strong>Birthdate:</strong> {{ d.birthdate if d.birthdate else 'N/A' }}</p>
+              <p class="text-muted small mb-1"><strong>Breed:</strong> {{ d.breed }}</p>
+              <p class="text-muted small mb-1"><strong>Dog Birthdate:</strong> {{ d.birthdate if d.birthdate else 'N/A' }}</p>
               <p class="text-muted small mb-1"><strong>Age:</strong> {{ d.age if d.age else 'N/A' }}</p>
+                            <p class="text-muted small mb-1">
+                <strong>Gender:</strong>
+                {% if d.gender == 'Male' %}
+                  <i class="bi bi-gender-male text-primary"></i>
+                {% elif d.gender == 'Female' %}
+                  <i class="bi bi-gender-female text-danger"></i>
+                {% else %}
+                  N/A
+                {% endif %}
+              </p>
+                            <p class="text-muted small mb-1"><strong>Vaccination Type:</strong> 
+                {{ d.vaccination_type if d.vaccination_type else "N/A" }}
+              </p>
                                               <p class="text-muted mb-1 small">
                     <strong>Vaccination Address:</strong>
                     {% if d.vaccination_barangay %}
@@ -97,16 +131,6 @@
                       N/A
                     {% endif %}
                   </p>
-              <p class="text-muted small mb-1">
-                <strong>Gender:</strong>
-                {% if d.gender == 'Male' %}
-                  <i class="bi bi-gender-male text-primary"></i>
-                {% elif d.gender == 'Female' %}
-                  <i class="bi bi-gender-female text-danger"></i>
-                {% else %}
-                  N/A
-                {% endif %}
-              </p>
               <p class="text-muted small mb-1"><strong>Last Vaccinated:</strong> 
                 {{ d.last_vaccination if d.last_vaccination else "N/A" }}
               </p>
@@ -145,6 +169,25 @@
 
   {% for d in dogs if d.vaccinated == 'Not Vaccinated' %}
         <div class="dog-card p-3 bg-white shadow-sm rounded mb-3">
+                              <div class="dog-action d-flex justify-content-end">
+  <div class="dropdown">
+    <button class="btn btn-sm dropdown-toggle" type="button"
+            data-bs-toggle="dropdown">
+      <i class="bi bi-three-dots-vertical"></i>
+    </button>
+
+    <ul class="dropdown-menu dropdown-menu-end">
+      <li>
+        <a class="dropdown-item"
+           href="#"
+           data-bs-toggle="modal"
+           data-bs-target="#ownerModal{{ d.id }}">
+          <i class="bi bi-person"></i> View Owner
+        </a>
+      </li>
+    </ul>
+  </div>
+</div>
           <div class="row g-3 align-items-center">
             
             
@@ -160,9 +203,19 @@
             <div class="col-8 col-md-8">
               <h5 class="fw-bold text-danger mb-1"><i class="text-danger bi bi-x-circle"></i> {{ d.name }}</h5>
               <p class="text-muted small mb-1"><strong>Registered by:</strong> {{ d.registered_by_admin if d.registered_by_admin else 'Owner' }}</p>
-              <p class="text-muted small mb-1"><strong>Breed:</strong> {{ d.breed }}</p>
               <p class="text-muted small mb-1"><strong>Owner:</strong> {{ d.owner_name or "Stray" }}</p>
-              <p class="text-muted small mb-1"><strong>Birthdate:</strong> {{ d.birthdate if d.birthdate else 'N/A' }}</p>
+              <p class="text-muted small mb-1">
+              <strong>Owner Address:</strong>
+              {% if d.owner_barangay %}
+              {{ d.owner_barangay }},
+              {{ d.owner_municipality }},
+              {{ d.owner_province }}
+              {% else %}
+              N/A
+              {% endif %}
+              </p>
+              <p class="text-muted small mb-1"><strong>Breed:</strong> {{ d.breed }}</p>
+              <p class="text-muted small mb-1"><strong>Dog Birthdate:</strong> {{ d.birthdate if d.birthdate else 'N/A' }}</p>
               <p class="text-muted small mb-1"><strong>Age:</strong> {{ d.age if d.age else 'N/A' }}</p>
               <p class="text-muted small mb-1">
                 <strong>Gender:</strong>
@@ -174,8 +227,29 @@
                   N/A
                 {% endif %}
               </p>
+              <p class="text-muted small mb-1"><strong>Vaccination Type:</strong> 
+                {{ d.vaccination_type if d.vaccination_type else "N/A" }}
+              </p>
+              <p class="text-muted mb-1 small">
+                    <strong>Vaccination Address:</strong>
+                    {% if d.vaccination_barangay %}
+                      {{ d.vaccination_barangay }},
+                      {{ d.vaccination_municipality }},
+                      {{ d.vaccination_province }}
+                    {% else %}
+                      N/A
+                    {% endif %}
+                  </p>
+                  <p class="text-muted mb-1 small">
+                    <strong>Vaccination Conducted At:</strong>
+                    {% if d.vaccination_location %}
+                      {{ d.vaccination_location }}
+                    {% else %}
+                      N/A
+                    {% endif %}
+                  </p>
               <p class="text-muted small mb-1"><strong>Last Vaccinated:</strong> 
-                {{ d.last_vaccinated if d.last_vaccinated else "N/A" }}
+                {{ d.last_vaccination if d.last_vaccination else "N/A" }}
               </p>
               <p class="text-muted small mb-2"><strong>Next Vaccination:</strong> 
                 {{ d.next_vaccination if d.next_vaccination else "N/A" }}
@@ -211,7 +285,6 @@
         </div>
         {% endfor %}
       </div>
-
 {% if dogs|length == 0 %}
 <p class="text-muted">No dogs found.</p>
 {% endif %}
