@@ -1470,6 +1470,12 @@ def admin_dashboard():
         .all()
     )
 
+        # ✅ IMPORTANT FIX
+    for u in users:
+        u.active_dogs = [
+            d for d in dogs if d.owner_id == u.id
+        ]
+
     return render_template('admin_dashboard.html', users=users, dogs=dogs, pagination=users_pagination
 )
 

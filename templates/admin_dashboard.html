@@ -294,7 +294,7 @@
           <i class="bi bi-paw-fill"></i> Registered Dogs
         </h6>
 
-        {% if u.dogs %}
+{% if u.active_dogs %}
         <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
           <table class="table table-bordered table-hover align-middle">
             <thead class="table-light sticky-top">
@@ -310,7 +310,7 @@
               </tr>
             </thead>
             <tbody>
-              {% for d in u.dogs %}
+              {% for d in u.active_dogs %}
               <tr>
 
 
@@ -318,7 +318,6 @@
           {{ d.created_at.strftime('%B %d, %Y') if d.created_at else 'N/A' }}
 </td>
                 <td>{{ d.name }}</td>
-                <td>{{ d.owner_name }}</td>
                 <td>{{ d.breed }}</td>
                 <td>{{ d.age if d.age else 'N/A' }}</td>
                 <td>{{ d.gender }}</td>
