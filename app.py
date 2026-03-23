@@ -56,7 +56,7 @@ os.makedirs(app.config['UPLOAD_FOLDER_PROFILE'], exist_ok=True)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'd1f4eb1ea051a0cf47ddb5be36e4d5e5f3073bb242b8ea7136bda03612b82c58')
 on_render = os.environ.get('RENDER') is not None 
 if on_render: app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') 
-else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:somepassword@localhost:5432/drs_local' 
+else: app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://drs_user:somepassword@localhost:5432/drs_local'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 cloudinary.config(
@@ -154,6 +154,7 @@ class Dog(db.Model):
     image = db.Column(db.String(200))  
     last_vaccination = db.Column(db.Date)
     next_vaccination = db.Column(db.Date)
+    vaccination_type = db.Column(db.String(100))
     vaccination_expiry = db.Column(db.Date)  
     vaccination_barangay = db.Column(db.String(100))
     vaccination_municipality = db.Column(db.String(100))
@@ -1194,6 +1195,7 @@ def owner_add_dog():
     vaccinated = request.form['status']
     image = request.files.get("dog_image")
 
+    vaccination_type = request.form.get("vaccination_type")
     last_vaccination = request.form.get("last_vaccination")
     next_vaccination = request.form.get("next_vaccination")
 
@@ -1254,6 +1256,7 @@ def owner_add_dog():
         owner_province=current_user.province,          # ✅ add this
         qr_code=qr_url,
         image=filename,
+        vaccination_type=vaccination_type,
         last_vaccination=last_vac_date,
         next_vaccination=next_vac_date,
         vaccination_expiry=vaccination_expiry,
@@ -1344,8 +1347,14 @@ def owner_edit_dog(dog_id):
 @login_required
 def download_qr(dog_uuid):
 
-    qr = qrcode.make(url_for("dog_info", dog_uuid=dog_uuid, _external=True))
+    dog = Dog.query.filter_by(uuid=dog_uuid).first_or_404()
 
+    if dog.owner:
+        url = url_for("dog_info", dog_uuid=dog_uuid, _external=True)
+    else:
+        url = url_for("stray_info", dog_uuid=dog_uuid, _external=True)
+
+    qr = qrcode.make(url)
     buf = BytesIO()
     qr.save(buf, format="PNG")
     buf.seek(0)
@@ -1372,14 +1381,23 @@ def admin_qr(dog_uuid):
 
 @app.route('/generate_qr/<dog_uuid>')
 def generate_qr(dog_uuid):
+        
+    dog = Dog.query.filter_by(uuid=dog_uuid).first_or_404()
+
     qr = qrcode.QRCode(
         version=1,
         box_size=10,
         border=5
     )
 
-    qr.add_data(url_for("dog_info", dog_uuid=dog_uuid, _external=True))
+    # 🔥 LOGIC SWITCH
+    if dog.owner:
+        qr_url = url_for("dog_info", dog_uuid=dog_uuid, _external=True)
+    else:
+        qr_url = url_for("stray_info", dog_uuid=dog_uuid, _external=True)
+
     qr.make(fit=True)
+    qr = qrcode.make(qr_url)
 
     img = qr.make_image(fill='black', back_color='white')
     buf = BytesIO()
@@ -1395,8 +1413,14 @@ def qrcodes(filename):
 @login_required
 def owner_download_qr(dog_uuid):
 
-    qr = qrcode.make(url_for("dog_info", dog_uuid=dog_uuid, _external=True))
+    dog = Dog.query.filter_by(uuid=dog_uuid).first_or_404()
 
+    if dog.owner:
+        url = url_for("dog_info", dog_uuid=dog_uuid, _external=True)
+    else:
+        url = url_for("stray_info", dog_uuid=dog_uuid, _external=True)
+
+    qr = qrcode.make(url)
     buf = BytesIO()
     qr.save(buf, format="PNG")
     buf.seek(0)
@@ -1408,6 +1432,10 @@ def owner_download_qr(dog_uuid):
         download_name=f"{dog_uuid}_qr.png"
     )
 
+@app.route('/stray/<dog_uuid>')
+def stray_info(dog_uuid):
+    dog = Dog.query.filter_by(uuid=dog_uuid).first_or_404()
+    return render_template('stray_info.html', dog=dog)
 # ------------------ Admin Dashboard ------------------
 @app.route('/admin')
 @login_required
@@ -1458,6 +1486,7 @@ def add_stray_dog():
     breed = request.form.get('breed')
     gender = request.form.get("gender")
     location_found = request.form.get('location_found')
+    vaccination_type = request.form.get("vaccination_type")
     vaccinated = request.form.get('vaccinated')  # "Vaccinated" or "Not Vaccinated"
     last_vaccination = request.form.get('last_vaccination') or None
     next_vaccination = request.form.get('next_vaccination') or None
@@ -1484,7 +1513,7 @@ def add_stray_dog():
         image_filename = upload_result["secure_url"]
 
     dog_uuid = str(uuid.uuid4())
-    qr_data = url_for("dog_info", dog_uuid=dog_uuid, _external=True)
+    qr_data = url_for("stray_info", dog_uuid=dog_uuid, _external=True)
     img = qrcode.make(qr_data)
 
     buffer = BytesIO()
@@ -1501,7 +1530,7 @@ def add_stray_dog():
     qr_url = upload_result["secure_url"]
 
     new_dog = Dog(
-        uuid=str(uuid.uuid4()),  # ✅ ADD THIS
+        uuid=dog_uuid,  # ✅ ADD THIS
         name=name,
         breed=breed,
         gender=gender,
@@ -1509,14 +1538,17 @@ def add_stray_dog():
         qr_code=qr_url,
         is_stray=True,
         location_found=location_found,
+        vaccination_type=vaccination_type,
         vaccinated=vaccinated,  # ✅ add this
-        last_vaccination=last_vaccination,  # ✅ add this
-        next_vaccination=next_vaccination,  # ✅ add this
+        last_vaccination=last_vac_date,   # also fix this 👇
+        next_vaccination=next_vac_date,  # ✅ add this
         vaccination_expiry=vaccination_expiry,  # ✅ NEW
     )
 
     db.session.add(new_dog)
     db.session.commit()
+    print("QR UUID:", dog_uuid)
+    print("Saved UUID:", new_dog.uuid)
 
     return redirect(url_for('stray_dogs'))
 
@@ -1899,6 +1931,7 @@ def admin_register_dog():
     birthdate_str = request.form.get("birthdate")
     birthdate = datetime.strptime(birthdate_str, "%Y-%m-%d").date() if birthdate_str else None
     gender = request.form.get("gender")
+    vaccination_type = request.form.get("vaccination_type")
     status = request.form['status']
     vaccinated = "Vaccinated" if status == "Vaccinated" else "Not Vaccinated"
 
@@ -1965,6 +1998,7 @@ def admin_register_dog():
         vaccinated=vaccinated,
         qr_code=qr_url,
         image=image_filename,
+        vaccination_type=vaccination_type,
         last_vaccination=last_vac_date,
         next_vaccination=next_vac_date,
         vaccination_expiry=vaccination_expiry,  # ✅ NEW

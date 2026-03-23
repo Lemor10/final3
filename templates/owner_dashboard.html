@@ -6,7 +6,8 @@
 <style>
 body {
     font-family: "Poppins", sans-serif;
-    background: #f8f9fa;      color: #212529;
+    background: #f8f9fa;      
+    color: #212529;
     min-height: 100vh;
 }
 
@@ -31,7 +32,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    padding: 10px 0;
+    padding: 20px;
 }
 
 .card-body {
@@ -65,6 +66,7 @@ body {
     color: #d65900;
 }
 .dog-card {
+  padding: 15px;
   width: 100%;
   max-width: 520px;     /* keeps cards same width */
   height: 100%;
@@ -120,7 +122,7 @@ body {
 }
 .dog-img {
   width: 100%;
-  max-width: 180px;
+  max-width: 100%;
   height: auto;
   object-fit: cover;
   border-radius: 20px;
@@ -172,7 +174,6 @@ body {
 </div>
 <hr>
 <div class="dashboard-container">
-
 <div class="row mb-3 text-center">
   <div class="col-12 col-md-4 mb-3 mb-md-0">
     <div class="card shadow-sm border-0 h-100">
@@ -207,7 +208,7 @@ body {
 </div>
 
 <div class="row mt-4">
-  <div class="col-lg-6 col-12 mb-4 order-1 d-flex text-center flex-column align-items-center">
+  <div class="col-lg-6 col-12 mb-4 order-1 d-flex text-justify flex-column align-items-center">
     <h4 class="section-title text-success">
       <i class="bi bi-shield-check"></i> Vaccinated Dogs
     </h4>
@@ -233,6 +234,10 @@ body {
               {% endif %}
             </p>
             <p class="text-muted mb-1 small"><strong>Age:</strong> {{ dog.age }}</p>
+                                          <p class="text-muted small mb-1">
+                    <strong>Vaccine Type:</strong>
+                    {{ dog.vaccination_type if dog.vaccination_type else "N/A" }}
+                  </p>
                   <p class="text-muted mb-1 small">
                     <strong>Vaccination Address:</strong>
                     {% if dog.vaccination_barangay %}
@@ -269,7 +274,7 @@ body {
   </div>
 
   
-  <div class="col-lg-6 col-12 mb-4 order-1 d-flex text-center flex-column align-items-center">
+  <div class="col-lg-6 col-12 mb-4 order-1 d-flex text-justify flex-column align-items-center">
     <h4 class="section-title text-danger">
       <i class="bi bi-exclamation-triangle"></i> Not Vaccinated Dogs
     </h4>
@@ -283,9 +288,20 @@ body {
         <div class="col-8">
           <div class="card-body">
             <h6 class="fw-bold text-primary mb-1"><i class="text-danger bi bi-x-circle"></i> {{ dog.name }}</h6>
-            <p class="mb-1 small"><strong>Breed:</strong> {{ dog.breed }}</p>
-            <p class="mb-1 small"><strong>Gender:</strong> {{ dog.gender if dog.gender else 'N/A' }}</p>
-            <p class="mb-1 small"><strong>Age:</strong> {{ dog.age }}</p>
+            <p class="text-muted small mb-1"><strong>Breed:</strong> {{ dog.breed }}</p>
+            <p class="text-muted mb-1 small"><strong>Gender:</strong>                     
+              {% if dog.gender == 'Male' %}
+              <i class="bi bi-gender-male text-primary"></i>
+              {% elif dog.gender == 'Female' %}
+              <i class="bi bi-gender-female text-danger"></i>
+              {% else %}
+              N/A
+              {% endif %}
+            </p>            <p class="text-muted small mb-1"><strong>Age:</strong> {{ dog.age }}</p>
+                              <p class="text-muted small mb-1">
+                    <strong>Vaccine Type:</strong>
+                    {{ dog.vaccination_type if dog.vaccination_type else "N/A" }}
+                  </p>
                               <p class="text-muted mb-1 small">
                     <strong>Vaccination Address:</strong>
                     {% if dog.vaccination_barangay %}

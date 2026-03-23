@@ -103,7 +103,7 @@
           <!-- INFO -->
           <div class="col-md-8">
             <h5 class="fw-bold text-success mb-1">
-              <i class="bi bi-shield-check"></i> {{ d.name or "Unknown" }}
+              <i class="bi bi-shield-check"></i> {{ d.name or "Stray" }}
             </h5>
         <p class="text-muted small mb-1">
           <strong>Date Registered:</strong>
@@ -124,6 +124,9 @@
 
             <p class="text-muted small mb-1">
               <strong>Found at:</strong> {{ d.location_found or "N/A" }}
+            </p>
+                        <p class="text-muted small mb-1">
+              <strong>Vaccination Type:</strong> {{ d.vaccination_type or "N/A" }}
             </p>
 
             <p class="text-muted small mb-1">
@@ -198,7 +201,7 @@
           <!-- INFO -->
           <div class="col-md-8">
             <h5 class="fw-bold text-danger mb-1">
-              <i class="bi bi-x-circle"></i> {{ d.name or "Unknown" }}
+              <i class="bi bi-x-circle"></i> {{ d.name or "Stray" }}
             </h5>
                    <p class="text-muted small mb-1">
           <strong>Date Registered:</strong>
@@ -218,6 +221,9 @@
 
             <p class="text-muted small mb-1">
               <strong>Found at:</strong> {{ d.location_found or "N/A" }}
+            </p>
+            <p class="text-muted small mb-1">
+              <strong>Vaccination Type:</strong> {{ d.vaccination_type or "N/A" }}
             </p>
 
             <p class="text-muted small mb-2">
@@ -479,13 +485,18 @@
           <h6 class="fw-bold text-success mb-3">
             <i class="bi bi-shield-check"></i> Vaccination Info
           </h6>
-
+<div class="row g-2 mb-3">
             <div class="col-md-6 mb-3">
               <label class="form-label">Vaccination Status</label>
               <select name="vaccinated" class="form-select">
                 <option value="Not Vaccinated">Not Vaccinated</option>
                 <option value="Vaccinated">Vaccinated</option>
               </select>
+            </div>
+                                  <div class="col-md-6">
+              <label class="form-label">Vaccination Type</label>
+              <input type="text" name="vaccination_type" class="form-control" placeholder="Anti-Rabies, Parvo..." id="vaccination_type">
+            </div>
             </div>
 
 
@@ -579,16 +590,21 @@ function toggleVaccinationFields(modal) {
   const statusSelect = modal.querySelector('select[name="vaccinated"]');
   const lastInput = modal.querySelector('input[name="last_vaccination"]');
   const nextInput = modal.querySelector('input[name="next_vaccination"]');
+  const typeInput = modal.querySelector('input[name="vaccination_type"]');
+
 
   function updateFields() {
     if (statusSelect.value === "Not Vaccinated") {
       lastInput.disabled = true;
       nextInput.disabled = true;
+      typeInput.disabled = true;
       lastInput.value = "";
       nextInput.value = "";
+      typeInput.value = "";
     } else {
       lastInput.disabled = false;
       nextInput.disabled = false;
+      typeInput.disabled = false;
     }
   }
 

@@ -475,6 +475,10 @@
                   N/A
                 {% endif %}
               </p>
+              <p class="text-muted small mb-1">
+  <strong>Vaccine Type:</strong>
+  {{ d.vaccination_type if d.vaccination_type else "N/A" }}
+</p>
                   <p class="text-muted mb-1 small">
                     <strong>Vaccination Conducted At:</strong>
                     {% if d.vaccination_location %}
@@ -606,6 +610,10 @@
                   N/A
                 {% endif %}
               </p>
+                            <p class="text-muted small mb-1">
+  <strong>Vaccine Type:</strong>
+  {{ d.vaccination_type if d.vaccination_type else "N/A" }}
+</p>
                                 <p class="text-muted mb-1 small">
                     <strong>Vaccination Conducted At:</strong>
                     {% if d.vaccination_location %}
@@ -1084,6 +1092,15 @@
                 <option value="Not Vaccinated">Not Vaccinated</option>
               </select>
             </div>
+                        <div class="col-md-6">
+  <label class="form-label">Vaccination Type</label>
+  <input type="text" 
+         name="vaccination_type" 
+         id="addVaccinationType"
+         class="form-control"
+         placeholder="Anti-Rabies, Parvo... "
+         disabled>
+</div>
           <div class="row g-2 mb-3">
             <div class="col-md-6">
               <label class="form-label">Last Vaccination</label>
@@ -1265,6 +1282,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const registerBarangay = document.getElementById('registerStrayVaccinationBarangay');
   const registerMunicipality = document.getElementById('registerStrayVaccinationMunicipality');
   const registerProvince = document.getElementById('registerStrayVaccinationProvince');
+  const registerType = document.getElementById('addVaccinationType');
 
   function toggleRegisterDates() {
 
@@ -1276,6 +1294,7 @@ document.addEventListener("DOMContentLoaded", function () {
       registerBarangay.disabled = false;
       registerMunicipality.disabled = false;
       registerProvince.disabled = false;
+      registerType.disabled = false;
 
     } else {
 
@@ -1285,6 +1304,7 @@ document.addEventListener("DOMContentLoaded", function () {
       registerBarangay.value = '';
       registerMunicipality.value = '';
       registerProvince.value = '';
+      registerType.value = '';
 
       registerLast.disabled = true;
       registerNext.disabled = true;
@@ -1292,6 +1312,7 @@ document.addEventListener("DOMContentLoaded", function () {
       registerBarangay.disabled = true;
       registerMunicipality.disabled = true;
       registerProvince.disabled = true;
+      registerType.disabled = true;
     }
   }
 
