@@ -722,9 +722,12 @@ def index():
 
 @app.route('/scan')
 def scan_qr():
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
+
     if current_user.role not in ['owner', 'admin']:
         abort(403)
-        return render_template('owner_dashboard.html', dogs=dogs, stray_count=stray_count)
+
     return render_template('scan.html')
 
 @app.route('/dog/<string:dog_uuid>')

@@ -272,11 +272,11 @@ body{
 
 <div class="mb-4">
 <div class="info-row">
-<span><i class="bi bi-tag me-1"></i> Breed</span>
+<span><i class="bi bi-tag me-1"></i> Breed:</span>
 <strong>{{ dog.breed }}</strong>
 </div>
 <div class="info-row">
-<span><i class="bi bi-hourglass-split me-1"></i> Age</span>
+<span><i class="bi bi-hourglass-split me-1"></i> Age:</span>
 <strong>{{ dog.age }}</strong>
 </div>
 <div class="info-row">
@@ -286,7 +286,7 @@ body{
 {% elif dog.gender == 'Female' %}
 <i class="bi bi-gender-female text-danger me-1"></i>
 {% endif %}
-Gender
+Gender:
 </span>
 <strong>{{ dog.gender }}</strong>
 </div>
@@ -298,7 +298,7 @@ Gender
 
   <!-- Last Vaccination -->
   <div class="info-row">
-    <span><i class="bi bi-calendar-check me-1"></i> Last Vaccination</span>
+    <span><i class="bi bi-calendar-check me-1"></i> Last Vaccination:</span>
     <strong>
       {{ dog.last_vaccination.strftime('%b %d, %Y') if dog.last_vaccination else 'N/A' }}
     </strong>
@@ -306,7 +306,7 @@ Gender
 
   <!-- Next Vaccination -->
   <div class="info-row">
-    <span><i class="bi bi-calendar-event me-1"></i> Next Due</span>
+    <span><i class="bi bi-calendar-event me-1"></i> Next Due:</span>
     <strong>
       {{ dog.next_vaccination.strftime('%b %d, %Y') if dog.next_vaccination else 'N/A' }}
     </strong>
@@ -346,6 +346,7 @@ Gender
 <div class="owner-card">
   <img src="{{ dog.owner.profile_photo if dog.owner.profile_photo else url_for('static', filename='profile_images/default_profile.png') }}"
        class="owner-photo"
+       style="cursor: pointer;"
        onclick="openQrFullscreen(this.src)">
 
   <div class="flex-grow-1">

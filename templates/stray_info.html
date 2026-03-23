@@ -84,6 +84,15 @@ body{
   padding:18px;
   text-align:center;
 }
+
+@media (max-width: 576px) {
+    .info-row{
+  display:flex;
+  flex-direction:column;     /* stack label + value */
+  align-items:center;        /* center horizontally */
+  text-align:center;         /* center text */
+    }
+}
 </style>
 </head>
 
@@ -116,7 +125,7 @@ body{
 <div>
 
 <div class="info-row">
-<span><i class="bi bi-tag me-2"></i> Breed</span>
+<span><i class="bi bi-tag me-2"></i> Breed:</span>
 <strong>{{ dog.breed or "Unknown" }}</strong>
 </div>
 
@@ -129,33 +138,33 @@ body{
 {% else %}
 <i class="bi bi-question-circle me-2"></i>
 {% endif %}
-Gender
+Gender:
 </span>
 <strong>{{ dog.gender or "N/A" }}</strong>
 </div>
 
 <div class="info-row">
-<span><i class="bi bi-geo-alt me-2"></i> Found At</span>
+<span><i class="bi bi-geo-alt me-2"></i> Found At:</span>
 <strong>{{ dog.location_found or "N/A" }}</strong>
 </div>
 
 <div class="info-row">
-<span><i class="bi bi-shield me-2"></i> Vaccinatin Type</span>
+<span><i class="bi bi-shield me-2"></i> Vaccinatin Type:</span>
 <strong>{{ dog.vaccination_type or "N/A" }}</strong>
 </div>
 
 <div class="info-row">
-<span><i class="bi bi-calendar-check me-2"></i> Last Vaccination</span>
+<span><i class="bi bi-calendar-check me-2"></i> Last Vaccination:</span>
 <strong>{{ dog.last_vaccination or "N/A" }}</strong>
 </div>
 
 <div class="info-row">
-<span><i class="bi bi-calendar-event me-2"></i> Next Vaccination</span>
+<span><i class="bi bi-calendar-event me-2"></i> Next Vaccination:</span>
 <strong>{{ dog.next_vaccination or "N/A" }}</strong>
 </div>
 
 <div class="info-row">
-<span><i class="bi bi-hourglass-bottom me-2"></i> Vaccination Expiry</span>
+<span><i class="bi bi-hourglass-bottom me-2"></i> Vaccination Expiry:</span>
 <strong>{{ dog.vaccination_expiry or "N/A" }}</strong>
 </div>
 
@@ -166,9 +175,9 @@ Gender
 <i class="bi bi-exclamation-triangle"></i> Stray Dog Notice
 </h5>
 
-<div class="owner-card">
+<div class="owner-card mb-3">
 <p class="mb-2">
-⚠️ This dog has no registered owner.
+This dog has no registered owner.
 </p>
 <p class="small">
 If found, please contact your local barangay or animal control.
@@ -176,10 +185,12 @@ If found, please contact your local barangay or animal control.
 </div>
 
 <!-- BACK -->
-<div class="text-center mt-4">
-<a href="{{ url_for('scan_qr') }}" class="btn btn-light">
-<i class="bi bi-arrow-left"></i> Back to Scanner
-</a>
+<div class="text-center">
+{% if current_user.is_authenticated %}
+<a href="{{ url_for('scan_qr') }}" class="btn btn-light back-btn px-4">
+{% else %}
+<a href="{{ url_for('login') }}" class="btn btn-light back-btn px-4">
+{% endif %}<i class="bi bi-arrow-left-circle me-1 w-50"></i> Back to Scanner</a>
 </div>
 
 </div>
