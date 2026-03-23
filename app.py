@@ -2028,6 +2028,7 @@ def admin_edit_dog(dog_id):
     dog.name = request.form['name']
     dog.breed = request.form['breed']
     dog.vaccinated = request.form['status']
+    dog.vaccination_type = request.form.get("vaccination_type")
 
     # ✅ Convert dates FIRST
     last_vaccination = request.form.get("last_vaccination")
@@ -2041,6 +2042,7 @@ def admin_edit_dog(dog_id):
 
     # ✅ Vaccination details
     if dog.vaccinated == "Vaccinated":
+        dog.vaccination_type = request.form.get('vaccination_type')
         dog.vaccination_location = request.form.get('vaccination_location')
         dog.vaccination_barangay = request.form.get('vaccination_barangay')
         dog.vaccination_municipality = request.form.get('vaccination_municipality')
@@ -2056,6 +2058,7 @@ def admin_edit_dog(dog_id):
 
     else:
         # ❌ Clear everything if not vaccinated
+        dog.vaccination_type = None
         dog.vaccination_location = None
         dog.vaccination_barangay = None
         dog.vaccination_municipality = None

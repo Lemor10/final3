@@ -925,6 +925,16 @@
           </div>
 
           <div class="mb-3">
+            <label>Vaccination Type</label>
+            <input type="text"
+                  name="vaccination_type"
+                  class="form-control edit-last"
+                  data-dog-id="{{ d.id }}"
+                  value="{{ d.vaccination_type }}"
+                  placeholder="Anti-Rabies, Parvo...">
+          </div>
+
+          <div class="mb-3">
             <label>Last Vaccination</label>
             <input type="date"
                   name="last_vaccination"
@@ -948,17 +958,19 @@
                   class="form-control"
                   id="registerVaccinationLocation"
                   placeholder="In-house, Veterinary Clinic, Animal Hospital, DA Office, etc."
-                  title="Dog must be vaccinated">
+                  title="Dog must be vaccinated"
+                  value="{{ d.vaccination_location or '' }}">
           </div>
 
   <div class="mb-3">
     <label>Vaccination Address:</label>
     <input type="text"
-           name="vaccination_barangay"
-           class="form-control"
-           id="registerVaccinationBarangay"
-           title="Dog must be vaccinated" 
-           placeholder="Barangay">
+          name="vaccination_barangay"
+          class="form-control"
+          id="registerVaccinationBarangay"
+          title="Dog must be vaccinated" 
+          value="{{ d.vaccination_barangay }}"
+          placeholder="Barangay">
   </div>
 
   <div class="mb-3">
@@ -966,7 +978,9 @@
       name="vaccination_municipality"
       class="form-control"
       id="registerVaccinationMunicipality"
+      value="{{ d.vaccination_municipality }}"
       title="Dog must be vaccinated" 
+      
       placeholder="Municipality">
   </div>
 
@@ -976,6 +990,7 @@
       class="form-control"
       id="registerVaccinationProvince"
       title="Dog must be vaccinated"
+      value="{{ d.vaccination_province }}"
       placeholder="Province">
   </div>
         </div>
@@ -1336,6 +1351,8 @@ document.querySelectorAll('.edit-status').forEach(select => {
     const barangay = modal.querySelector('input[name="vaccination_barangay"]');
     const municipality = modal.querySelector('input[name="vaccination_municipality"]');
     const province = modal.querySelector('input[name="vaccination_province"]');
+    const type = modal.querySelector('input[name="vaccination_type"]');
+
 
     if (select.value === 'Vaccinated') {
 
@@ -1345,6 +1362,7 @@ document.querySelectorAll('.edit-status').forEach(select => {
       barangay.disabled = false;
       municipality.disabled = false;
       province.disabled = false;
+      type.disabled = false;
 
     } else {
 
@@ -1354,6 +1372,7 @@ document.querySelectorAll('.edit-status').forEach(select => {
       barangay.value = '';
       municipality.value = '';
       province.value = '';
+      type.value = '';
 
       last.disabled = true;
       next.disabled = true;
@@ -1361,6 +1380,7 @@ document.querySelectorAll('.edit-status').forEach(select => {
       barangay.disabled = true;
       municipality.disabled = true;
       province.disabled = true;
+      type.disabled = true;
     }
   }
 

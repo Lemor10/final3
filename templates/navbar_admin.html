@@ -179,8 +179,7 @@
         </li>
 
         <li class="nav-item" title="Logout">
-          <a class="nav-link logout-link" href="{{ url_for('index') }}" data-bs-toggle="modal" data-bs-target="#LogoutModal">
-            <i class="bi bi-box-arrow-right"></i>
+<a class="nav-link logout-link" href="#" data-bs-toggle="modal" data-bs-target="#LogoutModal">            <i class="bi bi-box-arrow-right"></i>
             <span class="nav-title">Logout</span>
           </a>
         </li>
@@ -213,9 +212,10 @@
             Cancel
           </button>
 
-          <a href="{{ url_for('logout') }}" class="btn btn-danger">
-            Logout
-          </a>
+<button id="logoutBtn" class="btn btn-danger">
+  <span id="logoutText">Logout</span>
+  <span id="logoutSpinner" class="spinner-border spinner-border-sm ms-2 d-none"></span>
+</button>
         </div>
 
       </div>
@@ -240,4 +240,35 @@ updateNotifDot();
 // Optional: poll every 10 seconds for live updates
 setInterval(updateNotifDot, 10000);
   }
+</script>
+<script>
+  const logoutBtn = document.getElementById("logoutBtn");
+
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", function () {
+
+      const text = document.getElementById("logoutText");
+      const spinner = document.getElementById("logoutSpinner");
+
+      // Show loading state
+      spinner.classList.remove("d-none");
+      text.textContent = "Logging out...";
+      logoutBtn.disabled = true;
+
+      // Redirect after short delay (for UX effect)
+      setTimeout(() => {
+        window.location.href = "{{ url_for('logout') }}";
+      }, 500);
+    });
+  }
+</script>
+<script>
+  window.addEventListener("pageshow", function () {
+    const btn = document.getElementById("logoutBtn");
+    if (btn) {
+      btn.disabled = false;
+      document.getElementById("logoutSpinner").classList.add("d-none");
+      document.getElementById("logoutText").textContent = "Logout";
+    }
+  });
 </script>

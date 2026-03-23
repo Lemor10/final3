@@ -223,8 +223,10 @@
           </label>
         </div>
 
-        <button type="submit" class="btn btn-primary w-100 py-2 mt-3">Sign In</button>
-      </form>
+<button type="submit" id="loginBtn" class="btn btn-primary w-100 py-2 mt-3">
+  <span id="btnText">Sign In</span>
+  <span id="btnSpinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status"></span>
+</button>      </form>
 
       <div class="text-center mt-3 mb-2">
         <a href="{{ url_for('forgot_password') }}" class="text-muted small text-decoration-none" style="font-size: 13px;">Forgot password?</a>
@@ -244,6 +246,36 @@
   document.getElementById("showPassword")?.addEventListener("change", function () {
     const pwd = document.querySelector("input[name='password']");
     pwd.type = this.checked ? "text" : "password";
+  });
+</script>
+<script>
+  const form = document.querySelector("form");
+  const btn = document.getElementById("loginBtn");
+  const btnText = document.getElementById("btnText");
+  const spinner = document.getElementById("btnSpinner");
+
+  form.addEventListener("submit", function () {
+    // Show spinner
+    spinner.classList.remove("d-none");
+
+    // Change text
+    btnText.textContent = "Signing in...";
+
+    // Disable button to prevent double click
+    btn.disabled = true;
+  });
+</script>
+<script>
+  window.addEventListener("pageshow", function () {
+    const btn = document.getElementById("loginBtn");
+    const spinner = document.getElementById("btnSpinner");
+    const btnText = document.getElementById("btnText");
+
+    if (btn) {
+      btn.disabled = false;
+      spinner.classList.add("d-none");
+      btnText.textContent = "Sign In";
+    }
   });
 </script>
 </body>
