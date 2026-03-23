@@ -305,6 +305,7 @@
                 <th>Age</th>
                 <th>Gender</th>
                 <th>Status</th>
+                <th>Vaccine Type</th>
                 <th>Last Vaccination</th>
                 <th>Next Vaccination</th>
               </tr>
@@ -328,6 +329,7 @@
                     <span class="badge text-danger">Not Vaccinated</span>
                   {% endif %}
                 </td>
+                <td>{{ d.vaccination_type }}</td>
                 <td>{{ d.last_vaccination or 'N/A' }}</td>
                 <td>{{ d.next_vaccination or 'N/A' }}</td>
               </tr>

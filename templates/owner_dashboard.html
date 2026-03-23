@@ -257,11 +257,11 @@ body {
                     {% endif %}
                   </p>
             <p class="mb-0 text-muted small">
-              Next Vaccination:
+              <strong>Next Vaccination:</strong>
               {{ dog.next_vaccination if dog.next_vaccination else "N/A" }}
             </p>
             <p class="mb-0 text-muted small">
-              Vaccine Expiration:
+              <strong>Expiration:</strong>
               {{ dog.vaccination_expiry if dog.vaccination_expiry else "N/A" }}
             </p>
           </div>
@@ -321,11 +321,11 @@ body {
                     {% endif %}
                   </p>
             <p class="mb-0 text-muted small">
-              Last Vaccinated:
-              {{ dog.last_vaccination if dog.last_vaccination else "N/A" }}
+              <strong>Next Vaccination:</strong>
+              {{ dog.next_vaccination if dog.next_vaccination else "N/A" }}
             </p>
             <p class="mb-0 text-muted small">
-              Vaccine Expiration:
+              <strong>Vaccine Expiration:<strong>
               {{ dog.vaccination_expiry if dog.vaccination_expiry else "N/A" }}
             </p>
           </div>
