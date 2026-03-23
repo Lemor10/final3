@@ -176,31 +176,74 @@ body{
 
 /* Mobile adjustments */
 @media (max-width: 576px) {
-  .site-logo {
-    width: 100px; /* smaller logo on mobile */
-    top: 10px;
-    left: 10px;
-  }
-}
-/* Mobile responsiveness */
-@media(max-width:576px){
-  .hero-card{
-    padding:30px 20px;
+  body {
+    padding: 15px;
   }
 
-  .dog-img{
-    width:50%;
-    height:50%;
+  /* Hero card */
+  .hero-card {
+    padding: 25px 15px;
+    max-width: 100%;
   }
 
-  .owner-card{
-    flex-direction:column;
-    text-align:center;
+  /* Dog image */
+  .dog-img {
+    width: 80%;       /* take most of screen */
+    height: auto;     /* maintain aspect ratio */
+    margin: 0 auto 15px auto;
+    display: block;
   }
 
-  .owner-actions a{
-    width:100%;
-    margin-bottom:6px;
+  /* Dog info rows */
+  .info-row {
+    flex-direction: column; /* stack labels and values */
+    align-items: flex-start;
+    gap: 5px;
+    font-size: 0.9rem;
+  }
+
+  .info-row strong {
+    font-size: 0.95rem;
+    color: #fff;
+  }
+
+  /* Section title */
+  .section-title {
+    font-size: 1.05rem;
+    text-align: left;
+  }
+
+  /* Owner card adjustments */
+  .owner-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 15px;
+    gap: 10px;
+  }
+
+  .owner-photo {
+    width: 80px;
+    height: 80px;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+  }
+
+  .owner-actions a {
+    width: 100%; /* full-width buttons */
+    margin-bottom: 8px;
+  }
+
+  /* Back button */
+  .back-btn {
+    width: 100%;
+    padding: 10px 0;
+    font-size: 0.95rem;
+  }
+
+  /* Blobs adjustment */
+  .blob {
+    width: 250px;
+    height: 250px;
+    filter: blur(60px);
   }
 }
 </style>
