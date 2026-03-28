@@ -1827,7 +1827,7 @@ def download_data_analysis():
     document.add_heading("Cause of Death", level=2)
     if data["death_causes"]:
         plt.figure()
-        plt.bar(data["death_causes"], data["death_counts"])
+        plt.bar(data["death_causes"], data["death_counts"], color="#dc3545")
         plt.xticks(rotation=45)
         plt.title("Cause of Death")
         plt.tight_layout()
@@ -1836,6 +1836,61 @@ def download_data_analysis():
         plt.close()
         death_chart.seek(0)
         document.add_picture(death_chart, width=Inches(5))
+
+        # ---------- TOP MUNICIPALITIES ----------
+    document.add_heading("Top Municipalities by Total Dogs", level=2)
+    if data["top_municipalities"]:
+        plt.figure()
+        plt.bar(
+            [m[0] for m in data["top_municipalities"]],
+            [m[1] for m in data["top_municipalities"]],
+            color="#0d6efd"
+        )
+        plt.xticks(rotation=45)
+        plt.title("Top Municipalities by Total Dogs")
+        plt.tight_layout()
+
+        muni_chart = io.BytesIO()
+        plt.savefig(muni_chart, format="png")
+        plt.close()
+        muni_chart.seek(0)
+        document.add_picture(muni_chart, width=Inches(5))
+
+    document.add_heading("Top Municipalities by Vaccinated Dogs", level=2)
+    if data["top_vaccinated_municipalities"]:
+        plt.figure()
+        plt.bar(
+            [m[0] for m in data["top_vaccinated_municipalities"]],
+            [m[1] for m in data["top_vaccinated_municipalities"]],
+            color="#198754"
+        )
+        plt.xticks(rotation=45)
+        plt.title("Top Municipalities by Vaccinated Dogs")
+        plt.tight_layout()
+
+        vac_muni_chart = io.BytesIO()
+        plt.savefig(vac_muni_chart, format="png")
+        plt.close()
+        vac_muni_chart.seek(0)
+        document.add_picture(vac_muni_chart, width=Inches(5))
+
+    document.add_heading("Top Municipalities by Unvaccinated Dogs", level=2)
+    if data["top_unvaccinated_municipalities"]:
+        plt.figure()
+        plt.bar(
+            [m[0] for m in data["top_unvaccinated_municipalities"]],
+            [m[1] for m in data["top_unvaccinated_municipalities"]],
+            color="#dc3545"
+        )
+        plt.xticks(rotation=45)
+        plt.title("Top Municipalities by Unvaccinated Dogs")
+        plt.tight_layout()
+
+        unvac_muni_chart = io.BytesIO()
+        plt.savefig(unvac_muni_chart, format="png")
+        plt.close()
+        unvac_muni_chart.seek(0)
+        document.add_picture(unvac_muni_chart, width=Inches(5))
 
     # ---------- TOP BARANGAYS ----------
     document.add_heading("Top Barangays by Total Dogs", level=2)
