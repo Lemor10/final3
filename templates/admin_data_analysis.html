@@ -169,6 +169,9 @@
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
 let breedChart, vaccineChart, monthlyChart, deathChart, ownershipChart;
+let topMunicipalityChart, topVaccinatedMunicipalityChart, topUnvaccinatedMunicipalityChart;
+let topBarangayChart, topVaccinatedBarangayChart, topUnvaccinatedBarangayChart;
+
 function renderCharts(data) {
     document.querySelector('div.card h2:nth-child(2)').textContent = data.total_owners;
     document.querySelectorAll('div.card h2:nth-child(2)')[1].textContent = data.total_dogs;
@@ -289,8 +292,6 @@ if (data.death_counts.length > 0) {
        document.querySelector('#deathChart').style.display = 'none';
         document.querySelector('#deathChart').nextElementSibling?.classList.remove('d-none');
     }
-    let topMunicipalityChart, topVaccinatedMunicipalityChart, topUnvaccinatedMunicipalityChart;
-
 // TOTAL MUNICIPALITIES
 if (data.top_municipalities.length > 0) {
     if (topMunicipalityChart) topMunicipalityChart.destroy();
@@ -315,9 +316,6 @@ if (data.top_municipalities.length > 0) {
 
 // VACCINATED
 if (data.top_vaccinated_municipalities.length > 0) {
-    document.getElementById('topVaccinatedMunicipalityChart').style.display = 'block';
-    document.getElementById('topVaccinatedMunicipalityChart').nextElementSibling.classList.add('d-none');
-
     if (topVaccinatedMunicipalityChart) topVaccinatedMunicipalityChart.destroy();
 
     topVaccinatedMunicipalityChart = new Chart(document.getElementById('topVaccinatedMunicipalityChart'), {
@@ -330,13 +328,13 @@ if (data.top_vaccinated_municipalities.length > 0) {
                 backgroundColor: '#198754'
             }]
         },
-        options: { responsive: true }
+        options: { responsive: true, maintainAspectRatio: true }
     });
-
 } else {
     document.getElementById('topVaccinatedMunicipalityChart').style.display = 'none';
     document.getElementById('topVaccinatedMunicipalityChart').nextElementSibling.classList.remove('d-none');
 }
+
 
 // UNVACCINATED
 if (data.top_unvaccinated_municipalities.length > 0) {
@@ -352,11 +350,12 @@ if (data.top_unvaccinated_municipalities.length > 0) {
                 backgroundColor: '#dc3545'
             }]
         },
-        options: { responsive: true }
+        options: { responsive: true, maintainAspectRatio: true }
     });
+} else {
+    document.getElementById('topUnvaccinatedMunicipalityChart').style.display = 'none';
+    document.getElementById('topUnvaccinatedMunicipalityChart').nextElementSibling.classList.remove('d-none');
 }
-
-    let topBarangayChart, topVaccinatedBarangayChart, topUnvaccinatedBarangayChart;
 
 if (data.top_barangays.length > 0) {
     if (topBarangayChart) topBarangayChart.destroy();

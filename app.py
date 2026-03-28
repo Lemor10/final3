@@ -491,30 +491,38 @@ def get_analysis_data(start_month=None, end_month=None):
     month_counts = [month_counts_dict[m] for m in months]
 
     # ---------------- BARANGAY ANALYTICS ----------------
-    barangay_counts = {}
     vaccinated_barangay_counts = {}
     unvaccinated_barangay_counts = {}
+    barangay_counts = {}
 
     for d in dogs:
 
         if d.is_stray or (d.owner_id is None and not d.owner_barangay):
             continue
 
-        # Priority: Dog.owner_barangay -> Owner's barangay -> "Unknown"
         if d.owner_barangay:
             barangay = d.owner_barangay.strip().title()
         elif d.owner and d.owner.barangay:
             barangay = d.owner.barangay.strip().title()
         else:
             barangay = "Unknown"
-        
-        # Total dogs per barangay
-        barangay_counts[barangay] = barangay_counts.get(barangay, 0) + 1
+
+        # Municipality
+        if d.owner_municipality:
+            municipality = d.owner_municipality.strip().title()
+        elif d.owner and d.owner.municipality:
+            municipality = d.owner.municipality.strip().title()
+        else:
+            municipality = "Unknown"
+
+        key = f"{barangay} ({municipality})"
+
+        barangay_counts[key] = barangay_counts.get(key, 0) + 1
         # Vaccinated
         if d.vaccinated == "Vaccinated":
-            vaccinated_barangay_counts[barangay] = vaccinated_barangay_counts.get(barangay, 0) + 1
+            vaccinated_barangay_counts[key] = vaccinated_barangay_counts.get(key, 0) + 1
         else:
-            unvaccinated_barangay_counts[barangay] = unvaccinated_barangay_counts.get(barangay, 0) + 1
+            unvaccinated_barangay_counts[key] = unvaccinated_barangay_counts.get(key, 0) + 1
 
     # Sort and take top 5 barangays
     top_barangays = sorted(barangay_counts.items(), key=lambda x: x[1], reverse=True)[:5]
