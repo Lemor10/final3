@@ -502,12 +502,12 @@ def get_analysis_data(start_month=None, end_month=None):
 
         # Priority: Dog.owner_barangay -> Owner's barangay -> "Unknown"
         if d.owner_barangay:
-            barangay = d.owner_barangay
+            barangay = d.owner_barangay.strip().title()
         elif d.owner and d.owner.barangay:
-            barangay = d.owner.barangay
+            barangay = d.owner.barangay.strip().title()
         else:
             barangay = "Unknown"
-
+        
         # Total dogs per barangay
         barangay_counts[barangay] = barangay_counts.get(barangay, 0) + 1
         # Vaccinated
@@ -533,11 +533,11 @@ def get_analysis_data(start_month=None, end_month=None):
 
         # Priority: Dog.owner_municipality -> Owner's municipality -> "Unknown"
         if d.owner_municipality:
-            municipality = d.owner_municipality
+            municipality = d.owner_municipality.strip().title()
         elif d.owner and d.owner.municipality:
-            municipality = d.owner.municipality
+            municipality = d.owner.municipality.strip().title()
         else:
-            municipality = "Unknown"
+            municipality = "unknown"
 
         # Total dogs per municipality
         municipality_counts[municipality] = municipality_counts.get(municipality, 0) + 1
