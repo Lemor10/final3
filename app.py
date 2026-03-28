@@ -33,6 +33,10 @@ import cloudinary
 import cloudinary.uploader
 import cloudinary.api
 from docx.shared import Inches
+from docx import Document
+from matplotlib.ticker import MultipleLocator
+from docx.shared import Pt
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 load_dotenv()
 
@@ -584,6 +588,27 @@ def get_analysis_data(start_month=None, end_month=None):
         "top_vaccinated_barangays": top_vaccinated_barangays,
         "top_unvaccinated_barangays": top_unvaccinated_barangays
     }
+
+def add_table(document, title, headers, rows):
+    document.add_heading(title, level=2)
+
+    if not rows:
+        document.add_paragraph("No available data.")
+        return
+
+    table = document.add_table(rows=1, cols=len(headers))
+    table.style = 'Table Grid'
+
+    # Header
+    hdr_cells = table.rows[0].cells
+    for i, header in enumerate(headers):
+        hdr_cells[i].text = header
+
+    # Rows
+    for row in rows:
+        row_cells = table.add_row().cells
+        for i, value in enumerate(row):
+            row_cells[i].text = str(value)
 
 @app.route("/check-username")
 def check_username():
@@ -1741,23 +1766,36 @@ def download_data_analysis():
     end_month = request.args.get("end_month")
 
     data = get_analysis_data(start_month, end_month)
-
-    downloaded_at = datetime.utcnow()
-    formatted_date = downloaded_at.strftime("%B %d, %Y")
-
+    
+    tz = pytz.timezone("Asia/Manila")
+    today = datetime.now(tz)
+    formatted_date = today.strftime("%B %d, %Y %I:%M %p")
     document = Document()
 
     # Add a logo at the top (adjust path to your logo file)
     logo_path = os.path.join("static", "images", "logo1.png")  # e.g., static/images/logo.png
     try:
-        document.add_picture(logo_path, width=Inches(1.5))  # adjust size as needed
+        paragraph = document.add_paragraph()
+        paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+        run = paragraph.add_run()
+        run.add_picture(logo_path, width=Inches(1.2))
+
     except Exception as e:
         print(f"Logo could not be added: {e}")
 
-    # Create Word document
-    document.add_heading("TraCK Paw PH Data Analysis Report", level=1)
-    document.add_paragraph(f"Data Analytics Report as of {formatted_date}")
-    document.add_paragraph("")  # spacing
+    # ================= TITLE =================
+    title = document.add_paragraph()
+    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = title.add_run("TracK Paw PH\nData Analysis Report")
+    run.bold = True
+    run.font.size = Pt(18)
+
+    subtitle = document.add_paragraph()
+    subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    subtitle.add_run(f"As of {formatted_date}")
+
+    document.add_paragraph("\n")
 
     # Summary
     document.add_paragraph(f"Total Owners: {data['total_owners']}")
@@ -1766,184 +1804,99 @@ def download_data_analysis():
     document.add_paragraph(f"Total Stray Dogs: {data['total_stray_dogs']}")
     document.add_paragraph(f"Total Deaths: {data['total_deaths']}")
 
-    # ---------- BREED CHART ----------
-    document.add_heading("Dogs per Breed", level=2)
-    plt.figure()
-    plt.bar(data["breeds"], data["breed_numbers"])
-    plt.xticks(rotation=45)
-    plt.title("Dogs per Breed")
-    plt.tight_layout()
-    breed_chart = io.BytesIO()
-    plt.savefig(breed_chart, format="png")
-    plt.close()
-    breed_chart.seek(0)
-    document.add_picture(breed_chart, width=Inches(5))
+    # ---------- BREED TABLE ----------
+    breed_rows = list(zip(data["breeds"], data["breed_numbers"]))
+
+    add_table(
+        document,
+        "Dogs per Breed",
+        ["Breed", "Count"],
+        breed_rows
+    )
 
     # ---------- VACCINATION CHART ----------
-    document.add_heading("Vaccination Status", level=2)
-    plt.figure()
-    plt.pie(
-        [data["vaccinated_count"], data["unvaccinated_count"]],
-        labels=["Vaccinated", "Not Vaccinated"],
-        autopct="%1.1f%%"
-    )
-    plt.title("Vaccination Distribution")
-    vac_chart = io.BytesIO()
-    plt.savefig(vac_chart, format="png")
-    plt.close()
-    vac_chart.seek(0)
-    document.add_picture(vac_chart, width=Inches(4))
+    vaccination_rows = [
+        ["Vaccinated", data["vaccinated_count"]],
+        ["Not Vaccinated", data["unvaccinated_count"]],
+    ]
 
-    # ---------- OWNED VS STRAY ----------
-    document.add_heading("Owned vs Stray Dogs", level=2)
-    plt.figure()
-    plt.pie(
-        [data["owned_dogs"], data["total_stray_dogs"]],
-        labels=["Owned Dogs", "Stray Dogs"],
-        autopct="%1.1f%%",
-        colors=['#0d6efd', '#ffc107']
+    add_table(
+        document,
+        "Vaccination Status",
+        ["Status", "Count"],
+        vaccination_rows
     )
-    plt.title("Owned vs Stray Dogs")
-    own_stray_chart = io.BytesIO()
-    plt.savefig(own_stray_chart, format="png")
-    plt.close()
-    own_stray_chart.seek(0)
-    document.add_picture(own_stray_chart, width=Inches(4))
+    # ---------- OWNED VS STRAY ----------
+    owned_stray_rows = [
+        ["Owned Dogs", data["owned_dogs"]],
+        ["Stray Dogs", data["total_stray_dogs"]],
+    ]
+
+    add_table(
+        document,
+        "Owned vs Stray Dogs",
+        ["Category", "Count"],
+        owned_stray_rows
+    )
 
     # ---------- MONTHLY REGISTRATION ----------
-    document.add_heading("Monthly Registrations", level=2)
-    plt.figure()
-    plt.plot(data["months"], data["month_counts"], marker='o')
-    plt.xticks(rotation=45)
-    plt.title("Monthly Registrations")
-    plt.tight_layout()
-    month_chart = io.BytesIO()
-    plt.savefig(month_chart, format="png")
-    plt.close()
-    month_chart.seek(0)
-    document.add_picture(month_chart, width=Inches(5))
+    monthly_rows = list(zip(data["months"], data["month_counts"]))
 
+    add_table(
+        document,
+        "Monthly Registrations",
+        ["Month", "Registrations"],
+        monthly_rows
+    )
     # ---------- DEATH CAUSE ----------
-    document.add_heading("Cause of Death", level=2)
-    if data["death_causes"]:
-        plt.figure()
-        plt.bar(data["death_causes"], data["death_counts"], color="#dc3545")
-        plt.xticks(rotation=45)
-        plt.title("Cause of Death")
-        plt.tight_layout()
-        death_chart = io.BytesIO()
-        plt.savefig(death_chart, format="png")
-        plt.close()
-        death_chart.seek(0)
-        document.add_picture(death_chart, width=Inches(5))
+    death_rows = list(zip(data["death_causes"], data["death_counts"]))
 
+    add_table(
+        document,
+        "Cause of Death",
+        ["Cause", "Count"],
+        death_rows
+    )
         # ---------- TOP MUNICIPALITIES ----------
-    document.add_heading("Top Municipalities by Total Dogs", level=2)
-    if data["top_municipalities"]:
-        plt.figure()
-        plt.bar(
-            [m[0] for m in data["top_municipalities"]],
-            [m[1] for m in data["top_municipalities"]],
-            color="#0d6efd"
-        )
-        plt.xticks(rotation=45)
-        plt.title("Top Municipalities by Total Dogs")
-        plt.tight_layout()
+    add_table(
+        document,
+        "Top Municipalities by Total Dogs",
+        ["Municipality", "Count"],
+        data["top_municipalities"]
+    )
+    add_table(
+        document,
+        "Top Municipalities by Vaccinated Dogs",
+        ["Municipality", "Count"],
+        data["top_vaccinated_municipalities"]
+    )
 
-        muni_chart = io.BytesIO()
-        plt.savefig(muni_chart, format="png")
-        plt.close()
-        muni_chart.seek(0)
-        document.add_picture(muni_chart, width=Inches(5))
-
-    document.add_heading("Top Municipalities by Vaccinated Dogs", level=2)
-    if data["top_vaccinated_municipalities"]:
-        plt.figure()
-        plt.bar(
-            [m[0] for m in data["top_vaccinated_municipalities"]],
-            [m[1] for m in data["top_vaccinated_municipalities"]],
-            color="#198754"
-        )
-        plt.xticks(rotation=45)
-        plt.title("Top Municipalities by Vaccinated Dogs")
-        plt.tight_layout()
-
-        vac_muni_chart = io.BytesIO()
-        plt.savefig(vac_muni_chart, format="png")
-        plt.close()
-        vac_muni_chart.seek(0)
-        document.add_picture(vac_muni_chart, width=Inches(5))
-
-    document.add_heading("Top Municipalities by Unvaccinated Dogs", level=2)
-    if data["top_unvaccinated_municipalities"]:
-        plt.figure()
-        plt.bar(
-            [m[0] for m in data["top_unvaccinated_municipalities"]],
-            [m[1] for m in data["top_unvaccinated_municipalities"]],
-            color="#dc3545"
-        )
-        plt.xticks(rotation=45)
-        plt.title("Top Municipalities by Unvaccinated Dogs")
-        plt.tight_layout()
-
-        unvac_muni_chart = io.BytesIO()
-        plt.savefig(unvac_muni_chart, format="png")
-        plt.close()
-        unvac_muni_chart.seek(0)
-        document.add_picture(unvac_muni_chart, width=Inches(5))
-
+    add_table(
+        document,
+        "Top Municipalities by Unvaccinated Dogs",
+        ["Municipality", "Count"],
+        data["top_unvaccinated_municipalities"]
+    )
     # ---------- TOP BARANGAYS ----------
-    document.add_heading("Top Barangays by Total Dogs", level=2)
-    if data["top_barangays"]:
-        plt.figure()
-        plt.bar(
-            [b[0] for b in data["top_barangays"]],
-            [b[1] for b in data["top_barangays"]],
-            color="#6f42c1"
-        )
-        plt.xticks(rotation=45)
-        plt.title("Top Barangays by Total Dogs")
-        plt.tight_layout()
-        barangay_chart = io.BytesIO()
-        plt.savefig(barangay_chart, format="png")
-        plt.close()
-        barangay_chart.seek(0)
-        document.add_picture(barangay_chart, width=Inches(5))
-
-    document.add_heading("Top Barangays by Vaccinated Dogs", level=2)
-    if data["top_vaccinated_barangays"]:
-        plt.figure()
-        plt.bar(
-            [b[0] for b in data["top_vaccinated_barangays"]],
-            [b[1] for b in data["top_vaccinated_barangays"]],
-            color="#198754"
-        )
-        plt.xticks(rotation=45)
-        plt.title("Top Barangays by Vaccinated Dogs")
-        plt.tight_layout()
-        vac_barangay_chart = io.BytesIO()
-        plt.savefig(vac_barangay_chart, format="png")
-        plt.close()
-        vac_barangay_chart.seek(0)
-        document.add_picture(vac_barangay_chart, width=Inches(5))
-
-    document.add_heading("Top Barangays by Unvaccinated Dogs", level=2)
-    if data["top_unvaccinated_barangays"]:
-        plt.figure()
-        plt.bar(
-            [b[0] for b in data["top_unvaccinated_barangays"]],
-            [b[1] for b in data["top_unvaccinated_barangays"]],
-            color="#dc3545"
-        )
-        plt.xticks(rotation=45)
-        plt.title("Top Barangays by Unvaccinated Dogs")
-        plt.tight_layout()
-        unvac_barangay_chart = io.BytesIO()
-        plt.savefig(unvac_barangay_chart, format="png")
-        plt.close()
-        unvac_barangay_chart.seek(0)
-        document.add_picture(unvac_barangay_chart, width=Inches(5))
-
+    add_table(
+        document,
+        "Top Barangays by Total Dogs",
+        ["Barangay", "Count"],
+        data["top_barangays"]
+    )
+    
+    add_table(
+        document,
+        "Top Barangays by Vaccinated Dogs",
+        ["Barangay", "Count"],
+        data["top_vaccinated_barangays"]
+    )
+    add_table(
+        document,
+        "Top Barangays by Unvaccinated Dogs",
+        ["Barangay", "Count"],
+        data["top_unvaccinated_barangays"]
+    )
     # Save file
     file_stream = io.BytesIO()
     document.save(file_stream)
