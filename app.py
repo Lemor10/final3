@@ -37,6 +37,7 @@ from docx import Document
 from matplotlib.ticker import MultipleLocator
 from docx.shared import Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import RGBColor
 
 load_dotenv()
 
@@ -590,7 +591,10 @@ def get_analysis_data(start_month=None, end_month=None):
     }
 
 def add_table(document, title, headers, rows):
-    document.add_heading(title, level=2)
+    heading = document.add_heading(title, level=2)
+
+    for run in heading.runs:
+        run.font.color.rgb = RGBColor(0, 0, 0)
 
     if not rows:
         document.add_paragraph("No available data.")
