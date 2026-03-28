@@ -191,10 +191,19 @@ function renderCharts(data) {
                     borderWidth: 1
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true
+options: {
+    responsive: true,
+    maintainAspectRatio: true,
+    scales: {
+        y: {
+            beginAtZero: true,
+            ticks: {
+                stepSize: 1,   // 👈 forces 1-step intervals
+                precision: 0    // 👈 ensures whole numbers only
             }
+        }
+    }
+}
         });
     } else {
         document.querySelector('#breedChart').style.display = 'none';
