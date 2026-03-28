@@ -521,6 +521,39 @@ def get_analysis_data(start_month=None, end_month=None):
     top_vaccinated_barangays = sorted(vaccinated_barangay_counts.items(), key=lambda x: x[1], reverse=True)[:5]
     top_unvaccinated_barangays = sorted(unvaccinated_barangay_counts.items(), key=lambda x: x[1], reverse=True)[:5]
 
+    # ---------------- MUNICIPALITY ANALYTICS ----------------
+    municipality_counts = {}
+    vaccinated_municipality_counts = {}
+    unvaccinated_municipality_counts = {}
+
+    for d in dogs:
+
+        if d.is_stray or (d.owner_id is None and not d.owner_municipality):
+            continue
+
+        # Priority: Dog.owner_municipality -> Owner's municipality -> "Unknown"
+        if d.owner_municipality:
+            municipality = d.owner_municipality
+        elif d.owner and d.owner.municipality:
+            municipality = d.owner.municipality
+        else:
+            municipality = "Unknown"
+
+        # Total dogs per municipality
+        municipality_counts[municipality] = municipality_counts.get(municipality, 0) + 1
+
+        # Vaccinated
+        if d.vaccinated == "Vaccinated":
+            vaccinated_municipality_counts[municipality] = vaccinated_municipality_counts.get(municipality, 0) + 1
+        else:
+            unvaccinated_municipality_counts[municipality] = unvaccinated_municipality_counts.get(municipality, 0) + 1
+
+
+    # Sort top 5
+    top_municipalities = sorted(municipality_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+    top_vaccinated_municipalities = sorted(vaccinated_municipality_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+    top_unvaccinated_municipalities = sorted(unvaccinated_municipality_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+
     return {
         "total_owners": total_owners,
         "total_dogs": total_dogs,
@@ -535,6 +568,9 @@ def get_analysis_data(start_month=None, end_month=None):
         "total_deaths": total_deaths,
         "death_causes": death_causes,
         "death_counts": death_counts,
+        "top_municipalities": top_municipalities,
+        "top_vaccinated_municipalities": top_vaccinated_municipalities,
+        "top_unvaccinated_municipalities": top_unvaccinated_municipalities,
         # New barangay analytics
         "top_barangays": top_barangays,
         "top_vaccinated_barangays": top_vaccinated_barangays,
@@ -2020,6 +2056,9 @@ def admin_register_dog():
 
     db.session.add(new_dog)
     db.session.commit()
+
+    # ✅ SUCCESS FLASH HERE
+    flash("Dog registered successfully! QR code has been generated.", "dog_success")
 
     existing_user = User.query.filter_by(email=owner_email).first()
     if existing_user:

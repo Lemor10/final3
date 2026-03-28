@@ -121,6 +121,18 @@
   top: 10px;
   right: 10px;
 }
+
+.btn-loading {
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.btn-loading .spinner-border {
+  width: 1rem;
+  height: 1rem;
+  margin-right: 5px;
+}
+
     /* Responsive */
     @media (max-width: 1440px) {
       .dog-img { width: 100%; height: 100%; }
@@ -710,13 +722,26 @@
           {% endif %}
         </p>
 
-        {% if d.owner and d.owner.email %}
-        <p><strong>Email:</strong> {{ d.owner.email }}</p>
-        {% endif %}
+        <!-- ✅ FIX HERE -->
+        <p><strong>Email:</strong>
+          {% if d.owner %}
+            {{ d.owner.email }}
+          {% elif d.owner_email %}
+            {{ d.owner_email }}
+          {% else %}
+            N/A
+          {% endif %}
+        </p>
 
-        {% if d.owner and d.owner.contact %}
-        <p><strong>Contact:</strong> {{ d.owner.contact }}</p>
-        {% endif %}
+        <p><strong>Contact:</strong>
+          {% if d.owner %}
+            {{ d.owner.contact }}
+          {% elif d.owner_mobile %}
+            {{ d.owner_mobile }}
+          {% else %}
+            N/A
+          {% endif %}
+        </p>
 
       </div>
 
@@ -724,6 +749,45 @@
   </div>
 </div>
 {% endfor %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for category, message in messages %}
+    {% if category == "dog_success" %}
+      <script>
+        document.addEventListener("DOMContentLoaded", function () {
+          const modalEl = document.getElementById("adminSuccessModal");
+          if (modalEl) {
+            const successModal = new bootstrap.Modal(modalEl);
+            successModal.show();
+          }
+        });
+      </script>
+    {% endif %}
+  {% endfor %}
+{% endwith %}
+<!-- Admin Success Modal -->
+<div class="modal fade" id="adminSuccessModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+
+      <!-- Header -->
+      <div class="text-center bg-success text-white p-4 rounded-top">
+        <i class="bi bi-check-circle-fill fs-1 mb-2"></i>
+        <h5 class="fw-bold mb-1">Success!</h5>
+        <p class="mb-0" id="adminSuccessMessage">
+          Dog registered successfully! QR code has been generated.
+        </p>
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer justify-content-center border-0 pt-3">
+        <button class="btn btn-success w-50 rounded-pill" data-bs-dismiss="modal">
+          OK
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
 <div class="modal fade" id="qrFullscreenModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-fullscreen">
     <div class="modal-content qr-modal-bg">
@@ -863,8 +927,8 @@
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
             Cancel
           </button>
-          <button type="submit" class="btn btn-danger">
-            Archive Dog
+          <button type="submit" class="btn btn-danger archiveDogBtn">
+            <span class="btn-text">Archive Dog</span>
           </button>
         </div>
 
@@ -998,7 +1062,9 @@
         
 
         <div class="modal-footer">
-          <button type="submit" class="btn btn-primary w-100">Update</button>
+          <button type="submit" class="btn btn-primary w-100 editDogBtn">
+            <span class="btn-text">Update</span>
+          </button>
         </div>
       </form>
     </div>
@@ -1150,7 +1216,7 @@
             <i class="bi bi-image"></i> Dog Image
           </h6>
 
-          <div class="mb-3">
+          <div class="mb-1">
             <input type="file" name="dog_image" class="form-control" accept="image/*" onchange="previewAdminImage(event)">
           </div>
 
@@ -1166,8 +1232,10 @@
 
         <!-- FOOTER -->
         <div class="modal-footer">
-          <button type="submit" class="btn btn-success w-100">
-            <i class="bi bi-check-circle"></i> Register
+          <button type="submit" class="btn btn-success w-100" id="registerDogBtn">
+            <span class="btn-text">
+              <i class="bi bi-check-circle"></i> Register
+            </span>
           </button>
         </div>
 
@@ -1465,6 +1533,42 @@ document.querySelector('#registerStrayDogModal form').addEventListener('submit',
         e.preventDefault();
         emailInput.focus();
     }
+});
+</script>
+<script>
+function setLoading(button, text = "Processing...") {
+  button.classList.add("btn-loading");
+
+  const span = button.querySelector(".btn-text");
+
+  span.innerHTML = `
+    <span class="spinner-border spinner-border-sm"></span>
+    ${text}
+  `;
+}
+
+// ✅ Register Dog
+document.querySelector('#registerStrayDogModal form')
+  .addEventListener('submit', function() {
+
+    const btn = document.getElementById('registerDogBtn');
+    setLoading(btn, "Registering...");
+});
+
+// ✅ Edit Dog (ALL MODALS)
+document.querySelectorAll('form[action*="admin_edit_dog"]').forEach(form => {
+  form.addEventListener('submit', function() {
+    const btn = form.querySelector('.editDogBtn');
+    setLoading(btn, "Updating...");
+  });
+});
+
+// ✅ Archive Dog
+document.getElementById('deleteDogForm')
+  .addEventListener('submit', function() {
+
+    const btn = this.querySelector('.archiveDogBtn');
+    setLoading(btn, "Archiving...");
 });
 </script>
 {% endblock %}
