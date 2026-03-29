@@ -1690,52 +1690,52 @@ def admin_check_email():
 
     return jsonify({"exists": bool(exists)})
 
-@app.route('/admin/login_as_owner/<int:user_id>')
-@login_required
-def login_as_owner(user_id):
+#@app.route('/admin/login_as_owner/<int:user_id>')
+#@login_required
+#def login_as_owner(user_id):
 
-    if current_user.role != "admin":
-        abort(403)
+#    if current_user.role != "admin":
+#        abort(403)
 
-    owner = User.query.get_or_404(user_id)
+#   owner = User.query.get_or_404(user_id)
 
     # login as owner
-    login_user(owner)
+#    login_user(owner)
 
-    flash(f"You are now logged in as {owner.name}", "warning")
+#   flash(f"You are now logged in as {owner.name}", "warning")
 
-    return redirect(url_for('owner_dashboard'))
+#    return redirect(url_for('owner_dashboard'))
 
-@app.route('/admin/edit-owner/<int:owner_id>', methods=['POST'])
-@login_required
-def admin_edit_owner(owner_id):
+#@app.route('/admin/edit-owner/<int:owner_id>', methods=['POST'])
+#@login_required
+#def admin_edit_owner(owner_id):
 
-    if current_user.role != 'admin':
-        abort(403)
+#    if current_user.role != 'admin':
+#        abort(403)
 
-    owner = User.query.get_or_404(owner_id)
+#    owner = User.query.get_or_404(owner_id)
 
-    owner.name = request.form.get('name')
-    owner.contact = request.form.get('contact')
-    owner.barangay = request.form.get('barangay')
-    owner.municipality = request.form.get('municipality')
-    owner.province = request.form.get('province')
+#    owner.name = request.form.get('name')
+#    owner.contact = request.form.get('contact')
+#    owner.barangay = request.form.get('barangay')
+#    owner.municipality = request.form.get('municipality')
+#    owner.province = request.form.get('province')
 
-    owner.address = f"{owner.barangay}, {owner.municipality}, {owner.province}"
+#    owner.address = f"{owner.barangay}, {owner.municipality}, {owner.province}"
 
     # 🔥 update dogs automatically
-    dogs = Dog.query.filter_by(owner_id=owner.id).all()
+#   dogs = Dog.query.filter_by(owner_id=owner.id).all()
 
-    for dog in dogs:
-        dog.owner_barangay = owner.barangay
-        dog.owner_municipality = owner.municipality
-        dog.owner_province = owner.province
-        dog.owner_address = owner.address
+#    for dog in dogs:
+#        dog.owner_barangay = owner.barangay
+#       dog.owner_municipality = owner.municipality
+#        dog.owner_province = owner.province
+#       dog.owner_address = owner.address
 
-    db.session.commit()
+#    db.session.commit()
 
-    flash("Owner updated successfully.", "success")
-    return redirect(url_for('admin_dashboard'))
+#    flash("Owner updated successfully.", "success")
+#    return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/data-analysis')
 @login_required
