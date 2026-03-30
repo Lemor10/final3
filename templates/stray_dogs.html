@@ -65,6 +65,11 @@
     /* Buttons */
     .btn-qr { background-color: #081a30; border: none; }
     .btn-qr:hover { background-color: #040e19; }
+    
+    .btn-loading {
+  pointer-events: none;
+  opacity: 0.8;
+}
 </style>
 {% endblock %}
 
@@ -354,8 +359,9 @@
         </div>
 
         <div class="modal-footer">
-          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button class="btn btn-primary">Save Changes</button>
+          <button type="submit" class="btn btn-primary editStrayBtn">
+            <span class="btn-text">Save Changes</span>
+          </button>
         </div>
 
       </form>
@@ -421,8 +427,9 @@
         </div>
 
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-danger">Archive</button>
+          <button type="submit" class="btn btn-danger archiveStrayBtn">
+            <span class="btn-text">Archive</span>
+          </button>
         </div>
 
       </form>
@@ -529,8 +536,10 @@
 
         <!-- FOOTER -->
         <div class="modal-footer">
-          <button type="submit" class="btn btn-success w-100">
-            <i class="bi bi-check-circle"></i> Register
+          <button type="submit" class="btn btn-success w-100" id="registerStrayBtn">
+            <span class="btn-text">
+              <i class="bi bi-check-circle"></i> Register
+            </span>
           </button>
         </div>
 
@@ -633,5 +642,41 @@ function openQrFullscreen(src) {
   );
   modal.show();
 }
+</script>
+<script>
+function setLoading(button, text = "Processing...") {
+  button.classList.add("btn-loading");
+
+  const span = button.querySelector(".btn-text");
+
+  span.innerHTML = `
+    <span class="spinner-border spinner-border-sm"></span>
+    ${text}
+  `;
+}
+
+// ✅ Register Stray
+document.querySelector('#addStrayModal form')
+  .addEventListener('submit', function() {
+
+    const btn = document.getElementById('registerStrayBtn');
+    setLoading(btn, "Registering...");
+});
+
+// ✅ Edit Stray (ALL MODALS)
+document.querySelectorAll('form[action*="admin_edit_stray"]').forEach(form => {
+  form.addEventListener('submit', function() {
+    const btn = form.querySelector('.editStrayBtn');
+    setLoading(btn, "Updating...");
+  });
+});
+
+// ✅ Archive Stray
+document.getElementById('deleteDogForm')
+  .addEventListener('submit', function() {
+
+    const btn = this.querySelector('.archiveStrayBtn');
+    setLoading(btn, "Archiving...");
+});
 </script>
 {% endblock %}
