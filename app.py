@@ -1971,7 +1971,7 @@ def admin_search_dogs():
                 )
 
                 dogs = dogs.filter(func.lower(full_address).like(f"%{query.lower()}%"))
-                
+
         # ✅ FORCE ORIGINAL ORDER (IMPORTANT)
     dogs = dogs.order_by(Dog.created_at.desc()).all()
 
@@ -2251,6 +2251,42 @@ def admin_delete_owner(owner_id):
     db.session.delete(owner)
     db.session.commit()
 
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/edit-owner/<int:owner_id>', methods=['POST'])
+@login_required
+def admin_edit_owner(owner_id):
+    if current_user.role != 'admin':
+        abort(403)
+
+    owner = User.query.get_or_404(owner_id)
+
+    new_email = request.form.get('email')
+
+    # ✅ Prevent duplicate email
+    existing_user = User.query.filter(User.email == new_email).first()
+    if existing_user and existing_user.id != owner.id:
+        flash("Email already exists!", "danger")
+        return redirect(url_for('admin_dashboard'))
+
+    # ✅ Update fields
+    owner.name = request.form.get('name')
+    owner.email = new_email
+    owner.contact = request.form.get('contact')
+
+    owner.barangay = request.form.get('barangay')
+    owner.municipality = request.form.get('municipality')
+    owner.province = request.form.get('province')
+
+    Dog.query.filter_by(owner_id=owner.id).update({
+        "owner_barangay": owner.barangay,
+        "owner_municipality": owner.municipality,
+        "owner_province": owner.province
+    })
+
+    db.session.commit()
+
+    flash("Owner updated successfully!", "success")
     return redirect(url_for('admin_dashboard'))
 
 if __name__ == '__main__':

@@ -187,6 +187,14 @@
                         </a>
                       </li>
                       <li>
+                        <a class="dropdown-item"
+                          href="#"
+                          data-bs-toggle="modal"
+                          data-bs-target="#editOwnerModal{{ u.id }}">
+                          <i class="bi bi-pencil-square me-2"></i> Edit
+                        </a>
+                      </li>
+                      <li>
                         <a 
                           class="dropdown-item text-danger" 
                           href="#" 
@@ -282,8 +290,16 @@
                 <p class="mb-0"><strong>Contact:</strong> {{ u.contact or 'N/A' }}</p>
           </div>
           <div class="col-md-6">
-                <p class="mb-1"><strong>Address:</strong> {{ u.address or 'N/A' }}</p>
-                <p class="mb-0"><strong>Role:</strong> {{ u.role | capitalize }}</p>
+            <p><strong>Address:</strong>
+              {% if u.barangay or u.municipality or u.province %}
+                {{ u.barangay }}, {{ u.municipality }}, {{ u.province }}
+              {% elif u.address %}
+                {{ u.address }}
+              {% else %}
+                N/A
+              {% endif %}
+            </p>    
+            <p class="mb-0"><strong>Role:</strong> {{ u.role | capitalize }}</p>
           </div>
         </div>
 
@@ -346,7 +362,89 @@
   </div>
 </div>
 {% endfor %}
+{% for u in users %}
+<div class="modal fade" id="editOwnerModal{{ u.id }}" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
 
+      <form method="POST" action="{{ url_for('admin_edit_owner', owner_id=u.id) }}">
+        
+        <!-- HEADER -->
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">
+            <i class="bi bi-pencil-square"></i> Edit Owner
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <!-- BODY -->
+        <div class="modal-body">
+
+          <div class="mb-3">
+            <label>Name</label>
+            <input type="text" name="name" class="form-control" value="{{ u.name }}" required>
+          </div>
+
+          <div class="mb-3">
+            <label>Email</label>
+            <input type="email" name="email" class="form-control" value="{{ u.email }}" required>
+          </div>
+
+          <div class="mb-3">
+            <label>Contact</label>
+            <input type="text" name="contact" class="form-control" value="{{ u.contact }}">
+          </div>
+
+<div class="mb-3">
+  <label class="fw-bold">Address</label>
+
+  <div class="row g-2 mt-1">
+
+    <div class="col-md-4">
+      <label class="form-label small">Barangay</label>
+      <input type="text" 
+             name="barangay" 
+             class="form-control" 
+             placeholder="Barangay"
+             value="{{ u.barangay }}">
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label small">Municipality</label>
+      <input type="text" 
+             name="municipality" 
+             class="form-control" 
+             placeholder="Municipality"
+             value="{{ u.municipality }}">
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label small">Province</label>
+      <input type="text" 
+             name="province" 
+             class="form-control" 
+             placeholder="Province"
+             value="{{ u.province }}">
+    </div>
+
+  </div>
+</div>
+
+        </div>
+
+        <!-- FOOTER -->
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary w-100 editOwnerBtn">
+            <span class="btn-text">Update Owner</span>
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+</div>
+{% endfor %}
 
     <div class="d-flex justify-content-between align-items-center mb-4">
       <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#registerStrayDogModal">
