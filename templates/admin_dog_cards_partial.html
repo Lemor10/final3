@@ -147,18 +147,28 @@
               {% endif %}
 
               <div class="mt-2">
-                <button class="btn btn-primary btn-sm"
-                        data-bs-toggle="modal"
-                        data-bs-target="#editDogModal{{ d.id }}">
-                  Edit
-                </button>
-              <button type="button" 
-                      class="btn btn-danger btn-sm" 
-                      data-bs-toggle="modal" 
-                      data-bs-target="#deleteDogModal" 
-                      onclick="setDeleteDogForm('{{ url_for('admin_archive_dog', dog_id=d.id) }}')">
-                Delete
-              </button>
+              {% if d.qr_code %}
+                  <a href="{{ url_for('download_qr', dog_uuid=d.uuid) }}" class="btn btn-sm btn-qr w-100 mb-2 text-white"><i class="bi bi-download"></i> Download QR</a>
+              {% endif %}
+              </div>
+
+              <div class="row g-2">
+                <div class="col-10 col-sm-6">
+                  <button class="btn btn-outline-primary btn-sm w-100"
+                          data-bs-toggle="modal"
+                          data-bs-target="#editDogModal{{ d.id }}">
+                    Edit
+                  </button>
+                </div>
+                <div class="col-10 col-sm-6">
+                  <button type="button" 
+                          class="btn btn-danger btn-sm w-100" 
+                          data-bs-toggle="modal" 
+                          data-bs-target="#deleteDogModal" 
+                          onclick="setDeleteDogForm('{{ url_for('admin_archive_dog', dog_id=d.id) }}')">
+                    Archive
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -264,20 +274,28 @@
               {% endif %}
 
               <div class="mt-2">
-                <button class="btn btn-primary btn-sm"
-                        data-bs-toggle="modal"
-                        data-bs-target="#editDogModal{{ d.id }}">
-                  Edit
-                </button>
+              {% if d.qr_code %}
+                  <a href="{{ url_for('download_qr', dog_uuid=d.uuid) }}" class="btn btn-sm btn-qr w-100 mb-2 text-white"><i class="bi bi-download"></i> Download QR</a>
+              {% endif %}
+              </div>
 
-              <button type="button" 
-                      class="btn btn-danger btn-sm" 
-                      data-bs-toggle="modal" 
-                      data-bs-target="#deleteDogModal" 
-                      onclick="setDeleteDogForm('{{ url_for('admin_archive_dog', dog_id=d.id) }}')">
-                Delete
-              </button>
-
+              <div class="row g-2">
+                <div class="col-10 col-sm-6">
+                  <button class="btn btn-outline-primary btn-sm w-100"
+                          data-bs-toggle="modal"
+                          data-bs-target="#editDogModal{{ d.id }}">
+                    Edit
+                  </button>
+                </div>
+                <div class="col-10 col-sm-6">
+                  <button type="button" 
+                          class="btn btn-danger btn-sm w-100" 
+                          data-bs-toggle="modal" 
+                          data-bs-target="#deleteDogModal" 
+                          onclick="setDeleteDogForm('{{ url_for('admin_archive_dog', dog_id=d.id) }}')">
+                    Archive
+                  </button>
+                </div>
               </div>
             </div>
 
