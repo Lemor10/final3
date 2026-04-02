@@ -38,6 +38,7 @@ from matplotlib.ticker import MultipleLocator
 from docx.shared import Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import RGBColor
+from sqlalchemy.orm import joinedload
 
 load_dotenv()
 
@@ -181,6 +182,20 @@ class Dog(db.Model):
             parts.append(f"{rd.months} month{'s' if rd.months > 1 else ''}")
 
         return " ".join(parts) if parts else "0 months"
+
+    @property
+    def full_owner_address(self):
+        if self.owner_id and self.owner:
+            # Registered owner → use User table
+            return f"{self.owner.barangay}, {self.owner.municipality}, {self.owner.province}"
+        
+        # Walk-in → use Dog table
+        parts = [
+            self.owner_barangay,
+            self.owner_municipality,
+            self.owner_province
+        ]
+        return ", ".join([p for p in parts if p]) or "N/A"
 
 class Notification(db.Model):
     __tablename__ = "notifications"
@@ -1923,6 +1938,8 @@ def admin_search_dogs():
     search_field = request.args.get("search_field", "name")
     filter_status = request.args.get("filter", "all")
 
+    dogs = Dog.query.options(joinedload(Dog.owner))
+    
     dogs = Dog.query.filter(Dog.is_archived == False)
                 # Vaccination filter
     if filter_status in ["vaccinated", "not_vaccinated"]:
@@ -1941,14 +1958,14 @@ def admin_search_dogs():
                 dogs = dogs.filter(Dog.owner_name.ilike(f"{query}%"))
 
             elif search_field == "owner_barangay":
-                dogs = dogs.filter(
-                    Dog.registered_by_admin != None,  # only walk-in registrations
+                dogs = dogs.outerjoin(Dog.owner).filter(
                     func.concat(
-                        func.coalesce(Dog.owner_barangay, ''), ', ',
-                        func.coalesce(Dog.owner_municipality, ''), ', ',
-                        func.coalesce(Dog.owner_province, '')
-                    ).ilike(f"%{query}%"))
-                                    
+                        func.coalesce(User.barangay, Dog.owner_barangay, ''), ', ',
+                        func.coalesce(User.municipality, Dog.owner_municipality, ''), ', ',
+                        func.coalesce(User.province, Dog.owner_province, '')
+                    ).ilike(f"{query}%")
+                )          
+                               
             elif search_field == "gender":
                 dogs = dogs.filter(func.lower(Dog.gender) == query.lower())
 
@@ -1961,17 +1978,7 @@ def admin_search_dogs():
 
             elif search_field == "vaccination_location":
                 dogs = dogs.filter(Dog.vaccination_location.ilike(f"{query}%"))
-
-
-            elif search_field == "owner_barangay":
-                full_address = (
-                    func.coalesce(Dog.owner_barangay, '') + ', ' +
-                    func.coalesce(Dog.owner_municipality, '') + ', ' +
-                    func.coalesce(Dog.owner_province, '')
-                )
-
-                dogs = dogs.filter(func.lower(full_address).like(f"%{query.lower()}%"))
-
+                
         # ✅ FORCE ORIGINAL ORDER (IMPORTANT)
     dogs = dogs.order_by(Dog.created_at.desc()).all()
 
@@ -2056,9 +2063,9 @@ def admin_register_dog():
         owner_name=owner_name,
         owner_email=owner_email,
         owner_mobile=owner_mobile,
-        owner_barangay=owner_barangay,
-        owner_municipality=owner_municipality,
-        owner_province=owner_province,
+        owner_barangay=current_user.barangay,
+        owner_municipality=current_user.municipality,
+        owner_province=current_user.province,
         owner_id=None,
         vaccinated=vaccinated,
         qr_code=qr_url,
