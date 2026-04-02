@@ -1932,13 +1932,13 @@ def admin_search_dogs():
     # Search by name, breed, owner
     if query:
             if search_field == "name":
-                dogs = dogs.filter(Dog.name.ilike(f"%{query}%"))
+                dogs = dogs.filter(Dog.name.ilike(f"{query}%"))
 
             elif search_field == "breed":
-                dogs = dogs.filter(Dog.breed.ilike(f"%{query}%"))
+                dogs = dogs.filter(Dog.breed.ilike(f"{query}%"))
 
             elif search_field == "owner_name":
-                dogs = dogs.filter(Dog.owner_name.ilike(f"%{query}%"))
+                dogs = dogs.filter(Dog.owner_name.ilike(f"{query}%"))
 
             elif search_field == "owner_barangay":
                 dogs = dogs.filter(
@@ -1960,18 +1960,18 @@ def admin_search_dogs():
                     dogs = dogs.filter(False)
 
             elif search_field == "vaccination_location":
-                dogs = dogs.filter(Dog.vaccination_location.ilike(f"%{query}%"))
+                dogs = dogs.filter(Dog.vaccination_location.ilike(f"{query}%"))
 
 
-            elif search_field == "vaccination_add":
-                dogs = dogs.filter(
-                    func.concat(
-                        func.coalesce(Dog.vaccination_barangay, ''), ', ',
-                        func.coalesce(Dog.vaccination_municipality, ''), ', ',
-                        func.coalesce(Dog.vaccination_province, '')
-                    ).ilike(f"%{query}%")
+            elif search_field == "owner_barangay":
+                full_address = (
+                    func.coalesce(Dog.owner_barangay, '') + ', ' +
+                    func.coalesce(Dog.owner_municipality, '') + ', ' +
+                    func.coalesce(Dog.owner_province, '')
                 )
 
+                dogs = dogs.filter(func.lower(full_address).like(f"%{query.lower()}%"))
+                
         # ✅ FORCE ORIGINAL ORDER (IMPORTANT)
     dogs = dogs.order_by(Dog.created_at.desc()).all()
 
