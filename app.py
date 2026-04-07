@@ -234,6 +234,23 @@ class Notification(db.Model):
     email_sent = db.Column(db.Boolean, default=False)  
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    def time_ago(self):
+        now = datetime.utcnow()
+        diff = now - self.created_at
+        seconds = int(diff.total_seconds())
+
+        if seconds < 60:
+            return "Just now"
+        elif seconds < 3600:
+            minutes = seconds // 60
+            return f"{minutes} min{'s' if minutes > 1 else ''} ago"
+        elif seconds < 86400:
+            hours = seconds // 3600
+            return f"{hours} hr{'s' if hours > 1 else ''} ago"
+        else:
+            days = seconds // 86400
+            return f"{days} day{'s' if days > 1 else ''} ago"
+    
     def __repr__(self):
         return f"<Notification {self.id} - User {self.user_id} - Read {self.is_read}>"
 
@@ -314,6 +331,41 @@ def generate_vaccination_notifications(user_id, dog):
             notif.email_sent = True
 
         db.session.commit()
+
+def generate_admin_dog_notifications(new_dog):
+
+    # Determine owner display name
+    if new_dog.owner_id and new_dog.owner:
+        owner_name = new_dog.owner.name
+    elif new_dog.owner_name:
+        owner_name = new_dog.owner_name  # walk-in
+    elif new_dog.is_stray:
+        owner_name = "Stray Dog"
+    else:
+        owner_name = "Unknown"
+
+    message = (
+        f"New dog registered by <strong>{owner_name}</strong><br>"
+        f"Dog Name: <strong>{new_dog.name}</strong><br>"
+        f"Breed: {new_dog.breed or 'N/A'}<br>"
+        f"Location: {new_dog.full_owner_address}"
+    )
+
+    admins = User.query.filter_by(role='admin').all()
+
+    for admin in admins:
+        notif = Notification(
+            user_id=admin.id,
+            dog_id=new_dog.id,  # 🔥 IMPORTANT (for linking + uniqueness)
+            title="New Dog Registration",
+            message=message,
+            type="new_dog",
+            milestone="created",  # 🔥 required for your unique constraint
+            is_read=False
+        )
+        db.session.add(notif)
+
+    db.session.commit()
 
 def generate_admin_user_notifications(new_user):
 
@@ -729,13 +781,13 @@ def cleanup_notifications():
     # Delete read notifications older than 1 minute
     Notification.query.filter(
         Notification.is_read == True,
-        Notification.created_at < now - timedelta(minutes=1)
+        Notification.created_at < now - timedelta(days=7)
     ).delete(synchronize_session=False)
 
     # Delete unread notifications older than 2 minutes
     Notification.query.filter(
         Notification.is_read == False,
-        Notification.created_at < now - timedelta(minutes=2)
+        Notification.created_at < now - timedelta(days=14)
     ).update({Notification.dismissed: True}, synchronize_session=False)
 
     db.session.commit()
@@ -771,12 +823,12 @@ def handle_notifications():
     # Clean up old notifications
     Notification.query.filter(
         Notification.is_read == True,
-        Notification.created_at < now - timedelta(minutes=1)
+        Notification.created_at < now - timedelta(days=7)
     ).delete(synchronize_session=False)
 
     Notification.query.filter(
         Notification.is_read == False,
-        Notification.created_at < now - timedelta(minutes=2)
+        Notification.created_at < now - timedelta(days=14)
     ).update({Notification.dismissed: True}, synchronize_session=False)
 
     db.session.commit()
@@ -1363,6 +1415,7 @@ def owner_add_dog():
     db.session.commit()
 
     generate_vaccination_notifications(current_user.id, new_dog)
+    generate_admin_dog_notifications(new_dog)  # 🔥 ADD THIS
 
     flash("Dog registered successfully! QR code generated.", "dog_success")
     return redirect(url_for('owner_profile'))
