@@ -143,23 +143,23 @@
     </div>
 
     <div class="mb-3">
-      <label>Full Name</label>
+      <small>Full Name</small>
       <input type="text" name="name" class="form-control profile-input" value="{{ current_user.name }}" readonly>
     </div>
     <div class="mb-3">
-      <label>Username</label>
+      <small>Username</small>
       <input type="text" name="name" class="form-control profile-input" value="{{ current_user.username }}" readonly>
     </div>
     <div class="mb-3">
-      <label>Email Address</label>
+      <small>Email Address</small>
       <input type="email" class="form-control" value="{{ current_user.email if current_user.email else 'N/A' }}" readonly>
     </div>
     <div class="mb-3">
-      <label>Contact Number</label>
+      <small>Contact Number</small>
       <input type="text" name="contact" class="form-control profile-input" value="{{ current_user.contact }}" readonly>
     </div>
 <div class="mb-3">
-  <label>Barangay</label>
+  <small>Barangay</small>
   <input type="text"
          name="barangay"
          class="form-control profile-input"
@@ -168,7 +168,7 @@
 </div>
 
 <div class="mb-3">
-  <label>Municipality / City</label>
+  <small>Municipality / City</small>
   <input type="text"
          name="municipality"
          class="form-control profile-input"
@@ -177,7 +177,7 @@
 </div>
 
 <div class="mb-3">
-  <label>Province</label>
+  <small>Province</small>
   <input type="text"
          name="province"
          class="form-control profile-input"
