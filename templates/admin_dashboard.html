@@ -752,23 +752,22 @@
               </div>
 
               <div class="row g-2">
-                    <div class="col-10 col-sm-6">
-                <button class="btn btn-outline-primary btn-sm w-100"
-                        data-bs-toggle="modal"
-                        data-bs-target="#editDogModal{{ d.id }}">
-                  Edit
-                </button>
-              </div>
-            <div class="col-10 col-sm-6">
-              <button type="button" 
-                      class="btn btn-danger btn-sm w-100" 
-                      data-bs-toggle="modal" 
-                      data-bs-target="#deleteDogModal" 
-                      onclick="setDeleteDogForm('{{ url_for('admin_archive_dog', dog_id=d.id) }}')">
-                Archive
-              </button>
-              </div>
-
+                <div class="col-10 col-sm-6">
+                  <button class="btn btn-outline-primary btn-sm w-100"
+                          data-bs-toggle="modal"
+                          data-bs-target="#editDogModal{{ d.id }}">
+                    Edit
+                  </button>
+                </div>
+                <div class="col-10 col-sm-6">
+                  <button type="button" 
+                          class="btn btn-danger btn-sm w-100" 
+                          data-bs-toggle="modal" 
+                          data-bs-target="#deleteDogModal" 
+                          onclick="setDeleteDogForm('{{ url_for('admin_archive_dog', dog_id=d.id) }}')">
+                    Archive
+                  </button>
+                </div>
               </div>
             </div>
 
