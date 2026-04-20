@@ -393,37 +393,37 @@
             <input type="text" class="form-control" name="province" value="{{ form_data.province if form_data else '' }}" placeholder="" required>
             <label>Province</label>
           </div>
-<div class="mb-2 form-floating-custom">
-  <input type="password" class="form-control" id="password" name="password" placeholder="" value="{% if not clear_passwords and form_data %}{{ form_data.password | default('') }}{% endif %}"  required>
-  <label>Password</label>
-</div>
+          <div class="mb-2 form-floating-custom">
+            <input type="password" class="form-control" id="password" name="password" placeholder="" value="{% if not clear_passwords and form_data %}{{ form_data.password | default('') }}{% endif %}"  required>
+            <label>Password</label>
+          </div>
 
-<div class="mt-1 mb-3">
-  <div class="progress" style="height:6px;">
-    <div id="passwordStrengthBar" class="progress-bar" style="width:0%"></div>
-  </div>
-  <div>
-  <small id="passwordStrengthText" class="text-muted" style="font-size:12px;"></small>
-  </div>
-  <small class="text-muted" style="font-size:12px;">
-    Must be at least 8 characters, include uppercase, number, and special character
-  </small>
-</div>
+          <div class="mt-1 mb-3">
+            <div class="progress" style="height:6px;">
+              <div id="passwordStrengthBar" class="progress-bar" style="width:0%"></div>
+            </div>
+            <div>
+            <small id="passwordStrengthText" class="text-muted" style="font-size:12px;"></small>
+            </div>
+            <small class="text-muted" style="font-size:12px;">
+              Must be at least 8 characters, include uppercase, number, and special character
+            </small>
+          </div>
 
-<div class="mb-2 form-floating-custom">
-  <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder=""  value="{% if not clear_passwords and form_data %}{{ form_data.confirm_password | default('') }}{% endif %}" required>
-  <label>Confirm Password</label>
-  <div class="invalid-feedback text-danger feedback-text" style="font-size: 13.50px;">
-    Passwords do not match.
-  </div>
-</div>
+          <div class="mb-2 form-floating-custom">
+            <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder=""  value="{% if not clear_passwords and form_data %}{{ form_data.confirm_password | default('') }}{% endif %}" required>
+            <label>Confirm Password</label>
+            <div class="invalid-feedback text-danger feedback-text" style="font-size: 13.50px;">
+              Passwords do not match.
+            </div>
+          </div>
 
-<div class="form-check text-end mt-3 mb-2" style="font-size: 15.5px;">
-  <input class="form-check-input" type="checkbox" id="showPassword">
-  <label class="form-check-label small text-muted" for="showPassword">
-    Show password
-  </label>
-</div>
+          <div class="form-check text-end mt-3 mb-2" style="font-size: 15.5px;">
+            <input class="form-check-input" type="checkbox" id="showPassword">
+            <label class="form-check-label small text-muted" for="showPassword">
+              Show password
+            </label>
+          </div>
 
           <button type="button"
               class="btn btn-primary w-100 mt-3 mb-2"
