@@ -1993,7 +1993,12 @@ def admin_search_dogs():
 
     dogs = Dog.query.options(joinedload(Dog.owner))
     
-    dogs = Dog.query.filter(Dog.is_archived == False)
+    dogs = (
+        Dog.query
+        .filter(Dog.is_archived == False)
+        .filter(func.coalesce(Dog.is_stray, False) == False)
+        .order_by(func.lower(Dog.name))
+    )
                 # Vaccination filter
     if filter_status in ["vaccinated", "not_vaccinated"]:
         status = "Vaccinated" if filter_status == "vaccinated" else "Not Vaccinated"
