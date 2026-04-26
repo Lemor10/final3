@@ -98,102 +98,94 @@ body{
 
 <body>
 
-<div class="blob one"></div>
-<div class="blob two"></div>
+  <div class="blob one"></div>
+  <div class="blob two"></div>
   <img src="{{ url_for('static', filename='images/logo1.png') }}" 
-       alt="TrackPawPH Logo" 
-       style="width:140px; height:auto; position:absolute; top:15px; left:15px;">
-<div class="hero-card mt-5">
+    alt="TrackPawPH Logo" 
+    style="width:140px; height:auto; position:absolute; top:15px; left:15px;">
+  <div class="hero-card mt-5">
+    <!-- HEADER -->
+    <div class="dog-header">
+      <img src="{{ dog.image if dog.image else url_for('static', filename='dog_images/logo.png') }}" class="dog-img">
+      <h2>
+        {{ dog.name or "Stray Dog" }}
+        {% if dog.vaccinated == 'Vaccinated' %}
+        <i class="bi bi-shield-check text-success"></i>
+        {% else %}
+        <i class="bi bi-shield-x text-danger"></i>
+        {% endif %}
+      </h2>
+    </div>
 
-<!-- HEADER -->
-<div class="dog-header">
-<img src="{{ dog.image if dog.image else url_for('static', filename='dog_images/logo.png') }}"
-     class="dog-img">
+    <!-- INFO -->
+    <div>
+      <div class="info-row">
+        <span><i class="bi bi-tag me-2"></i> Breed:</span>
+        <strong>{{ dog.breed or "Unknown" }}</strong>
+      </div>
 
-<h2>
-{{ dog.name or "Stray Dog" }}
+      <div class="info-row">
+        <span>
+          {% if dog.gender == 'Male' %}
+          <i class="bi bi-gender-male text-primary me-2"></i>
+          {% elif dog.gender == 'Female' %}
+          <i class="bi bi-gender-female text-danger me-2"></i>
+          {% else %}
+          <i class="bi bi-question-circle me-2"></i>
+          {% endif %}
+          Gender:
+        </span>
+        <strong>{{ dog.gender or "N/A" }}</strong>
+      </div>
 
-{% if dog.vaccinated == 'Vaccinated' %}
-<i class="bi bi-shield-check text-success"></i>
-{% else %}
-<i class="bi bi-shield-x text-danger"></i>
-{% endif %}
-</h2>
-</div>
+      <div class="info-row">
+        <span><i class="bi bi-geo-alt me-2"></i> Found At:</span>
+        <strong>{{ dog.location_found or "N/A" }}</strong>
+      </div>
 
-<!-- INFO -->
-<div>
+      <div class="info-row">
+        <span><i class="bi bi-shield me-2"></i> Vaccinatin Type:</span>
+        <strong>{{ dog.vaccination_type or "N/A" }}</strong>
+      </div>
 
-<div class="info-row">
-<span><i class="bi bi-tag me-2"></i> Breed:</span>
-<strong>{{ dog.breed or "Unknown" }}</strong>
-</div>
+      <div class="info-row">
+        <span><i class="bi bi-calendar-check me-2"></i> Last Vaccination:</span>
+        <strong>{{ dog.last_vaccination or "N/A" }}</strong>
+      </div>
 
-<div class="info-row">
-<span>
-{% if dog.gender == 'Male' %}
-<i class="bi bi-gender-male text-primary me-2"></i>
-{% elif dog.gender == 'Female' %}
-<i class="bi bi-gender-female text-danger me-2"></i>
-{% else %}
-<i class="bi bi-question-circle me-2"></i>
-{% endif %}
-Gender:
-</span>
-<strong>{{ dog.gender or "N/A" }}</strong>
-</div>
+      <div class="info-row">
+        <span><i class="bi bi-calendar-event me-2"></i> Next Vaccination:</span>
+        <strong>{{ dog.next_vaccination or "N/A" }}</strong>
+      </div>
 
-<div class="info-row">
-<span><i class="bi bi-geo-alt me-2"></i> Found At:</span>
-<strong>{{ dog.location_found or "N/A" }}</strong>
-</div>
+      <div class="info-row">
+        <span><i class="bi bi-hourglass-bottom me-2"></i> Vaccination Expiry:</span>
+        <strong>{{ dog.vaccination_expiry or "N/A" }}</strong>
+      </div>
+    </div>
 
-<div class="info-row">
-<span><i class="bi bi-shield me-2"></i> Vaccinatin Type:</span>
-<strong>{{ dog.vaccination_type or "N/A" }}</strong>
-</div>
+    <!-- 🚨 STRAY SECTION -->
+    <h5 class="section-title">
+      <i class="bi bi-exclamation-triangle"></i> Stray Dog Notice
+    </h5>
 
-<div class="info-row">
-<span><i class="bi bi-calendar-check me-2"></i> Last Vaccination:</span>
-<strong>{{ dog.last_vaccination or "N/A" }}</strong>
-</div>
+    <div class="owner-card mb-3">
+      <p class="mb-2">
+        This dog has no registered owner.
+      </p>
+      <p class="small">
+        If found, please contact your local barangay or animal control.
+      </p>
+    </div>
 
-<div class="info-row">
-<span><i class="bi bi-calendar-event me-2"></i> Next Vaccination:</span>
-<strong>{{ dog.next_vaccination or "N/A" }}</strong>
-</div>
-
-<div class="info-row">
-<span><i class="bi bi-hourglass-bottom me-2"></i> Vaccination Expiry:</span>
-<strong>{{ dog.vaccination_expiry or "N/A" }}</strong>
-</div>
-
-</div>
-
-<!-- 🚨 STRAY SECTION -->
-<h5 class="section-title">
-<i class="bi bi-exclamation-triangle"></i> Stray Dog Notice
-</h5>
-
-<div class="owner-card mb-3">
-<p class="mb-2">
-This dog has no registered owner.
-</p>
-<p class="small">
-If found, please contact your local barangay or animal control.
-</p>
-</div>
-
-<!-- BACK -->
-<div class="text-center">
-{% if current_user.is_authenticated %}
-<a href="{{ url_for('scan_qr') }}" class="btn btn-light back-btn px-4">
-{% else %}
-<a href="{{ url_for('login') }}" class="btn btn-light back-btn px-4">
-{% endif %}<i class="bi bi-arrow-left-circle me-1 w-50"></i> Back to Scanner</a>
-</div>
-
-</div>
-
+    <!-- BACK -->
+    <div class="text-center">
+    {% if current_user.is_authenticated %}
+      <a href="{{ url_for('scan_qr') }}" class="btn btn-light back-btn px-4">
+      {% else %}
+      <a href="{{ url_for('login') }}" class="btn btn-light back-btn px-4">
+      {% endif %}<i class="bi bi-arrow-left-circle me-1 w-50"></i> Back to Scanner</a>
+    </div>
+  </div>
 </body>
 </html>
