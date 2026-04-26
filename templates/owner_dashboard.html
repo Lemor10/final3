@@ -133,6 +133,42 @@ body {
   margin-bottom: 1rem;
 }
 
+#loadingOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 26, 48, 0.3);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+#loadingOverlay.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loader {
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+
+  background: linear-gradient(135deg, #081a30, #9c4506, #ffffff);
+  -webkit-mask: radial-gradient(circle, transparent 60%, black 61%);
+  mask: radial-gradient(circle, transparent 60%, black 61%);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 @media (max-width: 768px) {
     .stats {
         flex-direction: column;
@@ -362,5 +398,66 @@ body {
         </div>
     </div>
 </div>
+<!-- GLOBAL LOADER -->
+<div id="loadingOverlay" class="hidden">
+  <div class="loader"></div>
+</div>
 {% endblock %}
+<script>
+(function () {
+  const loader = document.getElementById("loadingOverlay");
 
+  if (!loader) return;
+
+  function show() {
+    loader.classList.remove("hidden");
+  }
+
+  function hide() {
+    loader.classList.add("hidden");
+  }
+
+  // ✅ Always hide when page finishes loading
+  window.addEventListener("load", hide);
+
+  // 🔥 FIX 1: Back/forward cache fix (THIS was your main bug)
+  window.addEventListener("pageshow", function () {
+    hide();
+  });
+
+  // 🔥 FIX 2: Extra safety (tab switching / restore state)
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible") {
+      hide();
+    }
+  });
+
+  // 🔥 Show loader BEFORE navigation (more reliable than click alone)
+  document.addEventListener("pointerdown", function (e) {
+    const link = e.target.closest("a");
+    if (!link) return;
+
+    const href = link.getAttribute("href");
+
+    if (
+      !href ||
+      href.startsWith("#") ||
+      link.target === "_blank" ||
+      href.startsWith("javascript:")
+    ) return;
+
+    show();
+  });
+
+  // 🔥 Form submit support (important if you have forms)
+  document.addEventListener("submit", function () {
+    show();
+  });
+
+  // 🔥 FINAL SAFETY NET (prevents infinite stuck loader)
+  setTimeout(() => {
+    hide();
+  }, 4000);
+
+})();
+</script>
