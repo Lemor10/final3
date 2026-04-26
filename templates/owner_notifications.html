@@ -41,6 +41,34 @@ h3 {
   overflow: hidden;
 }
 
+/* LOADER */
+#loadingOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 26, 48, 0.35);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+#loadingOverlay.hidden {
+  display: none;
+}
+
+.loader {
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #081a30, #9c4506, #ffffff);
+  -webkit-mask: radial-gradient(circle, transparent 60%, black 61%);
+  mask: radial-gradient(circle, transparent 60%, black 61%);
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 </style>
 {% endblock %}
 
@@ -85,7 +113,57 @@ h3 {
   <div class="alert alert-info rounded shadow-sm" id="no-notifications">No notifications at this time.</div>
   {% endif %}
 </div>
+<!-- LOADER -->
+<div id="loadingOverlay" class="hidden">
+  <div class="loader"></div>
+</div>
+<script>
+(function () {
+  const loader = document.getElementById("loadingOverlay");
 
+  if (!loader) return;
+
+  // SHOW loader
+  function showLoader() {
+    loader.classList.remove("hidden");
+  }
+
+  // HIDE loader
+  function hideLoader() {
+    loader.classList.add("hidden");
+  }
+
+  // ALWAYS hide when page loads
+  window.addEventListener("load", hideLoader);
+  window.addEventListener("pageshow", hideLoader);
+
+  // Show loader ONLY when clicking real navigation links
+  document.addEventListener("click", function (e) {
+    const link = e.target.closest("a");
+    if (!link) return;
+
+    const href = link.getAttribute("href");
+
+    if (
+      !href ||
+      href.startsWith("#") ||
+      link.target === "_blank" ||
+      href.startsWith("javascript:")
+    ) return;
+
+    showLoader();
+  });
+
+  // Show loader on form submit (important!)
+  document.addEventListener("submit", function () {
+    showLoader();
+  });
+
+  // Safety timeout (prevents stuck loader)
+  setTimeout(hideLoader, 5000);
+
+})();
+</script>
 <script>
 document.getElementById('mark-all-read').addEventListener('click', async () => {
     const unreadIds = Array.from(document.querySelectorAll('li[data-id]')).map(li => li.dataset.id);

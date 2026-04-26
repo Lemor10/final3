@@ -133,36 +133,30 @@ body {
   margin-bottom: 1rem;
 }
 
+/* LOADER */
 #loadingOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(8, 26, 48, 0.3);
+  background: rgba(8, 26, 48, 0.35);
   backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
-
-  opacity: 1;
-  visibility: visible;
-  transition: opacity 0.25s ease, visibility 0.25s ease;
 }
 
 #loadingOverlay.hidden {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
+  display: none;
 }
 
 .loader {
   width: 55px;
   height: 55px;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
-
   background: linear-gradient(135deg, #081a30, #9c4506, #ffffff);
   -webkit-mask: radial-gradient(circle, transparent 60%, black 61%);
   mask: radial-gradient(circle, transparent 60%, black 61%);
+  animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
@@ -398,42 +392,32 @@ body {
         </div>
     </div>
 </div>
-<!-- GLOBAL LOADER -->
+<!-- LOADER -->
 <div id="loadingOverlay" class="hidden">
   <div class="loader"></div>
 </div>
-{% endblock %}
 <script>
 (function () {
   const loader = document.getElementById("loadingOverlay");
 
   if (!loader) return;
 
-  function show() {
+  // SHOW loader
+  function showLoader() {
     loader.classList.remove("hidden");
   }
 
-  function hide() {
+  // HIDE loader
+  function hideLoader() {
     loader.classList.add("hidden");
   }
 
-  // ✅ Always hide when page finishes loading
-  window.addEventListener("load", hide);
+  // ALWAYS hide when page loads
+  window.addEventListener("load", hideLoader);
+  window.addEventListener("pageshow", hideLoader);
 
-  // 🔥 FIX 1: Back/forward cache fix (THIS was your main bug)
-  window.addEventListener("pageshow", function () {
-    hide();
-  });
-
-  // 🔥 FIX 2: Extra safety (tab switching / restore state)
-  document.addEventListener("visibilitychange", function () {
-    if (document.visibilityState === "visible") {
-      hide();
-    }
-  });
-
-  // 🔥 Show loader BEFORE navigation (more reliable than click alone)
-  document.addEventListener("pointerdown", function (e) {
+  // Show loader ONLY when clicking real navigation links
+  document.addEventListener("click", function (e) {
     const link = e.target.closest("a");
     if (!link) return;
 
@@ -446,18 +430,18 @@ body {
       href.startsWith("javascript:")
     ) return;
 
-    show();
+    showLoader();
   });
 
-  // 🔥 Form submit support (important if you have forms)
+  // Show loader on form submit (important!)
   document.addEventListener("submit", function () {
-    show();
+    showLoader();
   });
 
-  // 🔥 FINAL SAFETY NET (prevents infinite stuck loader)
-  setTimeout(() => {
-    hide();
-  }, 4000);
+  // Safety timeout (prevents stuck loader)
+  setTimeout(hideLoader, 5000);
 
 })();
 </script>
+{% endblock %}
+

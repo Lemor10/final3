@@ -74,6 +74,35 @@ h1 {
 
 .btn-stop { background-color: #dc3545; color: #fff; border: none; }
 .btn-stop:hover { background-color: #b02a37; }
+/* LOADER */
+#loadingOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 26, 48, 0.35);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+#loadingOverlay.hidden {
+  display: none;
+}
+
+.loader {
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #081a30, #9c4506, #ffffff);
+  -webkit-mask: radial-gradient(circle, transparent 60%, black 61%);
+  mask: radial-gradient(circle, transparent 60%, black 61%);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 
 @media (max-width: 560px) {
     #reader { height: 100%; }
@@ -100,7 +129,57 @@ h1 {
         <button class="btn btn-stop btn-qr" onclick="stopScanner()">Stop Camera</button>
     </div>
 </div>
+<!-- LOADER -->
+<div id="loadingOverlay" class="hidden">
+  <div class="loader"></div>
+</div>
+<script>
+(function () {
+  const loader = document.getElementById("loadingOverlay");
 
+  if (!loader) return;
+
+  // SHOW loader
+  function showLoader() {
+    loader.classList.remove("hidden");
+  }
+
+  // HIDE loader
+  function hideLoader() {
+    loader.classList.add("hidden");
+  }
+
+  // ALWAYS hide when page loads
+  window.addEventListener("load", hideLoader);
+  window.addEventListener("pageshow", hideLoader);
+
+  // Show loader ONLY when clicking real navigation links
+  document.addEventListener("click", function (e) {
+    const link = e.target.closest("a");
+    if (!link) return;
+
+    const href = link.getAttribute("href");
+
+    if (
+      !href ||
+      href.startsWith("#") ||
+      link.target === "_blank" ||
+      href.startsWith("javascript:")
+    ) return;
+
+    showLoader();
+  });
+
+  // Show loader on form submit (important!)
+  document.addEventListener("submit", function () {
+    showLoader();
+  });
+
+  // Safety timeout (prevents stuck loader)
+  setTimeout(hideLoader, 5000);
+
+})();
+</script>
 <script src="https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js"></script>
 <script>
 let html5QrCode;

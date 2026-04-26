@@ -78,22 +78,34 @@
     .btn-qr { background-color: #081a30; border: none; }
     .btn-qr:hover { background-color: #040e19; }
 
+/* LOADER */
 #loadingOverlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 9999; /* 🔥 higher than Bootstrap modal */
+  inset: 0;
+  background: rgba(8, 26, 48, 0.35);
+  backdrop-filter: blur(6px);
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
+  z-index: 9999;
 }
-.loading-box {
-  background: #081a3000;
-  padding: 25px 35px;
-  border-radius: 12px;
+
+#loadingOverlay.hidden {
+  display: none;
+}
+
+.loader {
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #081a30, #9c4506, #ffffff);
+  -webkit-mask: radial-gradient(circle, transparent 60%, black 61%);
+  mask: radial-gradient(circle, transparent 60%, black 61%);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 #profilePreview {
@@ -661,10 +673,7 @@ Your Registered Dogs
   </div>
 </div>
 <div id="loadingOverlay" class="d-none">
-  <div class="loading-box text-center">
-    <div class="spinner-border text-light mb-3"></div>
-    <p class="text-white mb-0">Processing, please wait...</p>
-  </div>
+  <div class="loader"></div>
 </div>
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% for category, message in messages %}
@@ -810,16 +819,44 @@ function toggleCauseField(reason) {
 document.addEventListener("DOMContentLoaded", function () {
 
   const overlay = document.getElementById("loadingOverlay");
+  if (!overlay) return;
 
-  const forms = document.querySelectorAll(
-    '#addDogModal form, [id^="editDogModal"] form, #deleteDogForm'
-  );
+  function showLoader() {
+    overlay.classList.remove("d-none");
+  }
 
-  forms.forEach(form => {
-    form.addEventListener("submit", function () {
-      overlay.classList.remove("d-none");
-    });
+  function hideLoader() {
+    overlay.classList.add("d-none");
+  }
+
+  // Always hide on load
+  window.addEventListener("load", hideLoader);
+  window.addEventListener("pageshow", hideLoader);
+
+  // Show on form submit ONLY
+  document.querySelectorAll("form").forEach(form => {
+    form.addEventListener("submit", showLoader);
   });
+
+  // Show on real page navigation clicks ONLY
+  document.addEventListener("click", function (e) {
+    const link = e.target.closest("a");
+    if (!link) return;
+
+    const href = link.getAttribute("href");
+
+    if (
+      !href ||
+      href.startsWith("#") ||
+      link.target === "_blank" ||
+      href.startsWith("javascript:")
+    ) return;
+
+    showLoader();
+  });
+
+  // Safety fallback (prevents infinite loading)
+  setTimeout(hideLoader, 4000);
 
 });
 </script>
