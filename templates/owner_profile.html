@@ -8,13 +8,17 @@
       background: #f4f6f9;
       font-family: "Poppins", sans-serif;
     }
-    .profile-card{
+.profile-card {
   background: white;
   border-radius: 18px;
   padding: 25px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.08);
   border-top: 4px solid #081a30;
+
+  max-height: 90vh;      /* 👈 LIMIT HEIGHT */
+  overflow-y: auto;      /* 👈 ENABLE SCROLL */
 }
+
     .profile-photo {
       width: 145px;
       height: 145px;
@@ -125,7 +129,17 @@
     margin-left: 25%;
   }
 }
+/* 📱 MOBILE ONLY */
+@media (max-width: 767px) {
+  .profile-card {
+    max-height: none;
+    overflow: visible;
+  }
 
+  #saveCancelBtns {
+    position: static;
+  }
+}
   </style>
 {% endblock %}
 
@@ -142,10 +156,6 @@
       <div class="profile-card" style="position: sticky; top: 20px;">
   <form action="{{ url_for('owner_profile') }}" method="POST" enctype="multipart/form-data">
     <div class="mb-3 text-center">
-      <div class="text-center mb-3">
-  <h5 class="fw-bold mb-0">{{ current_user.name }}</h5>
-  <small class="text-muted">@{{ current_user.username }}</small>
-</div>
       <img src="{{ current_user.profile_photo if current_user.profile_photo else url_for('static', filename='profile_images/default_profile.png') }}"
            class="profile-photo"
            data-bs-toggle="modal"
@@ -153,53 +163,62 @@
            alt="Profile Photo">
       <p class="text-muted small">Click to change photo</p>
     </div>
-
-    <div class="mb-3">
-      <small>Full Name</small>
-      <input type="text" name="name" class="form-control profile-input" value="{{ current_user.name }}" readonly>
-    </div>
-    <div class="mb-3">
-      <small>Username</small>
-      <input type="text" name="name" class="form-control profile-input" value="{{ current_user.username }}" readonly>
-    </div>
-    <div class="mb-3">
-      <small>Email Address</small>
-      <input type="email" class="form-control" value="{{ current_user.email if current_user.email else 'N/A' }}" readonly>
-    </div>
-    <div class="mb-3">
-      <small>Contact Number</small>
-      <input type="text" name="contact" class="form-control profile-input" value="{{ current_user.contact }}" readonly>
-    </div>
-<div class="mb-3">
-  <small>Barangay</small>
-  <input type="text"
-         name="barangay"
-         class="form-control profile-input"
-         value="{{ current_user.barangay or '' }}"
-         readonly>
+    <div class="text-center mb-3">
+  <h5 class="fw-bold mb-0">{{ current_user.name }}</h5>
+  <small class="text-muted">@{{ current_user.username }}</small>
 </div>
 
-<div class="mb-3">
-  <small>Municipality / City</small>
-  <input type="text"
-         name="municipality"
-         class="form-control profile-input"
-         value="{{ current_user.municipality or '' }}"
-         readonly>
+    <div id="privacyNotice" class="text-center text-muted">
+  <i class="bi bi-shield-lock fs-3"></i>
+  <p class="small">
+    Your personal details are hidden for privacy.<br>
+    Click <strong>Edit Profile</strong> to view or update your information.
+  </p>
 </div>
 
-<div class="mb-3">
-  <small>Province</small>
-  <input type="text"
-         name="province"
-         class="form-control profile-input"
-         value="{{ current_user.province or '' }}"
-         readonly>
+<!-- Hidden Profile Details -->
+<div id="profileDetails" class="d-none">
+
+  <div class="mb-3">
+    <small>Full Name</small>
+    <input type="text" name="name" class="form-control profile-input" value="{{ current_user.name }}" readonly>
+  </div>
+
+  <div class="mb-3">
+    <small>Username</small>
+    <input type="text" class="form-control" value="{{ current_user.username }}" readonly>
+  </div>
+
+  <div class="mb-3">
+    <small>Email Address</small>
+    <input type="email" class="form-control" value="{{ current_user.email if current_user.email else 'N/A' }}" readonly>
+  </div>
+
+  <div class="mb-3">
+    <small>Contact Number</small>
+    <input type="text" name="contact" class="form-control profile-input" value="{{ current_user.contact }}" readonly>
+  </div>
+
+  <div class="mb-3">
+    <small>Barangay</small>
+    <input type="text" name="barangay" class="form-control profile-input" value="{{ current_user.barangay or '' }}" readonly>
+  </div>
+
+  <div class="mb-3">
+    <small>Municipality / City</small>
+    <input type="text" name="municipality" class="form-control profile-input" value="{{ current_user.municipality or '' }}" readonly>
+  </div>
+
+  <div class="mb-3">
+    <small>Province</small>
+    <input type="text" name="province" class="form-control profile-input" value="{{ current_user.province or '' }}" readonly>
+  </div>
+
 </div>
 
-    <button type="button" id="editBtn" class="btn btn-outline-primary w-100 mt-3">Edit Profile</button>
+    <button type="button" id="editBtn" class="btn btn-outline-primary w-100">Edit Profile</button>
     <div id="saveCancelBtns" class="mt-3 d-none">
-      <button type="submit" class="btn btn-success w-100 mb-2">Save Changes</button>
+      <button type="submit" class="btn btn-success w-100 mb-2"><i class="bi bi-check-circle"></i> Save Changes</button>
       <button type="button" id="cancelBtn" class="btn btn-secondary w-100">Cancel</button>
     </div>
   </form>
@@ -442,11 +461,12 @@ Your Registered Dogs
             </div>
             <div class="col-md-6">
   <label class="form-label">Vaccination Type</label>
-  <input type="text" 
-         name="vaccination_type" 
-         id="addVaccinationType"
-         class="form-control"
-         placeholder="Anti-Rabies, Parvo...">
+<input type="text" 
+       name="vaccination_type" 
+       id="addVaccinationType"
+       list="vaccine-list"
+       class="form-control"
+       placeholder="Select or type vaccine">
 </div>
 </div>
           <div class="row g-2 mb-3">
@@ -477,15 +497,15 @@ Your Registered Dogs
     <label class="form-label">Vaccination Address:</label>
   
     <div class="col-md-4">
-      <input type="text" name="vaccination_barangay" id="addVaccinationBarangay" class="form-control" placeholder="Barangay">
+      <input type="text" name="vaccination_barangay" id="addVaccinationBarangay" list="barangay-list" class="form-control" placeholder="Barangay">
     </div>
 
     <div class="col-md-4">
-      <input type="text" name="vaccination_municipality" id="addVaccinationMunicipality" class="form-control" placeholder="Municipality/City">
+      <input type="text" name="vaccination_municipality" id="addVaccinationMunicipality" list="city-list" class="form-control" placeholder="Municipality/City">
     </div>
 
     <div class="col-md-4">
-      <input type="text" name="vaccination_province" id="addVaccinationProvince" class="form-control" placeholder="Province">
+      <input type="text" name="vaccination_province" id="addVaccinationProvince" list="province-list" class="form-control" placeholder="Province">
     </div>
   </div>
 
@@ -522,6 +542,7 @@ Your Registered Dogs
     </div>
   </div>
 </div>
+
 {% for dog in dogs %}
 <div class="modal fade" id="editDogModal{{ dog.id }}" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
@@ -714,26 +735,42 @@ function previewOwnerImage(event){
 </script>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+
   const editBtn = document.getElementById("editBtn");
   const saveCancelBtns = document.getElementById("saveCancelBtns");
   const cancelBtn = document.getElementById("cancelBtn");
+
   const inputs = document.querySelectorAll(".profile-input");
+  const profileDetails = document.getElementById("profileDetails");
+  const privacyNotice = document.getElementById("privacyNotice");
 
-  if (editBtn) {
-    editBtn.addEventListener("click", function () {
-      inputs.forEach(i => i.readOnly = false);
-      editBtn.classList.add("d-none");
-      saveCancelBtns.classList.remove("d-none");
-    });
-  }
+  // Default: hidden
+  profileDetails.classList.add("d-none");
 
-  if (cancelBtn) {
-    cancelBtn.addEventListener("click", function () {
-      inputs.forEach(i => i.readOnly = true);
-      editBtn.classList.remove("d-none");
-      saveCancelBtns.classList.add("d-none");
-    });
-  }
+  editBtn.addEventListener("click", function () {
+    // Show fields
+    profileDetails.classList.remove("d-none");
+    privacyNotice.classList.add("d-none");
+
+    // Enable editing
+    inputs.forEach(i => i.readOnly = false);
+
+    editBtn.classList.add("d-none");
+    saveCancelBtns.classList.remove("d-none");
+  });
+
+  cancelBtn.addEventListener("click", function () {
+    // Hide again
+    profileDetails.classList.add("d-none");
+    privacyNotice.classList.remove("d-none");
+
+    // Disable editing
+    inputs.forEach(i => i.readOnly = true);
+
+    editBtn.classList.remove("d-none");
+    saveCancelBtns.classList.add("d-none");
+  });
+
 });
 </script>
 <script>

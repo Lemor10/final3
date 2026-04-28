@@ -39,6 +39,11 @@ from docx.shared import Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import RGBColor
 from sqlalchemy.orm import joinedload
+from docx2pdf import convert
+import tempfile
+import pythoncom
+
+pythoncom.CoInitialize()
 
 load_dotenv()
 
@@ -1838,14 +1843,15 @@ def download_data_analysis():
     end_month = request.args.get("end_month")
 
     data = get_analysis_data(start_month, end_month)
-    
+
     tz = pytz.timezone("Asia/Manila")
     today = datetime.now(tz)
     formatted_date = today.strftime("%B %d, %Y %I:%M %p")
+
     document = Document()
 
-    # Add a logo at the top (adjust path to your logo file)
-    logo_path = os.path.join("static", "images", "logo1.png")  # e.g., static/images/logo.png
+    # ---------- LOGO ----------
+    logo_path = os.path.join("static", "images", "logo1.png")
     try:
         paragraph = document.add_paragraph()
         paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -1856,7 +1862,7 @@ def download_data_analysis():
     except Exception as e:
         print(f"Logo could not be added: {e}")
 
-    # ================= TITLE =================
+    # ---------- TITLE ----------
     title = document.add_paragraph()
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
     run = title.add_run("TracK Paw PH\nData Analysis Report")
@@ -1869,118 +1875,72 @@ def download_data_analysis():
 
     document.add_paragraph("\n")
 
-    # Summary
+    # ---------- SUMMARY ----------
     document.add_paragraph(f"Total Owners: {data['total_owners']}")
     document.add_paragraph(f"Total Dogs: {data['total_dogs']}")
     document.add_paragraph(f"Owned Dogs: {data['owned_dogs']}")
     document.add_paragraph(f"Total Stray Dogs: {data['total_stray_dogs']}")
     document.add_paragraph(f"Total Deaths: {data['total_deaths']}")
 
-    # ---------- BREED TABLE ----------
+    # ---------- TABLES ----------
     breed_rows = list(zip(data["breeds"], data["breed_numbers"]))
+    add_table(document, "Dogs per Breed", ["Breed", "Count"], breed_rows)
 
-    add_table(
-        document,
-        "Dogs per Breed",
-        ["Breed", "Count"],
-        breed_rows
-    )
-
-    # ---------- VACCINATION CHART ----------
     vaccination_rows = [
         ["Vaccinated", data["vaccinated_count"]],
         ["Not Vaccinated", data["unvaccinated_count"]],
     ]
+    add_table(document, "Vaccination Status", ["Status", "Count"], vaccination_rows)
 
-    add_table(
-        document,
-        "Vaccination Status",
-        ["Status", "Count"],
-        vaccination_rows
-    )
-    # ---------- OWNED VS STRAY ----------
     owned_stray_rows = [
         ["Owned Dogs", data["owned_dogs"]],
         ["Stray Dogs", data["total_stray_dogs"]],
     ]
+    add_table(document, "Owned vs Stray Dogs", ["Category", "Count"], owned_stray_rows)
 
-    add_table(
-        document,
-        "Owned vs Stray Dogs",
-        ["Category", "Count"],
-        owned_stray_rows
-    )
-
-    # ---------- MONTHLY REGISTRATION ----------
     monthly_rows = list(zip(data["months"], data["month_counts"]))
+    add_table(document, "Monthly Registrations", ["Month", "Registrations"], monthly_rows)
 
-    add_table(
-        document,
-        "Monthly Registrations",
-        ["Month", "Registrations"],
-        monthly_rows
-    )
-    # ---------- DEATH CAUSE ----------
     death_rows = list(zip(data["death_causes"], data["death_counts"]))
+    add_table(document, "Cause of Death", ["Cause", "Count"], death_rows)
 
-    add_table(
-        document,
-        "Cause of Death",
-        ["Cause", "Count"],
-        death_rows
-    )
-        # ---------- TOP MUNICIPALITIES ----------
-    add_table(
-        document,
-        "Top Municipalities by Total Dogs",
-        ["Municipality", "Count"],
-        data["top_municipalities"]
-    )
-    add_table(
-        document,
-        "Top Municipalities by Vaccinated Dogs",
-        ["Municipality", "Count"],
-        data["top_vaccinated_municipalities"]
-    )
+    add_table(document, "Top Municipalities by Total Dogs", ["Municipality", "Count"], data["top_municipalities"])
+    add_table(document, "Top Municipalities by Vaccinated Dogs", ["Municipality", "Count"], data["top_vaccinated_municipalities"])
+    add_table(document, "Top Municipalities by Unvaccinated Dogs", ["Municipality", "Count"], data["top_unvaccinated_municipalities"])
 
-    add_table(
-        document,
-        "Top Municipalities by Unvaccinated Dogs",
-        ["Municipality", "Count"],
-        data["top_unvaccinated_municipalities"]
-    )
-    # ---------- TOP BARANGAYS ----------
-    add_table(
-        document,
-        "Top Barangays by Total Dogs",
-        ["Barangay", "Count"],
-        data["top_barangays"]
-    )
-    
-    add_table(
-        document,
-        "Top Barangays by Vaccinated Dogs",
-        ["Barangay", "Count"],
-        data["top_vaccinated_barangays"]
-    )
-    add_table(
-        document,
-        "Top Barangays by Unvaccinated Dogs",
-        ["Barangay", "Count"],
-        data["top_unvaccinated_barangays"]
-    )
-    # Save file
-    file_stream = io.BytesIO()
-    document.save(file_stream)
-    file_stream.seek(0)
+    add_table(document, "Top Barangays by Total Dogs", ["Barangay", "Count"], data["top_barangays"])
+    add_table(document, "Top Barangays by Vaccinated Dogs", ["Barangay", "Count"], data["top_vaccinated_barangays"])
+    add_table(document, "Top Barangays by Unvaccinated Dogs", ["Barangay", "Count"], data["top_unvaccinated_barangays"])
+
+    # ---------- TEMP FILES ----------
+    with tempfile.TemporaryDirectory() as tmpdir:
+
+        docx_path = os.path.join(tmpdir, "report.docx")
+        pdf_path = os.path.join(tmpdir, "report.pdf")
+
+        document.save(docx_path)
+
+        # Initialize COM for Word automation
+        pythoncom.CoInitialize()
+
+        try:
+            convert(docx_path, pdf_path)
+        finally:
+            pythoncom.CoUninitialize()
+
+        with open(pdf_path, "rb") as f:
+            pdf_bytes = f.read()
+
+    pdf_stream = io.BytesIO(pdf_bytes)
+    pdf_stream.seek(0)
 
     return send_file(
-        file_stream,
+        pdf_stream,
         as_attachment=True,
-        download_name="Dog_Data_Analysis_Report.docx",
-        mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        download_name="Dog_Data_Analysis_Report.pdf",
+        mimetype="application/pdf"
     )
-
+        
 @app.route('/admin/search-dogs')
 @login_required
 def admin_search_dogs():

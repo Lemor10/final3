@@ -491,7 +491,7 @@
       </div>
     </div>
   </form>
-<!-- Terms & Privacy Modal -->
+<!-- Terms & Privacy Notice Modal -->
 <div class="modal fade" id="termsModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content border-0 shadow" style="background: rgba(255,255,255,0.15); backdrop-filter: blur(14px); border-radius: 1.5rem;">
@@ -500,34 +500,51 @@
       <div class="modal-header" style="background: #081a30; color: white; border-bottom: none; border-radius: 1.5rem 1.5rem 0 0;">
         <h5 class="modal-title">
           <i class="bi bi-file-text-fill me-2"></i>
-          Terms & Privacy
+          Terms & Privacy Notice
         </h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       
       <!-- Body -->
       <div class="modal-body" style="max-height: 400px; overflow-y: auto; color: white; font-size: 0.95rem;">
-        <h6>Terms of Service</h6></a>
+        
+        <!-- Terms -->
+        <h6>Terms of Service</h6>
         <p>
-          By creating an account, you agree to TrackPawPH’s Terms of Service.
-          You will provide accurate information, respect privacy, and comply with our regulations.
+          By creating an account in TrackPawPH, you agree to use the system responsibly and provide accurate and complete information
+          for dog registration, identification, and vaccination records. Users must ensure that all submitted data is truthful and updated.
+          Misuse of the system, including falsification of records or unauthorized access, may result in account suspension.
         </p>
-        <h6>Privacy Policy</h6>
+
+        <!-- Privacy Notice -->
+        <h6>Privacy Notice</h6>
         <p>
-          TrackPawPH collects and processes your data to maintain pet records, provide notifications, and improve services.
-          We will not share your personal information without your consent.
+          TrackPawPH collects and processes personal and pet-related information such as owner details, dog identification data,
+          and vaccination records to provide efficient registration, monitoring, and data analytics services.
         </p>
+        <p>
+          Your data is securely stored and used solely for system functionality, including vaccination tracking, reporting,
+          and improving public service delivery. We do not sell or share your personal information with third parties
+          without your consent, except when required by law or authorized government agencies.
+        </p>
+        <p>
+          Appropriate security measures are implemented to protect your data against unauthorized access, alteration, or disclosure.
+        </p>
+
+        <!-- Agreement -->
         <div class="form-check mt-3">
           <input class="form-check-input" type="checkbox" id="agreeTermsModal" style="background-color: transparent; border: 2px solid white;">
           <label class="form-check-label" for="agreeTermsModal" style="color: white; font-size: 14px;">
-            I agree to the Terms of Service and Privacy Policy
+            I agree to the Terms of Service and Privacy Notice
           </label>
         </div>
       </div>
       
       <!-- Footer -->
       <div class="modal-footer justify-content-center" style="border-top: none;">
-        <button type="button" class="btn btn-primary" id="confirmTermsBtn" disabled style="border-radius: 50px; padding: 8px 20px;">Confirm & Create Account</button>
+        <button type="button" class="btn btn-primary" id="confirmTermsBtn" disabled style="border-radius: 50px; padding: 8px 20px;">
+          Confirm & Create Account
+        </button>
       </div>
     </div>
   </div>

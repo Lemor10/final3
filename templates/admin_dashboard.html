@@ -1207,11 +1207,12 @@
                 <option value="Not Vaccinated">Not Vaccinated</option>
               </select>
             </div>
-                        <div class="col-md-6">
+<div class="col-md-6">
   <label class="form-label">Vaccination Type</label>
   <input type="text" 
          name="vaccination_type" 
          id="addVaccinationType"
+          list="vaccine-list"
          class="form-control"
          placeholder="Anti-Rabies, Parvo... "
          disabled>
@@ -1276,6 +1277,29 @@
 
     </div>
   </div>
+    <datalist id="breed-list">
+  <option value="Aspin">
+  <option value="Labrador Retriever">
+  <option value="German Shepherd">
+  <option value="Golden Retriever">
+  <option value="Shih Tzu">
+  <option value="Chihuahua">
+  <option value="Pomeranian">
+  <option value="Siberian Husky">
+  <option value="Beagle">
+  <option value="Bulldog">
+  <option value="Mix Breed">
+</datalist>
+
+<!-- VACCINE TYPE LIST -->
+<datalist id="vaccine-list">
+  <option value="Anti-Rabies">
+  <option value="5-in-1 Vaccine">
+  <option value="6-in-1 Vaccine">
+  <option value="Parvo Vaccine">
+  <option value="Distemper Vaccine">
+  <option value="Leptospirosis Vaccine">
+</datalist>
 </div>
 <script>
 function previewAdminImage(event){
