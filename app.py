@@ -1,46 +1,59 @@
 import os
-import token
-from turtle import heading
-from wsgiref import headers
-from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory, send_file, abort, jsonify ,session
-#from flask_mail import Mail, Message
+import io
+import csv
+import uuid
+import re
+from io import BytesIO
+from time import time
+from datetime import date, datetime, timedelta
+
+from flask import (
+    Flask, render_template, request, redirect, url_for, flash,
+    send_from_directory, send_file, abort, jsonify, session, g
+)
+
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
+from flask_login import (
+    LoginManager, UserMixin, login_user, logout_user,
+    current_user, login_required
+)
+
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.middleware.proxy_fix import ProxyFix
-from datetime import date, datetime,timedelta
-import qrcode, io, csv, uuid
-from io import BytesIO
-from flask import g
-import re
+
 from sqlalchemy import func, or_
+from sqlalchemy.orm import joinedload
+
 from itsdangerous import URLSafeTimedSerializer
 from flask import render_template_string
+
 from dateutil.relativedelta import relativedelta
+
 from openpyxl import Workbook
-from docx import Document
-from docx.shared import Inches
+
+import qrcode
+
+import pytz
+
 import matplotlib
-matplotlib.use("Agg") 
+matplotlib.use("Agg")  # IMPORTANT: prevents Tkinter errors
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator
+
+from docx import Document
+from docx.shared import Inches, Pt, RGBColor
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
+
 from dotenv import load_dotenv
-import os
-import pytz
-from time import time
+
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
-from docx.shared import Inches
-from docx import Document
-from matplotlib.ticker import MultipleLocator
-from docx.shared import Pt
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.shared import RGBColor
-from sqlalchemy.orm import joinedload
 
 load_dotenv()
 
