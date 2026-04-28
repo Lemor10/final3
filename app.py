@@ -19,6 +19,7 @@ from flask_login import (
     current_user, login_required
 )
 
+from reportlab.lib import styles
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -54,6 +55,12 @@ from dotenv import load_dotenv
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
+
+from reportlab.platypus import KeepTogether, SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.enums import TA_CENTER
 
 load_dotenv()
 
@@ -1854,124 +1861,221 @@ def download_data_analysis():
     today = datetime.now(tz)
     formatted_date = today.strftime("%B %d, %Y %I:%M %p")
 
-    document = Document()
+    buffer = BytesIO()
+    pdf = SimpleDocTemplate(
+        buffer,
+        pagesize=letter,
+        rightMargin=40,
+        leftMargin=40,
+        topMargin=40,
+        bottomMargin=40
+    )
 
-    # ---------- LOGO ----------
+    styles = getSampleStyleSheet()
+    elements = []
+
+    center_heading = styles["Heading2"].clone('center_heading')
+    center_heading.alignment = TA_CENTER    
+# =========================
+    # LOGO (CENTERED)
+    # =========================
     logo_path = os.path.join("static", "images", "logo1.png")
 
-    try:
-        paragraph = document.add_paragraph()
-        paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    if os.path.exists(logo_path):
+        logo = Image(logo_path, width=100, height=40)
+        logo.hAlign = "CENTER"
+        elements.append(logo)
 
-        run = paragraph.add_run()
-        run.add_picture(logo_path, width=Inches(1.2))
+    elements.append(Spacer(1, 10))
 
-    except Exception as e:
-        print(f"Logo could not be added: {e}")
+    # =========================
+    # TITLE (SAME AS DOCX)
+    # =========================
+    title_style = styles["Title"]
+    title_style.alignment = 1  # center
 
-    # ---------- TITLE ----------
-    title = document.add_paragraph()
-    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    elements.append(Paragraph("TracK Paw PH", title_style))
+    elements.append(Paragraph("Data Analysis Report", title_style))
+    
 
-    run = title.add_run("TracK Paw PH\nData Analysis Report")
-    run.bold = True
-    run.font.size = Pt(18)
+    subtitle_style = styles["Normal"].clone('subtitle_center')
+    subtitle_style.alignment = TA_CENTER
 
-    subtitle = document.add_paragraph()
-    subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    subtitle.add_run(f"As of {formatted_date}")
+    subtitle = Paragraph(f"As of {formatted_date}", subtitle_style)
+    elements.append(subtitle)
 
-    document.add_paragraph("\n")
+    elements.append(Spacer(1, 20))
 
-    # ---------- SUMMARY ----------
-    document.add_paragraph(f"Total Owners: {data['total_owners']}")
-    document.add_paragraph(f"Total Dogs: {data['total_dogs']}")
-    document.add_paragraph(f"Owned Dogs: {data['owned_dogs']}")
-    document.add_paragraph(f"Total Stray Dogs: {data['total_stray_dogs']}")
-    document.add_paragraph(f"Total Deaths: {data['total_deaths']}")
-
-    # ---------- BREED TABLE ----------
-    breed_rows = list(zip(data["breeds"], data["breed_numbers"]))
-    add_table(document, "Dogs per Breed", ["Breed", "Count"], breed_rows)
-
-    # ---------- VACCINATION ----------
-    vaccination_rows = [
-        ["Vaccinated", data["vaccinated_count"]],
-        ["Not Vaccinated", data["unvaccinated_count"]],
-    ]
-    add_table(document, "Vaccination Status", ["Status", "Count"], vaccination_rows)
-
-    # ---------- OWNED VS STRAY ----------
-    owned_stray_rows = [
+    # =========================
+    # SUMMARY SECTION (SAME ORDER)
+    # =========================
+    elements.append(Paragraph("SUMMARY", center_heading))
+    summary_data = [
+        ["Total Owners", data["total_owners"]],
+        ["Total Dogs", data["total_dogs"]],
         ["Owned Dogs", data["owned_dogs"]],
-        ["Stray Dogs", data["total_stray_dogs"]],
+        ["Total Stray Dogs", data["total_stray_dogs"]],
+        ["Total Deaths", data["total_deaths"]],
     ]
-    add_table(document, "Owned vs Stray Dogs", ["Category", "Count"], owned_stray_rows)
 
-    # ---------- MONTHLY REGISTRATION ----------
-    monthly_rows = list(zip(data["months"], data["month_counts"]))
-    add_table(document, "Monthly Registrations", ["Month", "Registrations"], monthly_rows)
+    summary_table = Table(summary_data, colWidths=[200, 200])
+    summary_table.setStyle(TableStyle([
+        ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+        ("BACKGROUND", (0,0), (-1,0), colors.white),
+        ("FONTNAME", (0,0), (-1,-1), "Helvetica"),
+    ]))
 
-    # ---------- DEATH CAUSE ----------
-    death_rows = list(zip(data["death_causes"], data["death_counts"]))
-    add_table(document, "Cause of Death", ["Cause", "Count"], death_rows)
+    elements.append(summary_table)
+    elements.append(Spacer(1, 20))
 
-    # ---------- TOP MUNICIPALITIES ----------
-    add_table(
-        document,
+    # =========================
+    # REUSABLE TABLE FUNCTION
+    # =========================
+    def build_table(title, headers, rows):
+
+        content = []
+
+        # Title
+        content.append(Paragraph(title, center_heading))
+        content.append(Spacer(1, 6))
+
+        if not rows:
+            content.append(Paragraph("No available data.", styles["Normal"]))
+            content.append(Spacer(1, 12))
+            elements.append(KeepTogether(content))
+            return
+
+        table_data = [headers] + rows
+
+        table = Table(
+            table_data,
+            colWidths=[250, 150],
+            repeatRows=1
+        )
+
+        table.setStyle(TableStyle([
+            ("GRID", (0,0), (-1,-1), 0.5, colors.black),
+            ("BACKGROUND", (0,0), (-1,0), colors.grey),
+            ("TEXTCOLOR", (0,0), (-1,0), colors.whitesmoke),
+            ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
+            ("ALIGN", (0,0), (-1,-1), "LEFT"),
+            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+            ("ROWBACKGROUNDS", (0,1), (-1,-1),
+            [colors.whitesmoke, colors.lightgrey]),
+        ]))
+
+        content.append(table)
+        content.append(Spacer(1, 12))
+
+        # 🔥 THIS IS THE FIX
+        elements.append(KeepTogether(content))
+
+    # =========================
+    # BREED TABLE
+    # =========================
+    build_table(
+        "Dogs per Breed",
+        ["Breed", "Count"],
+        list(zip(data["breeds"], data["breed_numbers"]))
+    )
+
+    # =========================
+    # VACCINATION STATUS
+    # =========================
+    build_table(
+        "Vaccination Status",
+        ["Status", "Count"],
+        [
+            ["Vaccinated", data["vaccinated_count"]],
+            ["Not Vaccinated", data["unvaccinated_count"]],
+        ]
+    )
+
+    # =========================
+    # OWNED VS STRAY
+    # =========================
+    build_table(
+        "Owned vs Stray Dogs",
+        ["Category", "Count"],
+        [
+            ["Owned Dogs", data["owned_dogs"]],
+            ["Stray Dogs", data["total_stray_dogs"]],
+        ]
+    )
+
+    # =========================
+    # MONTHLY REGISTRATION
+    # =========================
+    build_table(
+        "Monthly Registrations",
+        ["Month", "Registrations"],
+        list(zip(data["months"], data["month_counts"]))
+    )
+
+    # =========================
+    # CAUSE OF DEATH
+    # =========================
+    build_table(
+        "Cause of Death",
+        ["Cause", "Count"],
+        list(zip(data["death_causes"], data["death_counts"]))
+    )
+
+    # =========================
+    # TOP MUNICIPALITIES
+    # =========================
+    build_table(
         "Top Municipalities by Total Dogs",
         ["Municipality", "Count"],
         data["top_municipalities"]
     )
 
-    add_table(
-        document,
+    build_table(
         "Top Municipalities by Vaccinated Dogs",
         ["Municipality", "Count"],
         data["top_vaccinated_municipalities"]
     )
 
-    add_table(
-        document,
+    build_table(
         "Top Municipalities by Unvaccinated Dogs",
         ["Municipality", "Count"],
         data["top_unvaccinated_municipalities"]
     )
 
-    # ---------- TOP BARANGAYS ----------
-    add_table(
-        document,
+    # =========================
+    # TOP BARANGAYS
+    # =========================
+    build_table(
         "Top Barangays by Total Dogs",
         ["Barangay", "Count"],
         data["top_barangays"]
     )
 
-    add_table(
-        document,
+    build_table(
         "Top Barangays by Vaccinated Dogs",
         ["Barangay", "Count"],
         data["top_vaccinated_barangays"]
     )
 
-    add_table(
-        document,
+    build_table(
         "Top Barangays by Unvaccinated Dogs",
         ["Barangay", "Count"],
         data["top_unvaccinated_barangays"]
     )
 
-    # ---------- SAVE FILE ----------
-    file_stream = io.BytesIO()
-    document.save(file_stream)
-    file_stream.seek(0)
+    # =========================
+    # FINALIZE PDF
+    # =========================
+    pdf.build(elements)
+    buffer.seek(0)
 
     return send_file(
-        file_stream,
+        buffer,
         as_attachment=True,
-        download_name="Dog_Data_Analysis_Report.docx",
-        mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        download_name="TrackPawPH_Report.pdf",
+        mimetype="application/pdf"
     )
-        
+
 @app.route('/admin/search-dogs')
 @login_required
 def admin_search_dogs():
