@@ -40,6 +40,7 @@ from matplotlib.ticker import MultipleLocator
 from docx.shared import Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import RGBColor
+import _tkinter
 from sqlalchemy.orm import joinedload
 
 load_dotenv()
