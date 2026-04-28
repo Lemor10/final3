@@ -1961,7 +1961,7 @@ def download_data_analysis():
             ("ALIGN", (0,0), (-1,-1), "LEFT"),
             ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
             ("ROWBACKGROUNDS", (0,1), (-1,-1),
-            [colors.whitesmoke, colors.lightgrey]),
+            [colors.whitesmoke]),
         ]))
 
         content.append(table)
