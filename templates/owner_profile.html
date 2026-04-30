@@ -270,9 +270,9 @@ Your Registered Dogs
                     <p class="text-muted small mb-2">
                     <strong>Vaccination Address:</strong>
                     {% if dog.vaccination_barangay %}
-                      {{ dog.vaccination_barangay_name or dog.vaccination_barangay }},
-                      {{ dog.vaccination_municipality_name or dog.vaccination_municipality }},
-                      {{ dog.vaccination_province_name or dog.vaccination_province }}
+                      {{ dog.vaccination_barangay }},
+                      {{ dog.vaccination_municipality }},
+                      {{ dog.vaccination_province }}
                     {% else %}
                       N/A
                     {% endif %}
@@ -496,24 +496,17 @@ Your Registered Dogs
 
     <label class="form-label">Vaccination Address:</label>
   
-<div class="col-md-4">
-  <select name="vaccination_province" id="provinceSelect" class="form-select" disabled>
-    <option value="">Select Province</option>
-  </select>
-</div>
+    <div class="col-md-4">
+      <input type="text" name="vaccination_barangay" id="addVaccinationBarangay" list="barangay-list" class="form-control" placeholder="Barangay">
+    </div>
 
+    <div class="col-md-4">
+      <input type="text" name="vaccination_municipality" id="addVaccinationMunicipality" list="city-list" class="form-control" placeholder="Municipality/City">
+    </div>
 
-<div class="col-md-4">
-  <select name="vaccination_municipality" id="citySelect" class="form-select" disabled>
-    <option value="">Select City/Municipality</option>
-  </select>
-</div>
-
-<div class="col-md-4">
-  <select name="vaccination_barangay" id="barangaySelect" class="form-select" disabled>
-    <option value="">Select Barangay</option>
-  </select>
-</div>
+    <div class="col-md-4">
+      <input type="text" name="vaccination_province" id="addVaccinationProvince" list="province-list" class="form-control" placeholder="Province">
+    </div>
   </div>
 
 </div>
@@ -797,30 +790,11 @@ function toggleVaccinationFields(
 
   const vaccinated = statusEl.value === "Vaccinated";
 
-  const fields = [
-    lastDateEl,
-    nextDateEl,
-    brgyEl,
-    munEl,
-    provEl,
-    locationEl,
-    typeEl
-  ];
-
-  fields.forEach(el => {
+  [lastDateEl, nextDateEl, brgyEl, munEl, provEl, locationEl, typeEl].forEach(el => {
     if (!el) return;
-
     el.disabled = !vaccinated;
     el.required = vaccinated;
-
-    if (!vaccinated) {
-      el.value = "";
-
-      // reset dropdowns
-      if (el.tagName === "SELECT") {
-        el.selectedIndex = 0;
-      }
-    }
+    if (!vaccinated) el.value = "";
   });
 }
 
@@ -828,9 +802,9 @@ const addStatus = document.getElementById("addVaccinationStatus");
 const addLast = document.getElementById("addLastVaccination");
 const addNext = document.getElementById("addNextVaccination");
 
-const addBrgy = document.getElementById("barangaySelect");
-const addMun = document.getElementById("citySelect");
-const addProv = document.getElementById("provinceSelect");
+const addBrgy = document.getElementById("addVaccinationBarangay");
+const addMun = document.getElementById("addVaccinationMunicipality");
+const addProv = document.getElementById("addVaccinationProvince");
 const addLocation = document.getElementById("addVaccinationLocation");
 const addType = document.getElementById("addVaccinationType");
 
@@ -958,70 +932,5 @@ function confirmDeleteProfilePhoto() {
     }
   });
 }
-</script>
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-
-  const provinceSelect = document.getElementById("provinceSelect");
-  const citySelect = document.getElementById("citySelect");
-  const barangaySelect = document.getElementById("barangaySelect");
-
-  // Load provinces
-  fetch("https://psgc.gitlab.io/api/provinces/")
-    .then(res => res.json())
-    .then(data => {
-      data.forEach(p => {
-        const opt = document.createElement("option");
-        opt.value = p.code;
-        opt.textContent = p.name;
-        provinceSelect.appendChild(opt);
-      });
-    });
-
-  // Province → Cities
-  provinceSelect.addEventListener("change", function () {
-    const code = this.value;
-
-    citySelect.innerHTML = '<option value="">Select City</option>';
-    barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
-    barangaySelect.disabled = true;
-
-    if (!code) return;
-
-    fetch(`https://psgc.gitlab.io/api/provinces/${code}/cities-municipalities/`)
-      .then(res => res.json())
-      .then(data => {
-        citySelect.disabled = false;
-        data.forEach(c => {
-          const opt = document.createElement("option");
-          opt.value = c.code;
-          opt.textContent = c.name;
-          citySelect.appendChild(opt);
-        });
-      });
-  });
-
-  // City → Barangay
-  citySelect.addEventListener("change", function () {
-    const code = this.value;
-
-    barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
-
-    if (!code) return;
-
-    fetch(`https://psgc.gitlab.io/api/cities-municipalities/${code}/barangays/`)
-      .then(res => res.json())
-      .then(data => {
-        barangaySelect.disabled = false;
-        data.forEach(b => {
-          const opt = document.createElement("option");
-          opt.value = b.name;
-          opt.textContent = b.name;
-          barangaySelect.appendChild(opt);
-        });
-      });
-  });
-
-});
 </script>
 {% endblock %}
