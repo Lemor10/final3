@@ -1677,18 +1677,6 @@ def admin_dashboard():
             d for d in dogs if d.owner_id == u.id
         ]
     
-        # Convert PSGC codes → names
-    for dog in dogs:
-        dog.vaccination_province_name = get_location_name(
-            dog.vaccination_province, "provinces"
-        )
-        dog.vaccination_municipality_name = get_location_name(
-            dog.vaccination_municipality, "cities-municipalities"
-        )
-        dog.vaccination_barangay_name = get_location_name(
-            dog.vaccination_barangay, "barangays"
-        )
-
     return render_template('admin_dashboard.html', users=users, dogs=dogs, pagination=users_pagination
 )
 
