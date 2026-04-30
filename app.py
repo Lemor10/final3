@@ -701,20 +701,30 @@ def add_table(document, title, headers, rows):
         for i, value in enumerate(row): 
             row_cells[i].text = str(value)
 
-def get_location_name(code, level):
-    try:
-        if not code:
-            return None
+location_cache = {}
 
+def get_location_name(code, level):
+    if not code:
+        return None
+
+    key = f"{level}:{code}"
+
+    if key in location_cache:
+        return location_cache[key]
+
+    try:
         url = f"https://psgc.gitlab.io/api/{level}/{code}/"
-        res = requests.get(url)
+        res = requests.get(url, timeout=5)
 
         if res.status_code == 200:
-            return res.json().get("name")
-        return code
+            name = res.json().get("name")
+            location_cache[key] = name
+            return name
 
-    except Exception:
-        return code
+    except requests.exceptions.RequestException as e:
+        print(e)
+
+    return code
 
 @app.route("/check-username")
 def check_username():
