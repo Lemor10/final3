@@ -972,7 +972,7 @@ document.addEventListener("DOMContentLoaded", function () {
     .then(data => {
       data.forEach(p => {
         const opt = document.createElement("option");
-        opt.value = p.name;
+        opt.value = p.code;
         opt.textContent = p.name;
         provinceSelect.appendChild(opt);
       });
@@ -994,7 +994,7 @@ document.addEventListener("DOMContentLoaded", function () {
         citySelect.disabled = false;
         data.forEach(c => {
           const opt = document.createElement("option");
-          opt.value = c.name;
+          opt.value = c.code;
           opt.textContent = c.name;
           citySelect.appendChild(opt);
         });
