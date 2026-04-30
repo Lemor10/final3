@@ -701,30 +701,35 @@ def add_table(document, title, headers, rows):
         for i, value in enumerate(row): 
             row_cells[i].text = str(value)
 
-location_cache = {}
-
 def get_location_name(code, level):
-    if not code:
-        return None
-
-    key = f"{level}:{code}"
-
-    if key in location_cache:
-        return location_cache[key]
-
     try:
+        if not code:
+            return None
+
         url = f"https://psgc.gitlab.io/api/{level}/{code}/"
-        res = requests.get(url, timeout=5)
+        res = requests.get(url)
 
         if res.status_code == 200:
-            name = res.json().get("name")
-            location_cache[key] = name
-            return name
+            return res.json().get("name")
+        return code
 
-    except requests.exceptions.RequestException as e:
-        print(e)
+    except Exception:
+        return code
 
-    return code
+def get_location_name_admin(code, level):
+    try:
+        if not code:
+            return None
+
+        url = f"https://psgc.gitlab.io/api/{level}/{code}/"
+        res = requests.get(url)
+
+        if res.status_code == 200:
+            return res.json().get("name")
+        return code
+
+    except Exception:
+        return code
 
 @app.route("/check-username")
 def check_username():
@@ -1689,13 +1694,13 @@ def admin_dashboard():
     
         # Convert PSGC codes → names
     for dog in dogs:
-        dog.vaccination_province_name = get_location_name(
+        dog.vaccination_province_name = get_location_name_admin(
             dog.vaccination_province, "provinces"
         )
-        dog.vaccination_municipality_name = get_location_name(
+        dog.vaccination_municipality_name = get_location_name_admin(
             dog.vaccination_municipality, "cities-municipalities"
         )
-        dog.vaccination_barangay_name = get_location_name(
+        dog.vaccination_barangay_name = get_location_name_admin(
             dog.vaccination_barangay, "barangays"
         )
 
