@@ -271,9 +271,9 @@ body {
                   <p class="text-muted mb-1 small">
                     <strong>Vaccination Address:</strong>
                     {% if dog.vaccination_barangay %}
-                      {{ dog.vaccination_barangay }},
-                      {{ dog.vaccination_municipality }},
-                      {{ dog.vaccination_province }}
+                      {{ dog.vaccination_barangay_name or dog.vaccination_barangay }},
+                      {{ dog.vaccination_municipality_name or dog.vaccination_municipality }},
+                      {{ dog.vaccination_province_name or dog.vaccination_province }}
                     {% else %}
                       N/A
                     {% endif %}

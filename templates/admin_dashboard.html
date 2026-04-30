@@ -744,9 +744,9 @@
                 <p class="mb-1">
                   <strong>Address:</strong>
                   {% if d.vaccination_barangay %}
-                    {{ d.vaccination_barangay }},
-                    {{ d.vaccination_municipality }},
-                    {{ d.vaccination_province }}
+                    {{ d.vaccination_barangay_name or d.vaccination_barangay }},
+                    {{ d.vaccination_municipality_name or d.vaccination_municipality }},
+                    {{ d.vaccination_province_name or d.vaccination_province }}
                   {% else %}
                     N/A
                   {% endif %}
@@ -1147,15 +1147,24 @@
           </div>
 
           <div class="row g-2 mb-3">
-          <label class="form-label">Owner's Address:</label>
+            <label class="form-label">Owner's Address:</label>
+
             <div class="col-md-4">
-              <input type="text" name="owner_barangay" class="form-control" placeholder="Barangay" required>
+              <select id="ownerProvince" name="owner_province" class="form-select" required>
+                <option value="">Select Province</option>
+              </select>
             </div>
+
             <div class="col-md-4">
-              <input type="text" name="owner_municipality" class="form-control" placeholder="Municipality" required>
+              <select id="ownerMunicipality" name="owner_municipality" class="form-select" required disabled>
+                <option value="">Select Municipality</option>
+              </select>
             </div>
+
             <div class="col-md-4">
-              <input type="text" name="owner_province" class="form-control" placeholder="Province" required>
+              <select id="ownerBarangay" name="owner_barangay" class="form-select" required disabled>
+                <option value="">Select Barangay</option>
+              </select>
             </div>
           </div>
 
@@ -1230,18 +1239,21 @@
               <input type="text" name="vaccination_location" id="registerStrayVaccinationLocation" class="form-control" placeholder="In-House, Vet Clinic, DA..." disabled>
             </div>
 
-          <div class="row g-2 mb-3">
-            <label class="form-label ">Vaccination Address:</label>
-            <div class="col-md-4">
-              <input type="text" name="vaccination_barangay" id="registerStrayVaccinationBarangay" class="form-control" placeholder="Barangay" disabled>
-            </div>
-            <div class="col-md-4">
-              <input type="text" name="vaccination_municipality" id="registerStrayVaccinationMunicipality" class="form-control" placeholder="Municipality" disabled>
-            </div>
-            <div class="col-md-4">
-              <input type="text" name="vaccination_province" id="registerStrayVaccinationProvince" class="form-control" placeholder="Province" disabled>
-            </div>
-          </div>
+<div class="row g-2 mb-3">
+  <label class="form-label">Vaccination Address:</label>
+
+  <div class="col-md-4">
+    <input type="text" id="registerStrayVaccinationProvince" name="vaccination_province" class="form-control" placeholder="Province" disabled>
+  </div>
+
+  <div class="col-md-4">
+    <input type="text" id="registerStrayVaccinationMunicipality" name="vaccination_municipality" class="form-control" placeholder="Municipality" disabled>
+  </div>
+
+  <div class="col-md-4">
+    <input type="text" id="registerStrayVaccinationBarangay" name="vaccination_barangay" class="form-control" placeholder="Barangay" disabled>
+  </div>
+</div>
 
           <!-- 🖼 IMAGE -->
           <h6 class="fw-bold text-dark">
@@ -1601,6 +1613,55 @@ document.getElementById('deleteDogForm')
 
     const btn = this.querySelector('.archiveDogBtn');
     setLoading(btn, "Archiving...");
+});
+</script>
+<script>
+const PSGC_API = "https://psgc.gitlab.io/api";
+
+// Generic loader
+async function loadOptions(url, select, placeholder) {
+  select.innerHTML = `<option value="">${placeholder}</option>`;
+  const res = await fetch(url);
+  const data = await res.json();
+
+  data.forEach(item => {
+    const opt = document.createElement("option");
+    opt.value = item.name;
+    opt.textContent = item.name;
+    opt.dataset.code = item.code;
+    select.appendChild(opt);
+  });
+
+  select.disabled = false;
+}
+
+// OWNER CASCADE
+const ownerProvince = document.getElementById("ownerProvince");
+const ownerMunicipality = document.getElementById("ownerMunicipality");
+const ownerBarangay = document.getElementById("ownerBarangay");
+
+// Load provinces
+loadOptions(`${PSGC_API}/provinces/`, ownerProvince, "Select Province");
+
+ownerProvince.addEventListener("change", function () {
+  const code = this.selectedOptions[0].dataset.code;
+  
+  ownerMunicipality.disabled = true;
+  ownerBarangay.disabled = true;
+
+  loadOptions(`${PSGC_API}/provinces/${code}/cities-municipalities/`,
+              ownerMunicipality,
+              "Select Municipality");
+});
+
+ownerMunicipality.addEventListener("change", function () {
+  const code = this.selectedOptions[0].dataset.code;
+
+  ownerBarangay.disabled = true;
+
+  loadOptions(`${PSGC_API}/cities-municipalities/${code}/barangays/`,
+              ownerBarangay,
+              "Select Barangay");
 });
 </script>
 {% endblock %}

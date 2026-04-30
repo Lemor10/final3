@@ -38,6 +38,8 @@ import qrcode
 
 import pytz
 
+import requests
+
 import matplotlib
 matplotlib.use("Agg")  # IMPORTANT: prevents Tkinter errors
 import matplotlib.pyplot as plt
@@ -699,6 +701,21 @@ def add_table(document, title, headers, rows):
         for i, value in enumerate(row): 
             row_cells[i].text = str(value)
 
+def get_location_name(code, level):
+    try:
+        if not code:
+            return None
+
+        url = f"https://psgc.gitlab.io/api/{level}/{code}/"
+        res = requests.get(url)
+
+        if res.status_code == 200:
+            return res.json().get("name")
+        return code
+
+    except Exception:
+        return code
+
 @app.route("/check-username")
 def check_username():
     username = request.args.get("username", "").strip().lower()
@@ -1267,6 +1284,19 @@ def owner_dashboard():
 
     if current_user.role not in ['owner', 'admin']:
         abort(403)
+
+        # Convert PSGC codes → names
+    for dog in dogs:
+        dog.vaccination_province_name = get_location_name(
+            dog.vaccination_province, "provinces"
+        )
+        dog.vaccination_municipality_name = get_location_name(
+            dog.vaccination_municipality, "cities-municipalities"
+        )
+        dog.vaccination_barangay_name = get_location_name(
+            dog.vaccination_barangay, "barangays"
+        )
+
     return render_template('owner_dashboard.html', dogs=dogs, stray_count=stray_count)
 
 @app.route('/owner/profile', methods=['GET', 'POST'])
@@ -1318,8 +1348,20 @@ def owner_profile():
 
 
             flash("Profile and dog addresses updated!", "success")
-
+        
         return redirect(url_for('owner_profile'))
+    
+    # Convert PSGC codes → names
+    for dog in dogs:
+        dog.vaccination_province_name = get_location_name(
+            dog.vaccination_province, "provinces"
+        )
+        dog.vaccination_municipality_name = get_location_name(
+            dog.vaccination_municipality, "cities-municipalities"
+        )
+        dog.vaccination_barangay_name = get_location_name(
+            dog.vaccination_barangay, "barangays"
+        )
 
     return render_template('owner_profile.html', dogs=dogs)
 
@@ -1634,6 +1676,18 @@ def admin_dashboard():
         u.active_dogs = [
             d for d in dogs if d.owner_id == u.id
         ]
+    
+        # Convert PSGC codes → names
+    for dog in dogs:
+        dog.vaccination_province_name = get_location_name(
+            dog.vaccination_province, "provinces"
+        )
+        dog.vaccination_municipality_name = get_location_name(
+            dog.vaccination_municipality, "cities-municipalities"
+        )
+        dog.vaccination_barangay_name = get_location_name(
+            dog.vaccination_barangay, "barangays"
+        )
 
     return render_template('admin_dashboard.html', users=users, dogs=dogs, pagination=users_pagination
 )
