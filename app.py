@@ -1654,25 +1654,7 @@ def add_stray_dog():
     breed = request.form.get('breed')
     gender = request.form.get("gender")
     location_found = request.form.get('location_found')
-    vaccination_type = request.form.get("vaccination_type")
-    vaccinated = request.form.get('vaccinated')  # "Vaccinated" or "Not Vaccinated"
-    last_vaccination = request.form.get('last_vaccination') or None
-    next_vaccination = request.form.get('next_vaccination') or None
-
-    last_vac_date = datetime.strptime(last_vaccination, "%Y-%m-%d").date() if last_vaccination else None
-    next_vac_date = datetime.strptime(next_vaccination, "%Y-%m-%d").date() if next_vaccination else None
-
-    if last_vac_date:
-        # Expiry: 3 years after last vaccination
-        vaccination_expiry = last_vac_date + relativedelta(years=3)
-
-        # Next vaccination: 1 year after last if not provided
-        if not next_vac_date:
-            next_vac_date = last_vac_date + relativedelta(years=1)
-    else:
-        next_vac_date = None
-        vaccination_expiry = None
-
+    
     image_file = request.files.get("dog_image")
     image_filename = None
 
@@ -1706,11 +1688,6 @@ def add_stray_dog():
         qr_code=qr_url,
         is_stray=True,
         location_found=location_found,
-        vaccination_type=vaccination_type,
-        vaccinated=vaccinated,  # ✅ add this
-        last_vaccination=last_vac_date,   # also fix this 👇
-        next_vaccination=next_vac_date,  # ✅ add this
-        vaccination_expiry=vaccination_expiry,  # ✅ NEW
     )
 
     db.session.add(new_dog)
@@ -1735,30 +1712,6 @@ def admin_edit_stray(dog_id):
     dog.name = request.form['name']
     dog.breed = request.form['breed']
     dog.location_found = request.form.get('location_found')
-
-    # ✅ FIX 1: correct field name
-    dog.vaccinated = request.form.get('vaccinated')
-
-    # ✅ FIX 2: convert dates properly
-    last_vaccination = request.form.get('last_vaccination')
-    next_vaccination = request.form.get('next_vaccination')
-
-    last_vac_date = datetime.strptime(last_vaccination, "%Y-%m-%d").date() if last_vaccination else None
-    next_vac_date = datetime.strptime(next_vaccination, "%Y-%m-%d").date() if next_vaccination else None
-
-    dog.last_vaccination = last_vac_date
-    dog.next_vaccination = next_vac_date
-
-    # ✅ FIX 3: recalculate expiry
-    if dog.vaccinated == "Vaccinated" and last_vac_date:
-        dog.vaccination_expiry = last_vac_date + relativedelta(years=3)
-
-        # optional: auto next vaccination if empty
-        if not next_vac_date:
-            dog.next_vaccination = last_vac_date + relativedelta(years=1)
-    else:
-        dog.vaccination_expiry = None
-
     db.session.commit()
 
     flash("Stray dog information updated successfully!", "success")

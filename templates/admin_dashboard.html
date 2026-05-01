@@ -987,7 +987,33 @@
 
           <div class="mb-3">
             <label>Breed</label>
-            <input type="text" name="breed" class="form-control" value="{{ d.breed }}" required>
+<select name="breed" id="breedSelect" class="form-select" value="{{ d.breed }}" required>
+  <option value="" disabled selected>Select Breed</option>
+  <option>Aspin</option>
+  <option>Mixed Breed</option>
+  <option>Labrador Retriever</option>
+  <option>Golden Retriever</option>
+  <option>German Shepherd</option>
+  <option>Shih Tzu</option>
+  <option>Chihuahua</option>
+  <option>Pomeranian</option>
+  <option>Beagle</option>
+  <option>Bulldog</option>
+  <option>Pit Bull</option>
+  <option>Rottweiler</option>
+  <option>Siberian Husky</option>
+  <option>Dachshund</option>
+  <option>Doberman Pinscher</option>
+  <option>Great Dane</option>
+  <option>Border Collie</option>
+  <option>Shiba Inu</option>
+  <option>Poodle</option>
+  <option>Akita</option>
+  <option>Corgi</option>
+  <option>Boxer</option>
+  <option>French Bulldog</option>
+  <option>Other</option>
+</select>
           </div>
 
           <div class="mb-3">
@@ -1008,6 +1034,9 @@
               </option>
             </select>
           </div>
+          <h6 class="fw-bold text-success mb-3">
+            <i class="bi bi-shield-check"></i> Vaccination Info
+          </h6>
 
           <div class="mb-3">
             <label>Status</label>
@@ -1023,12 +1052,18 @@
 
           <div class="mb-3">
             <label>Vaccination Type</label>
-            <input type="text"
-                  name="vaccination_type"
-                  class="form-control edit-last"
-                  data-dog-id="{{ d.id }}"
-                  value="{{ d.vaccination_type }}"
-                  placeholder="Anti-Rabies, Parvo...">
+            <select name="vaccination_type" id="addVaccinationType" class="form-select edit-last" data-dog-id="{{ d.id }} "value="{{ d.vaccination_type }}" disabled>
+  <option value="">Select Vaccination Type</option>
+  <option>Anti-Rabies</option>
+  <option>5-in-1 Vaccine</option>
+  <option>6-in-1 Vaccine</option>
+  <option>7-in-1 Vaccine</option>
+  <option>8-in-1 Vaccine</option>
+  <option>Parvovirus</option>
+  <option>Distemper</option>
+  <option>Leptospirosis</option>
+  <option>Bordetella</option>
+</select>
           </div>
 
           <div class="mb-3">
@@ -1037,7 +1072,8 @@
                   name="last_vaccination"
                   class="form-control edit-last"
                   data-dog-id="{{ d.id }}"
-                  value="{{ d.last_vaccination }}">
+                  value="{{ d.last_vaccination }}"
+                  disabled>
           </div>
 
           <div class="mb-3">
@@ -1046,7 +1082,8 @@
                   name="next_vaccination"
                   class="form-control edit-next"
                   data-dog-id="{{ d.id }}"
-                  value="{{ d.next_vaccination }}">
+                  value="{{ d.next_vaccination }}"
+                  disabled>
           </div>
                       <div class="mb-3">
             <label>Vaccinated Conducted At</label>
@@ -1056,40 +1093,31 @@
                   id="registerVaccinationLocation"
                   placeholder="In-house, Veterinary Clinic, Animal Hospital, DA Office, etc."
                   title="Dog must be vaccinated"
-                  value="{{ d.vaccination_location or '' }}">
+                  value="{{ d.vaccination_location or '' }}"
+                  disabled>
           </div>
 
-  <div class="mb-3">
-    <label>Vaccination Address:</label>
-    <input type="text"
-          name="vaccination_barangay"
-          class="form-control"
-          id="registerVaccinationBarangay"
-          title="Dog must be vaccinated" 
-          value="{{ d.vaccination_barangay }}"
-          placeholder="Barangay">
+<div class="row g-2 mb-3">
+  <label class="form-label">Vaccination Address:</label>
+
+  <div class="col-md-4">
+    <select id="vacProvince{{ d.id }}" name="vaccination_province" value="{{ d.vaccination_province }}" class="form-select" disabled>
+      <option value="">Province</option>
+    </select>
   </div>
 
-  <div class="mb-3">
-    <input type="text"
-      name="vaccination_municipality"
-      class="form-control"
-      id="registerVaccinationMunicipality"
-      value="{{ d.vaccination_municipality }}"
-      title="Dog must be vaccinated" 
-      
-      placeholder="Municipality">
+  <div class="col-md-4">
+    <select id="vacMunicipality{{ d.id }}" name="vaccination_municipality" value="{{ d.vaccination_municipality }}" class="form-select" disabled>
+      <option value="">Municipality</option>
+    </select>
   </div>
 
-  <div class="mb-3">
-    <input type="text"
-      name="vaccination_province"
-      class="form-control"
-      id="registerVaccinationProvince"
-      title="Dog must be vaccinated"
-      value="{{ d.vaccination_province }}"
-      placeholder="Province">
+  <div class="col-md-4">
+    <select id="vacBarangay{{ d.id }}" name="vaccination_barangay" value="{{ d.vaccination_barangay }}" class="form-select" disabled>
+      <option value="">Barangay</option>
+    </select>
   </div>
+</div>
         </div>
         
 
@@ -1146,18 +1174,27 @@
             </div>
           </div>
 
-          <div class="row g-2 mb-3">
-          <label class="form-label">Owner's Address:</label>
-            <div class="col-md-4">
-              <input type="text" name="owner_barangay" class="form-control" placeholder="Barangay" required>
-            </div>
-            <div class="col-md-4">
-              <input type="text" name="owner_municipality" class="form-control" placeholder="Municipality" required>
-            </div>
-            <div class="col-md-4">
-              <input type="text" name="owner_province" class="form-control" placeholder="Province" required>
-            </div>
-          </div>
+<div class="row g-2 mb-3">
+  <label class="form-label">Owner's Address:</label>
+
+  <div class="col-md-4">
+    <select id="ownerProvince" name="owner_province" class="form-select" required>
+      <option value="">Select Province</option>
+    </select>
+  </div>
+
+  <div class="col-md-4">
+    <select id="ownerMunicipality" name="owner_municipality" class="form-select" required>
+      <option value="">Select Municipality</option>
+    </select>
+  </div>
+
+  <div class="col-md-4">
+    <select id="ownerBarangay" name="owner_barangay" class="form-select" required>
+      <option value="">Select Barangay</option>
+    </select>
+  </div>
+</div>
 
           <!-- 🐕 DOG INFO -->
           <h6 class="fw-bold text-primary mb-3">
@@ -1172,7 +1209,33 @@
 
             <div class="col-md-6">
               <label class="form-label">Breed</label>
-              <input type="text" name="breed" list="breed-list" class="form-control" required>
+<select name="breed" id="breedSelect" class="form-select" required>
+  <option value="" disabled selected>Select Breed</option>
+  <option>Aspin</option>
+  <option>Mixed Breed</option>
+  <option>Labrador Retriever</option>
+  <option>Golden Retriever</option>
+  <option>German Shepherd</option>
+  <option>Shih Tzu</option>
+  <option>Chihuahua</option>
+  <option>Pomeranian</option>
+  <option>Beagle</option>
+  <option>Bulldog</option>
+  <option>Pit Bull</option>
+  <option>Rottweiler</option>
+  <option>Siberian Husky</option>
+  <option>Dachshund</option>
+  <option>Doberman Pinscher</option>
+  <option>Great Dane</option>
+  <option>Border Collie</option>
+  <option>Shiba Inu</option>
+  <option>Poodle</option>
+  <option>Akita</option>
+  <option>Corgi</option>
+  <option>Boxer</option>
+  <option>French Bulldog</option>
+  <option>Other</option>
+</select>
             </div>
           </div>
 
@@ -1208,12 +1271,18 @@
             </div>
                         <div class="col-md-6">
   <label class="form-label">Vaccination Type</label>
-  <input type="text" 
-         name="vaccination_type" 
-         id="addVaccinationType"
-         class="form-control"
-         placeholder="Anti-Rabies, Parvo... "
-         disabled>
+<select name="vaccination_type" id="addVaccinationType" class="form-select">
+  <option value="">Select Vaccination Type</option>
+  <option>Anti-Rabies</option>
+  <option>5-in-1 Vaccine</option>
+  <option>6-in-1 Vaccine</option>
+  <option>7-in-1 Vaccine</option>
+  <option>8-in-1 Vaccine</option>
+  <option>Parvovirus</option>
+  <option>Distemper</option>
+  <option>Leptospirosis</option>
+  <option>Bordetella</option>
+</select>
 </div>
           <div class="row g-2 mb-3">
             <div class="col-md-6">
@@ -1230,18 +1299,27 @@
               <input type="text" name="vaccination_location" id="registerStrayVaccinationLocation" class="form-control" placeholder="In-House, Vet Clinic, DA..." disabled>
             </div>
 
-          <div class="row g-2 mb-3">
-            <label class="form-label ">Vaccination Address:</label>
-            <div class="col-md-4">
-              <input type="text" name="vaccination_barangay" id="registerStrayVaccinationBarangay" class="form-control" placeholder="Barangay" disabled>
-            </div>
-            <div class="col-md-4">
-              <input type="text" name="vaccination_municipality" id="registerStrayVaccinationMunicipality" class="form-control" placeholder="Municipality" disabled>
-            </div>
-            <div class="col-md-4">
-              <input type="text" name="vaccination_province" id="registerStrayVaccinationProvince" class="form-control" placeholder="Province" disabled>
-            </div>
-          </div>
+<div class="row g-2 mb-3">
+  <label class="form-label">Vaccination Address:</label>
+
+  <div class="col-md-4">
+    <select id="vacProvince" name="vaccination_province" class="form-select" disabled>
+      <option value="">Province</option>
+    </select>
+  </div>
+
+  <div class="col-md-4">
+    <select id="vacMunicipality" name="vaccination_municipality" class="form-select" disabled>
+      <option value="">Municipality</option>
+    </select>
+  </div>
+
+  <div class="col-md-4">
+    <select id="vacBarangay" name="vaccination_barangay" class="form-select" disabled>
+      <option value="">Barangay</option>
+    </select>
+  </div>
+</div>
 
           <!-- 🖼 IMAGE -->
           <h6 class="fw-bold text-dark">
@@ -1395,9 +1473,9 @@ document.addEventListener("DOMContentLoaded", function () {
   const registerLast = document.getElementById('registerLastVaccination');
   const registerNext = document.getElementById('registerNextVaccination');
   const registerLocation = document.getElementById('registerStrayVaccinationLocation');
-  const registerBarangay = document.getElementById('registerStrayVaccinationBarangay');
-  const registerMunicipality = document.getElementById('registerStrayVaccinationMunicipality');
-  const registerProvince = document.getElementById('registerStrayVaccinationProvince');
+  const registerBarangay = document.getElementById('vacBarangay');
+  const registerMunicipality = document.getElementById('vacMunicipality');
+  const registerProvince = document.getElementById('vacProvince');
   const registerType = document.getElementById('addVaccinationType');
 
   function toggleRegisterDates() {
@@ -1449,11 +1527,12 @@ document.querySelectorAll('.edit-status').forEach(select => {
     const last = modal.querySelector('input[name="last_vaccination"]');
     const next = modal.querySelector('input[name="next_vaccination"]');
     const location = modal.querySelector('input[name="vaccination_location"]');
-    const barangay = modal.querySelector('input[name="vaccination_barangay"]');
-    const municipality = modal.querySelector('input[name="vaccination_municipality"]');
-    const province = modal.querySelector('input[name="vaccination_province"]');
-    const type = modal.querySelector('input[name="vaccination_type"]');
 
+    const barangay = modal.querySelector('select[name="vaccination_barangay"]');
+    const municipality = modal.querySelector('select[name="vaccination_municipality"]');
+    const province = modal.querySelector('select[name="vaccination_province"]');
+
+    const type = modal.querySelector('select[name="vaccination_type"]');
 
     if (select.value === 'Vaccinated') {
 
@@ -1487,7 +1566,7 @@ document.querySelectorAll('.edit-status').forEach(select => {
 
   select.addEventListener('change', toggleEditFields);
 
-  toggleEditFields(); // run on modal load
+  toggleEditFields(); // run on load
 });
 </script>
 <script>
@@ -1601,6 +1680,108 @@ document.getElementById('deleteDogForm')
 
     const btn = this.querySelector('.archiveDogBtn');
     setLoading(btn, "Archiving...");
+});
+</script>
+<script>
+  $(document).ready(function () {
+  $('#registerStrayDogModal').on('shown.bs.modal', function () {
+    $('#breedSelect').select2({
+      placeholder: "Select or type breed",
+      allowClear: true,
+      tags: true,
+      dropdownParent: $('#registerStrayDogModal'), // 🔥 FIX MODAL ISSUE
+      width: '100%'
+    });
+  });
+});
+</script>
+<script>
+// LOAD PROVINCES
+function loadProvinces(selectId) {
+  fetch('https://psgc.gitlab.io/api/provinces/')
+    .then(res => res.json())
+    .then(data => {
+      const select = document.getElementById(selectId);
+      data.forEach(p => {
+        select.innerHTML += `<option value="${p.name}" data-code="${p.code}">${p.name}</option>`;
+      });
+    });
+}
+
+// LOAD MUNICIPALITIES
+function loadMunicipalities(provinceCode, selectId) {
+  fetch(`https://psgc.gitlab.io/api/provinces/${provinceCode}/cities-municipalities/`)
+    .then(res => res.json())
+    .then(data => {
+      const select = document.getElementById(selectId);
+      select.innerHTML = '<option value="">Select Municipality</option>';
+
+      data.forEach(m => {
+        select.innerHTML += `<option value="${m.name}" data-code="${m.code}">${m.name}</option>`;
+      });
+    });
+}
+
+// LOAD BARANGAYS
+function loadBarangays(municipalityCode, selectId) {
+  fetch(`https://psgc.gitlab.io/api/cities-municipalities/${municipalityCode}/barangays/`)
+    .then(res => res.json())
+    .then(data => {
+      const select = document.getElementById(selectId);
+      select.innerHTML = '<option value="">Select Barangay</option>';
+
+      data.forEach(b => {
+        select.innerHTML += `<option value="${b.name}">${b.name}</option>`;
+      });
+    });
+}
+
+// OWNER CASCADE
+document.getElementById('ownerProvince').addEventListener('change', function() {
+  const code = this.selectedOptions[0].dataset.code;
+  loadMunicipalities(code, 'ownerMunicipality');
+});
+
+document.getElementById('ownerMunicipality').addEventListener('change', function() {
+  const code = this.selectedOptions[0].dataset.code;
+  loadBarangays(code, 'ownerBarangay');
+});
+
+// VACCINATION CASCADE
+document.querySelectorAll('[id^="vacProvince"]').forEach(provinceSelect => {
+
+  provinceSelect.addEventListener('change', function () {
+    const code = this.selectedOptions[0].dataset.code;
+    const id = this.id.replace('vacProvince', '');
+
+    loadMunicipalities(code, 'vacMunicipality' + id);
+  });
+
+});
+
+document.querySelectorAll('[id^="vacMunicipality"]').forEach(municipalitySelect => {
+
+  municipalitySelect.addEventListener('change', function () {
+    const code = this.selectedOptions[0].dataset.code;
+    const id = this.id.replace('vacMunicipality', '');
+
+    loadBarangays(code, 'vacBarangay' + id);
+  });
+
+});
+
+// INIT
+loadProvinces('ownerProvince');
+document.querySelectorAll('[id^="vacProvince"]').forEach(select => {
+  loadProvinces(select.id);
+});
+</script>
+<script> 
+$('#addVaccinationType').select2({
+  placeholder: "Select Vaccination Type",
+  tags: true,
+  dropdownParent: $('#addDogModal'),
+  width: '100%'
 });
 </script>
 {% endblock %}

@@ -82,203 +82,89 @@
   </button>
   {% endif %}
 
-<div class="card p-3 mt-3">
-  <div class="row d-flex justify-content-evenly">
+<div class="row mt-4">
+  {% for d in dogs %}
+  <div class="col-md-3 mb-3">
 
-    <!-- 🟢 VACCINATED STRAY -->
-    <div class="col-md-5">
-      <h6 class="text-success fw-bold mb-3">
-        <i class="bi bi-shield-check"></i> Vaccinated Strays
-      </h6>
+    <div class="dog-card p-2 d-flex align-items-center justify-content-between"
+         data-bs-toggle="modal"
+         data-bs-target="#dogModal{{ d.id }}"
+         style="cursor:pointer;">
 
-      {% for d in dogs if d.vaccinated == 'Vaccinated' %}
-      <div class="dog-card p-3 shadow-sm mb-3">
+      <!-- IMAGE -->
+      <img src="{{ d.image if d.image else url_for('static', filename='dog_images/logo.png') }}"
+           class="rounded"
+           style="width:70px; height:70px; object-fit:cover;"
+           alt="{{ d.name }}"
+           onclick="openQrFullscreen(this.src)">
 
-        <div class="row g-3 align-items-center">
+      <!-- INFO -->
+      <div class="ms-2 flex-grow-1">
 
-          <!-- IMAGE -->
-          <div class="col-lg-4 col-12 dog-img-wrapper">
-              <img src="{{ d.image if d.image else url_for('static', filename='dog_images/logo.png') }}"
-                 class="dog-img"
-                 style="cursor: pointer;" 
-                 onclick="openQrFullscreen(this.src)">
-          </div>
-
-          <!-- INFO -->
-          <div class="col-md-8">
-            <h5 class="fw-bold text-success mb-1">
-              <i class="bi bi-shield-check"></i> {{ d.name or "Stray" }}
-            </h5>
-        <p class="text-muted small mb-1">
-          <strong>Date Registered:</strong>
-          {{ d.created_at.strftime('%B %d, %Y') if d.created_at else 'N/A' }}
-        </p>
-            <p class="text-muted small mb-1"><strong>Breed:</strong> {{ d.breed or "Unknown" }}</p>
-
-                          <p class="text-muted small mb-1">
-                <strong>Gender:</strong>
-                {% if d.gender == 'Male' %}
-                  <i class="bi bi-gender-male text-primary"></i>
-                {% elif d.gender == 'Female' %}
-                  <i class="bi bi-gender-female text-danger"></i>
-                {% else %}
-                  N/A
-                {% endif %}
-              </p>
-
-            <p class="text-muted small mb-1">
-              <strong>Found at:</strong> {{ d.location_found or "N/A" }}
-            </p>
-                        <p class="text-muted small mb-1">
-              <strong>Vaccination Type:</strong> {{ d.vaccination_type or "N/A" }}
-            </p>
-
-            <p class="text-muted small mb-1">
-              <strong>Last Vaccinated:</strong> {{ d.last_vaccination or "N/A" }}
-            </p>
-
-            <p class="text-muted small mb-2">
-              <strong>Next Vaccination:</strong> {{ d.next_vaccination or "N/A" }}
-            </p>
-              <p class="text-muted small mb-2"><strong>Vaccination Expiry:</strong> {{ d.vaccination_expiry if d.vaccination_expiry else "N/A" }}</p>
-
-            <!-- ACTIONS -->
-                           {% if d.qr_code %}
-                <img src="{{ d.qr_code }}" alt="{{ d.name}} QR"
-                    class="rounded p-1 mb-2 qr-clickable"
-                    style="height: 90px; width: 90px; cursor: pointer;"
-                    onclick="openQrFullscreen(this.src)">
-              {% endif %}
-
-              <div class="mt-2">
-              {% if d.qr_code %}
-                  <a href="{{ url_for('download_qr', dog_uuid=d.uuid) }}" class="btn btn-sm btn-qr w-100 mb-2 text-white"><i class="bi bi-download"></i> Download QR</a>
-              {% endif %}
-              </div>
-<div class="row g-2">
-              <div class="col-6">
-                <button class="btn btn-outline-primary btn-sm w-100"
-                        data-bs-toggle="modal"
-                        data-bs-target="#editDogModal{{ d.id }}">
-                  Edit
-                </button>
-              </div>
-
-              <div class="col-6">
-                <button class="btn btn-danger btn-sm w-100"
-                        data-bs-toggle="modal"
-                        data-bs-target="#deleteDogModal"
-                        onclick="setDeleteDogForm('{{ url_for('admin_archive_dog', dog_id=d.id) }}')">
-                  Archive
-                </button>
-              </div>
-            </div>
-
-          </div>
-
-        </div>
+        <!-- NAME + STATUS BADGE -->
+        <h6 class="mb-1 fw-bold" >
+          {{ d.name or "Unnamed" }}
+        </h6>
       </div>
-      {% else %}
-      <p class="text-muted">No vaccinated stray dogs.</p>
-      {% endfor %}
-    </div>
 
-    <!-- 🔴 NOT VACCINATED STRAY -->
-    <div class="col-md-5">
-      <h6 class="text-danger fw-bold mb-3">
-        <i class="bi bi-x-circle"></i> Not Vaccinated Strays
-      </h6>
+      <!-- ACTIONS -->
+      <div class="d-flex flex-column gap-1">
 
-      {% for d in dogs if d.vaccinated == 'Not Vaccinated' %}
-      <div class="dog-card p-3 shadow-sm mb-3">
+        {% if d.qr_code %}
+        <a href="{{ url_for('download_qr', dog_uuid=d.uuid) }}"
+           class="btn btn-sm btn-qr text-white">
+          <i class="bi bi-download"></i>
+        </a>
+        {% endif %}
 
-        <div class="row g-3 align-items-center">
+        <button class="btn btn-sm btn-outline-primary"
+                data-bs-toggle="modal"
+                data-bs-target="#editDogModal{{ d.id }}"
+                onclick="event.stopPropagation();">
+          <i class="bi bi-pencil"></i>
+        </button>
 
-          <!-- IMAGE -->
-          <div class="col-lg-4 col-12 dog-img-wrapper">
-              <img src="{{ d.image if d.image else url_for('static', filename='dog_images/logo.png') }}"
-                 class="dog-img"
-                 style="cursor: pointer;"
-                 onclick="openQrFullscreen(this.src)">
-          </div>
+        <button class="btn btn-sm btn-danger"
+                onclick="event.stopPropagation(); setDeleteDogForm('{{ url_for('admin_archive_dog', dog_id=d.id) }}')"
+                data-bs-toggle="modal"
+                data-bs-target="#deleteDogModal">
+          <i class="bi bi-trash"></i>
+        </button>
 
-          <!-- INFO -->
-          <div class="col-md-8">
-            <h5 class="fw-bold text-danger mb-1">
-              <i class="bi bi-x-circle"></i> {{ d.name or "Stray" }}
-            </h5>
-                   <p class="text-muted small mb-1">
-          <strong>Date Registered:</strong>
-          {{ d.created_at.strftime('%B %d, %Y') if d.created_at else 'N/A' }}
-        </p>
-            <p class="text-muted small mb-1"><strong>Breed:</strong> {{ d.breed or "Unknown" }}</p>
-                          <p class="text-muted small mb-1">
-                <strong>Gender:</strong>
-                {% if d.gender == 'Male' %}
-                  <i class="bi bi-gender-male text-primary"></i>
-                {% elif d.gender == 'Female' %}
-                  <i class="bi bi-gender-female text-danger"></i>
-                {% else %}
-                  N/A
-                {% endif %}
-              </p>
-
-            <p class="text-muted small mb-1">
-              <strong>Found at:</strong> {{ d.location_found or "N/A" }}
-            </p>
-            <p class="text-muted small mb-1">
-              <strong>Vaccination Type:</strong> {{ d.vaccination_type or "N/A" }}
-            </p>
-
-            <p class="text-muted small mb-2">
-              <strong>Status:</strong> Not Vaccinated
-            </p>
-              <p class="text-muted small mb-2"><strong>Vaccination Expiry:</strong> {{ d.vaccination_expiry if d.vaccination_expiry else "N/A" }}</p>
-
-            <!-- ACTIONS -->
-                           {% if d.qr_code %}
-                <img src="{{ d.qr_code }}" alt="{{ d.name}} QR"
-                    class="rounded p-1 mb-2 qr-clickable"
-                    style="height: 90px; width: 90px; cursor: pointer;"
-                    onclick="openQrFullscreen(this.src)">
-              {% endif %}
-
-              <div class="mt-2">
-              {% if d.qr_code %}
-                  <a href="{{ url_for('download_qr', dog_uuid=d.uuid) }}" class="btn btn-sm btn-qr w-100 mb-2 text-white"><i class="bi bi-download"></i> Download QR</a>
-              {% endif %}
-              </div>
-
-            <div class="row g-2">
-              <div class="col-6">
-                <button class="btn btn-outline-primary btn-sm w-100"
-                        data-bs-toggle="modal"
-                        data-bs-target="#editDogModal{{ d.id }}">
-                  Edit
-                </button>
-              </div>
-
-              <div class="col-6">
-                <button class="btn btn-danger btn-sm w-100"
-                        data-bs-toggle="modal"
-                        data-bs-target="#deleteDogModal"
-                        onclick="setDeleteDogForm('{{ url_for('admin_archive_dog', dog_id=d.id) }}')">
-                  Archive
-                </button>
-              </div>
-            </div>
-
-          </div>
-
-        </div>
       </div>
-      {% else %}
-      <p class="text-muted">No unvaccinated stray dogs.</p>
-      {% endfor %}
-    </div>
 
+    </div>
+  </div>
+  {% else %}
+    <p class="text-muted">No stray dogs found.</p>
+  {% endfor %}
+</div>
+{% for d in dogs %}
+<!-- 🐶 DOG DETAILS MODAL -->
+<div class="modal fade" id="dogModal{{ d.id }}" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title">
+          <i class="bi bi-info-circle"></i> Stray Dog Details
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <p><strong>Name:</strong> {{ d.name or "Unnamed" }}</p>
+        <p><strong>Breed:</strong> {{ d.breed or "Unknown" }}</p>
+        <p><strong>Gender:</strong> {{ d.gender or "Not specified" }}</p>
+        <p><strong>Location Found:</strong> {{ d.location_found or "Not specified" }}</p>
+
+      </div>
+
+    </div>
   </div>
 </div>
+{% endfor %}
 {% for d in dogs %}
 <div class="modal fade" id="editDogModal{{ d.id }}" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
@@ -321,7 +207,33 @@
 
           <div class="mb-3">
             <label>Breed</label>
-            <input type="text" name="breed" class="form-control" value="{{ d.breed }}">
+<select name="breed" id="breedSelect" class="form-select" value="{{ d.breed }}" required>
+  <option value="" disabled selected>Select Breed</option>
+  <option>Aspin</option>
+  <option>Mixed Breed</option>
+  <option>Labrador Retriever</option>
+  <option>Golden Retriever</option>
+  <option>German Shepherd</option>
+  <option>Shih Tzu</option>
+  <option>Chihuahua</option>
+  <option>Pomeranian</option>
+  <option>Beagle</option>
+  <option>Bulldog</option>
+  <option>Pit Bull</option>
+  <option>Rottweiler</option>
+  <option>Siberian Husky</option>
+  <option>Dachshund</option>
+  <option>Doberman Pinscher</option>
+  <option>Great Dane</option>
+  <option>Border Collie</option>
+  <option>Shiba Inu</option>
+  <option>Poodle</option>
+  <option>Akita</option>
+  <option>Corgi</option>
+  <option>Boxer</option>
+  <option>French Bulldog</option>
+  <option>Other</option>
+</select>
           </div>
 
           <div class="mb-3">
@@ -337,33 +249,12 @@
             <label>Location Found</label>
             <input type="text" name="location_found" class="form-control" value="{{ d.location_found }}">
           </div>
-
-          <div class="mb-3">
-            <label>Status</label>
-            <select name="vaccinated" class="form-select">
-              <option value="Vaccinated" {{ 'selected' if d.vaccinated == 'Vaccinated' }}>Vaccinated</option>
-              <option value="Not Vaccinated" {{ 'selected' if d.vaccinated == 'Not Vaccinated' }}>Not Vaccinated</option>
-            </select>
-          </div>
-
-          <div class="mb-3">
-            <label>Last Vaccination</label>
-            <input type="date" name="last_vaccination" class="form-control" value="{{ d.last_vaccination }}">
-          </div>
-
-          <div class="mb-3">
-            <label>Next Vaccination</label>
-            <input type="date" name="next_vaccination" class="form-control" value="{{ d.next_vaccination }}">
-          </div>
-
         </div>
-
         <div class="modal-footer">
-          <button type="submit" class="btn btn-primary editStrayBtn">
+          <button type="submit" class="btn btn-primary editStrayBtn w-100">
             <span class="btn-text">Save Changes</span>
           </button>
         </div>
-
       </form>
 
     </div>
@@ -389,7 +280,6 @@
     </div>
   </div>
 </div>
-
 {% endfor %}
 <div class="modal fade" id="deleteDogModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
@@ -467,7 +357,33 @@
 
             <div class="col-md-6">
               <label class="form-label">Breed</label>
-              <input type="text" name="breed" class="form-control" placeholder="e.g. Aspin">
+<select name="breed" id="breedSelect" class="form-select" required>
+  <option value="" disabled selected>Select Breed</option>
+  <option>Aspin</option>
+  <option>Mixed Breed</option>
+  <option>Labrador Retriever</option>
+  <option>Golden Retriever</option>
+  <option>German Shepherd</option>
+  <option>Shih Tzu</option>
+  <option>Chihuahua</option>
+  <option>Pomeranian</option>
+  <option>Beagle</option>
+  <option>Bulldog</option>
+  <option>Pit Bull</option>
+  <option>Rottweiler</option>
+  <option>Siberian Husky</option>
+  <option>Dachshund</option>
+  <option>Doberman Pinscher</option>
+  <option>Great Dane</option>
+  <option>Border Collie</option>
+  <option>Shiba Inu</option>
+  <option>Poodle</option>
+  <option>Akita</option>
+  <option>Corgi</option>
+  <option>Boxer</option>
+  <option>French Bulldog</option>
+  <option>Other</option>
+</select>
             </div>
           </div>
 
@@ -562,45 +478,6 @@ function previewStrayImage(event) {
 function setDeleteDogForm(actionUrl) {
   document.getElementById("deleteDogForm").action = actionUrl;
 }
-</script>
-<script>
-function toggleVaccinationFields(modal) {
-  const statusSelect = modal.querySelector('select[name="vaccinated"]');
-  const lastInput = modal.querySelector('input[name="last_vaccination"]');
-  const nextInput = modal.querySelector('input[name="next_vaccination"]');
-  const typeInput = modal.querySelector('input[name="vaccination_type"]');
-
-
-  function updateFields() {
-    if (statusSelect.value === "Not Vaccinated") {
-      lastInput.disabled = true;
-      nextInput.disabled = true;
-      typeInput.disabled = true;
-      lastInput.value = "";
-      nextInput.value = "";
-      typeInput.value = "";
-    } else {
-      lastInput.disabled = false;
-      nextInput.disabled = false;
-      typeInput.disabled = false;
-    }
-  }
-
-  statusSelect.addEventListener('change', updateFields);
-
-  // initialize on modal open
-  updateFields();
-}
-
-// Apply to Add Stray Modal
-const addStrayModal = document.getElementById('addStrayModal');
-addStrayModal.addEventListener('shown.bs.modal', () => toggleVaccinationFields(addStrayModal));
-
-// Apply to all Edit Modals
-const editModals = document.querySelectorAll('[id^="editDogModal"]');
-editModals.forEach(modal => {
-  modal.addEventListener('shown.bs.modal', () => toggleVaccinationFields(modal));
-});
 </script>
 <script>
 function openQrFullscreen(src) {
