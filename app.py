@@ -2084,12 +2084,21 @@ def admin_search_dogs():
 
             elif search_field == "vaccination_location":
                 dogs = dogs.filter(Dog.vaccination_location.ilike(f"{query}%"))
-                
+
+            elif search_field == "vaccination_add":
+                dogs = dogs.filter(
+                    func.concat(
+                        func.coalesce(Dog.vaccination_barangay, ''), ', ',
+                        func.coalesce(Dog.vaccination_municipality, ''), ', ',
+                        func.coalesce(Dog.vaccination_province, '')
+                    ).ilike(f"{query}%")
+                )
+
         # ✅ FORCE ORIGINAL ORDER (IMPORTANT)
     dogs = dogs.order_by(Dog.created_at.desc()).all()
 
     # Render partial template for dog cards only
-    return render_template("admin_dog_cards_partial.html", dogs=dogs)
+    return render_template("admin_dog_cards_partial.html", dogs=dogs, search_field=search_field,)
 
 @app.route('/admin/register_dog', methods=['POST'])
 @login_required

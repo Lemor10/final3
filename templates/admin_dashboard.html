@@ -499,6 +499,15 @@
             <option value="not_vaccinated">Not Vaccinated</option>
         </select>
     </div>
+
+    <div class="col-auto">
+    <button type="button"
+            class="btn btn-outline-secondary"
+            title="Refresh Dashboard"
+            onclick="window.location.href='{{ url_for('admin_dashboard') }}'">
+        <i class="bi bi-arrow-clockwise"></i>
+    </button>
+</div>
 </div>
     </div>
 </form>
@@ -1403,11 +1412,6 @@ function updateDogCards() {
     const query = searchInput.value.trim();
     const filter = filterSelect.value;
 
-    if (filter === 'all' && query === '') {
-        window.location.href = "{{ url_for('admin_dashboard') }}";
-        return;
-    }
-
     if (searchTimeout) clearTimeout(searchTimeout);
 
     searchTimeout = setTimeout(() => {
@@ -1451,6 +1455,7 @@ searchFieldSelect.addEventListener('change', () => {
         searchInput.readOnly = false;
         searchInput.placeholder = 'Search...';
     }
+    updateDogCards();
 });
 
 function toggleBreedSuggestions() {
