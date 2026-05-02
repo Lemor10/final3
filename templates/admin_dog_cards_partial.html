@@ -16,8 +16,8 @@
 }
 
 .dog-img {
-  width: 60px;
-  height: 60px;
+  width: 90px;
+  height: 90px;
   object-fit: cover;
   border-radius: 8px;
 }
@@ -53,15 +53,13 @@
       <div class="flex-grow-1">
 
         <!-- NAME + STATUS -->
-        <div class="dog-name 
-          {% if d.vaccinated == 'Vaccinated' %}text-success{% else %}text-danger{% endif %}">
+        <div class="dog-name fw-bold {% if d.vaccinated == 'Vaccinated' %}text-success{% else %}text-danger{% endif %}">
           
           {% if d.vaccinated == 'Vaccinated' %}
             <i class="bi bi-shield-check"></i>
           {% else %}
             <i class="bi bi-x-circle"></i>
           {% endif %}
-          
           {{ d.name }}
         </div>
 
