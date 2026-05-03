@@ -1783,6 +1783,14 @@ loadProvinces('ownerProvince');
 document.querySelectorAll('[id^="ownerProvince"]').forEach(select => {
   loadProvinces(select.id);
 });
+
+// LOAD REGISTER MODAL VACCINATION PROVINCES
+loadProvinces('vacProvince');
+
+// LOAD ALL EDIT MODAL VACCINATION PROVINCES
+document.querySelectorAll('[id^="vacProvince"]').forEach(select => {
+  loadProvinces(select.id);
+});
 </script>
 <script> 
 $('#addVaccinationType').select2({
