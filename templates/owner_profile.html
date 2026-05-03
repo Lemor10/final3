@@ -200,18 +200,24 @@
   </div>
 
   <div class="mb-3">
-    <small>Barangay</small>
-    <input type="text" name="barangay" class="form-control profile-input" value="{{ current_user.barangay or '' }}" readonly>
+    <small>Province</small>
+    <select name="province" id="ownerProvince" class="form-select profile-input" disabled>
+      <option value="">Select Province</option>
+    </select>
   </div>
 
   <div class="mb-3">
     <small>Municipality / City</small>
-    <input type="text" name="municipality" class="form-control profile-input" value="{{ current_user.municipality or '' }}" readonly>
+    <select name="municipality" id="ownerCity" class="form-select profile-input" disabled>
+      <option value="">Select City / Municipality</option>
+    </select>
   </div>
 
   <div class="mb-3">
-    <small>Province</small>
-    <input type="text" name="province" class="form-control profile-input" value="{{ current_user.province or '' }}" readonly>
+    <small>Barangay</small>
+    <select name="barangay" id="ownerBarangay" class="form-select profile-input" disabled>
+      <option value="">Select Barangay</option>
+    </select>
   </div>
 
 </div>
@@ -818,7 +824,10 @@ document.addEventListener("DOMContentLoaded", function () {
     privacyNotice.classList.add("d-none");
 
     // Enable editing
-    inputs.forEach(i => i.readOnly = false);
+  inputs.forEach(i => {
+    i.readOnly = false;
+    i.disabled = false; // 🔥 ADD THIS
+  });
 
     editBtn.classList.add("d-none");
     saveCancelBtns.classList.remove("d-none");
@@ -830,7 +839,10 @@ document.addEventListener("DOMContentLoaded", function () {
     privacyNotice.classList.remove("d-none");
 
     // Disable editing
-    inputs.forEach(i => i.readOnly = true);
+    inputs.forEach(i => {
+      i.readOnly = true;
+      i.disabled = true; // 🔥 ADD THIS
+    });
 
     editBtn.classList.remove("d-none");
     saveCancelBtns.classList.add("d-none");
@@ -1075,6 +1087,95 @@ document.addEventListener("DOMContentLoaded", function () {
           barangaySelect.appendChild(option);
         });
         barangaySelect.disabled = false;
+      });
+  });
+
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  const prov = document.getElementById("ownerProvince");
+  const city = document.getElementById("ownerCity");
+  const brgy = document.getElementById("ownerBarangay");
+
+  const currentProvince = "{{ current_user.province or '' }}";
+  const currentCity = "{{ current_user.municipality or '' }}";
+  const currentBarangay = "{{ current_user.barangay or '' }}";
+
+  // Load Provinces
+  fetch("https://psgc.gitlab.io/api/provinces/")
+    .then(res => res.json())
+    .then(data => {
+      data.forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = p.name;
+        opt.dataset.code = p.code;
+        opt.textContent = p.name;
+
+        if (p.name === currentProvince) opt.selected = true;
+
+        prov.appendChild(opt);
+      });
+
+      // Trigger next if existing value
+      if (currentProvince) prov.dispatchEvent(new Event("change"));
+    });
+
+  // Province → City
+  prov.addEventListener("change", function () {
+    const code = this.options[this.selectedIndex].dataset.code;
+
+    city.innerHTML = '<option>Loading...</option>';
+    city.disabled = true;
+    brgy.innerHTML = '<option>Select Barangay</option>';
+    brgy.disabled = true;
+
+    fetch(`https://psgc.gitlab.io/api/provinces/${code}/cities-municipalities/`)
+      .then(res => res.json())
+      .then(data => {
+        city.innerHTML = '<option value="">Select City / Municipality</option>';
+
+        data.forEach(c => {
+          const opt = document.createElement("option");
+          opt.value = c.name;
+          opt.dataset.code = c.code;
+          opt.textContent = c.name;
+
+          if (c.name === currentCity) opt.selected = true;
+
+          city.appendChild(opt);
+        });
+
+        city.disabled = false;
+
+        if (currentCity) city.dispatchEvent(new Event("change"));
+      });
+  });
+
+  // City → Barangay
+  city.addEventListener("change", function () {
+    const code = this.options[this.selectedIndex].dataset.code;
+
+    brgy.innerHTML = '<option>Loading...</option>';
+    brgy.disabled = true;
+
+    fetch(`https://psgc.gitlab.io/api/cities-municipalities/${code}/barangays/`)
+      .then(res => res.json())
+      .then(data => {
+        brgy.innerHTML = '<option value="">Select Barangay</option>';
+
+        data.forEach(b => {
+          const opt = document.createElement("option");
+          opt.value = b.name;
+          opt.textContent = b.name;
+
+          if (b.name === currentBarangay) opt.selected = true;
+
+          brgy.appendChild(opt);
+        });
+
+        brgy.disabled = false;
       });
   });
 
