@@ -400,35 +400,26 @@
 
   <div class="row g-2 mt-1">
 
-    <div class="col-md-4">
-      <label class="form-label small">Barangay</label>
-      <input type="text" 
-             name="barangay" 
-             class="form-control" 
-             placeholder="Barangay"
-             value="{{ u.barangay }}">
-    </div>
+  <div class="col-md-4">
+  <select id="ownerProvince{{ u.id }}" name="province" class="form-select" required>
+      <option value="">Select Province</option>
+    </select>
+  </div>
 
-    <div class="col-md-4">
-      <label class="form-label small">Municipality</label>
-      <input type="text" 
-             name="municipality" 
-             class="form-control" 
-             placeholder="Municipality"
-             value="{{ u.municipality }}">
-    </div>
+  <div class="col-md-4">
+<select id="ownerMunicipality{{ u.id }}" name="municipality" class="form-select" required>
+      <option value="">Select Municipality</option>
+    </select>
+  </div>
 
-    <div class="col-md-4">
-      <label class="form-label small">Province</label>
-      <input type="text" 
-             name="province" 
-             class="form-control" 
-             placeholder="Province"
-             value="{{ u.province }}">
-    </div>
-
+  <div class="col-md-4">
+    <select id="ownerBarangay{{ u.id }}" name="barangay" class="form-select" required>
+      <option value="">Select Barangay</option>
+    </select>
   </div>
 </div>
+
+  </div>
 
         </div>
 
@@ -1280,7 +1271,7 @@
             </div>
                         <div class="col-md-6">
   <label class="form-label">Vaccination Type</label>
-<select name="vaccination_type" id="addVaccinationType" class="form-select">
+<select name="vaccination_type" class="form-select register-type" disabled>
   <option value="">Select Vaccination Type</option>
   <option>Anti-Rabies</option>
   <option>5-in-1 Vaccine</option>
@@ -1481,8 +1472,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const registerBarangay = document.getElementById('vacBarangay');
   const registerMunicipality = document.getElementById('vacMunicipality');
   const registerProvince = document.getElementById('vacProvince');
-  const registerType = document.getElementById('addVaccinationType');
-
+  const registerType = document.querySelector('#registerStrayDogModal .register-type');
   function toggleRegisterDates() {
 
     if (registerStatus.value === 'Vaccinated') {
@@ -1742,14 +1732,26 @@ function loadBarangays(municipalityCode, selectId) {
 }
 
 // OWNER CASCADE
-document.getElementById('ownerProvince').addEventListener('change', function() {
-  const code = this.selectedOptions[0].dataset.code;
-  loadMunicipalities(code, 'ownerMunicipality');
+document.querySelectorAll('[id^="ownerProvince"]').forEach(provinceSelect => {
+
+  provinceSelect.addEventListener('change', function () {
+    const code = this.selectedOptions[0].dataset.code;
+    const id = this.id.replace('ownerProvince', '');
+
+    loadMunicipalities(code, 'ownerMunicipality' + id);
+  });
+
 });
 
-document.getElementById('ownerMunicipality').addEventListener('change', function() {
-  const code = this.selectedOptions[0].dataset.code;
-  loadBarangays(code, 'ownerBarangay');
+document.querySelectorAll('[id^="ownerMunicipality"]').forEach(municipalitySelect => {
+
+  municipalitySelect.addEventListener('change', function () {
+    const code = this.selectedOptions[0].dataset.code;
+    const id = this.id.replace('ownerMunicipality', '');
+
+    loadBarangays(code, 'ownerBarangay' + id);
+  });
+
 });
 
 // VACCINATION CASCADE
@@ -1777,7 +1779,8 @@ document.querySelectorAll('[id^="vacMunicipality"]').forEach(municipalitySelect 
 
 // INIT
 loadProvinces('ownerProvince');
-document.querySelectorAll('[id^="vacProvince"]').forEach(select => {
+// LOAD ALL OWNER PROVINCES (EDIT MODALS)
+document.querySelectorAll('[id^="ownerProvince"]').forEach(select => {
   loadProvinces(select.id);
 });
 </script>
